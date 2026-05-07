@@ -36,9 +36,6 @@ export default function Signup() {
       <div className="grid grid-cols-1 md:grid-cols-2 min-h-[calc(100vh-80px)]">
         {/* Left Side - Branding */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-12 flex flex-col justify-center">
-          <div className="mb-12">
-            <div className="w-24 h-32 bg-pink-400 rounded-2xl mb-8"></div>
-          </div>
           <h2 className="text-4xl font-bold mb-8">
             "The journey of a thousand miles begins with a single step — and the right support."
           </h2>

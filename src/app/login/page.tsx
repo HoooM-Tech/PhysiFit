@@ -14,9 +14,6 @@ export default function LoginPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 min-h-[calc(100vh-80px)]">
         <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-12 flex flex-col justify-center">
-          <div className="mb-12">
-            <div className="w-24 h-32 bg-pink-400 rounded-2xl mb-8"></div>
-          </div>
           <h2 className="text-4xl font-bold mb-8">Welcome back to PhysiFit NG.</h2>
           <p className="text-blue-200 max-w-md">
             Login to manage your sessions, message your trainer, and continue your progress in one place.

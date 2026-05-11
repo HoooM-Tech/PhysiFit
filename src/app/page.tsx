@@ -53,7 +53,7 @@ export default function Home() {
         </div>
 
          {/* Hero Image */}
-        <div className="relative rounded-2xl overflow-hidden h-96 md:h-full min-h-96">
+        <div className="relative rounded-2xl overflow-hidden h-72 sm:h-96 md:h-[28rem] lg:h-[32rem]">
           <Image
             src="/images/hero-section-1.jpg"
             alt="Fitness class in progress"
@@ -80,11 +80,11 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Senior Fitness */}
             <div className="bg-white rounded-xl overflow-hidden hover:shadow-lg transition">
-              <div className="bg-yellow-400 h-48 flex items-center justify-center text-5xl">
+              <div className="relative h-48 w-full">
                  <Image
                   src="/images/senior-fitness.jpg"
                   alt="Senior fitness class"
-                  width={400} height={40}
+                  fill
                   className="object-cover"
                   priority
                 />
@@ -102,11 +102,11 @@ export default function Home() {
 
             {/* Postpartum Fitness */}
             <div className="bg-white rounded-xl overflow-hidden hover:shadow-lg transition">
-              <div className="bg-pink-400 h-48 flex items-center justify-center text-5xl">
+              <div className="relative h-48 w-full">
                 <Image
                   src="/images/postpartum-fitness-1.jpg"
                   alt="postpartum fitness class"
-                  width={400} height={40}
+                  fill
                   className="object-cover"
                   priority
                 />
@@ -124,11 +124,11 @@ export default function Home() {
 
             {/* Corporate Wellness */}
             <div className="bg-white rounded-xl overflow-hidden hover:shadow-lg transition">
-              <div className="bg-cyan-400 h-48 flex items-center justify-center text-5xl">
+              <div className="relative h-48 w-full">
                 <Image
                   src="/images/cooperate-wellness.jpg"
                   alt="Corporate wellness class"
-                  width={400} height={40}
+                  fill
                   className="object-cover"
                   priority
                 />

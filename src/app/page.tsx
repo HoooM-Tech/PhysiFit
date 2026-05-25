@@ -220,12 +220,12 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-600 mb-6 italic">
-                "After my second child, I didn't know where to start. My trainer Tolu created a gentle program that helped me feel strong again within weeks. The app made tracking so easy."
+                "I've enjoyed excellent service so far. The trainer is professional and knows his beans. 100% recommend."
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-green-400 rounded-full"></div>
                 <div>
-                  <p className="font-bold">Amaka O.</p>
+                  <p className="font-bold">Pamilerinayo Ige.</p>
                   <p className="text-gray-600 text-sm">Postpartum Client · Lagos</p>
                 </div>
               </div>
@@ -239,12 +239,12 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-600 mb-6 italic">
-                "As a 68-year-old with joint issues, I was skeptical. But my PhysiFit trainer understood exactly what I needed. My balance has improved dramatically."
+                "A well equipped fitness center, attention to details and result driven coach."
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-yellow-400 rounded-full"></div>
                 <div>
-                  <p className="font-bold">Chief Adeleke</p>
+                  <p className="font-bold">Falaye Oluwamayowa</p>
                   <p className="text-gray-600 text-sm">Senior Fitness Client · Abuja</p>
                 </div>
               </div>
@@ -258,7 +258,7 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-600 mb-6 italic">
-                "We enrolled our entire team of 30. The corporate wellness sessions have noticeably reduced sick days and improved team morale. Highly recommend."
+                "You need that snatched waist and summer body or general body fitness? This is the right plug. The trainers are so relatable and they will help you achieve your body goals."
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-green-600 rounded-full"></div>

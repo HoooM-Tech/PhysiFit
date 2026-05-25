@@ -11,11 +11,11 @@ export default function Home() {
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div>
-          <div className="mb-6 inline-block bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold">
+          <div className="mb-6 inline-block bg-accent bg-opacity-10 text-accent px-4 py-2 rounded-full text-sm font-semibold">
             • Specialized Fitness Platform
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Fitness designed for <span className="text-blue-600">your</span> journey
+            Fitness designed for <span className="text-primary-dark">your</span> journey
           </h1>
           <p className="text-gray-600 text-lg mb-8">
             PhysiFit NG offers personalized, structured training for seniors, postpartum women, and corporate teams — with dedicated trainers and full progress tracking.
@@ -23,7 +23,7 @@ export default function Home() {
           <div className="flex gap-4">
             <Link
               href="/book-session"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold transition"
+              className="bg-primary-dark hover:bg-primary-darker text-white px-8 py-3 rounded-full font-semibold transition"
             >
               Book a Session
             </Link>
@@ -68,9 +68,9 @@ export default function Home() {
       <section id="services" className="bg-gray-50 py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className="text-blue-600 font-semibold mb-2">OUR SERVICES</p>
+            <p className="text-accent font-semibold mb-2">OUR SERVICES</p>
             <h2 className="text-5xl font-bold mb-4">
-              Fitness for every <span className="italic text-blue-600">life stage</span>
+              Fitness for every <span className="italic text-accent">life stage</span>
             </h2>
             <p className="text-gray-600 text-lg">
               Specialized programs built around your unique needs, delivered by certified trainers who understand your body and goals.
@@ -94,7 +94,7 @@ export default function Home() {
                 <p className="text-gray-600 mb-6">
                   Low-impact, mobility-focused programs designed specifically for older adults to maintain strength, balance, and independence.
                 </p>
-                <Link href="/book-session" className="text-blue-600 hover:text-blue-700 font-semibold">
+                <Link href="/book-session" className="text-primary-dark hover:text-primary-darker font-semibold">
                   Explore Program →
                 </Link>
               </div>
@@ -116,7 +116,7 @@ export default function Home() {
                 <p className="text-gray-600 mb-6">
                   Safe, evidence-based recovery programs helping new mothers regain strength, core stability, and overall wellbeing.
                 </p>
-                <Link href="/book-session" className="text-blue-600 hover:text-blue-700 font-semibold">
+                <Link href="/book-session" className="text-primary-dark hover:text-primary-darker font-semibold">
                   Explore Program →
                 </Link>
               </div>
@@ -138,7 +138,7 @@ export default function Home() {
                 <p className="text-gray-600 mb-6">
                   Group wellness programs for teams — improving productivity, reducing burnout, and building a healthier workplace culture.
                 </p>
-                <Link href="/book-session" className="text-blue-600 hover:text-blue-700 font-semibold">
+                <Link href="/book-session" className="text-primary-dark hover:text-primary-darker font-semibold">
                   Explore Program →
                 </Link>
               </div>
@@ -148,17 +148,17 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="bg-gray-900 text-white py-20">
+      <section id="how-it-works" className="bg-primary-dark text-white py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="mb-16">
-            <p className="text-blue-400 font-semibold mb-2">PROCESS</p>
+            <p className="text-accent font-semibold mb-2">PROCESS</p>
             <h2 className="text-5xl font-bold">How PhysiFit NG works</h2>
             <p className="text-gray-400 mt-4">From sign-up to your first session in four simple steps.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+              <div className="bg-accent w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 text-primary-dark">
                 1
               </div>
               <h3 className="text-2xl font-bold mb-3">Create Account</h3>
@@ -168,7 +168,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+              <div className="bg-accent w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 text-primary-dark">
                 2
               </div>
               <h3 className="text-2xl font-bold mb-3">Book Sessions</h3>
@@ -178,7 +178,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+              <div className="bg-accent w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 text-primary-dark">
                 3
               </div>
               <h3 className="text-2xl font-bold mb-3">Trainer Assigned</h3>
@@ -188,7 +188,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+              <div className="bg-accent w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 text-primary-dark">
                 4
               </div>
               <h3 className="text-2xl font-bold mb-3">Train & Progress</h3>
@@ -204,7 +204,7 @@ export default function Home() {
       <section className="bg-white py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="mb-16">
-            <p className="text-blue-600 font-semibold mb-2">TESTIMONIALS</p>
+            <p className="text-accent font-semibold mb-2">TESTIMONIALS</p>
             <h2 className="text-5xl font-bold">What our clients say</h2>
             <p className="text-gray-600 text-lg mt-4">
               Real stories from people who've transformed their health with PhysiFit NG.
@@ -276,7 +276,7 @@ export default function Home() {
       <section id="faq" className="bg-gray-50 py-20">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className="text-blue-600 font-semibold mb-2">FAQ</p>
+            <p className="text-accent font-semibold mb-2">FAQ</p>
             <h2 className="text-5xl font-bold">Common questions</h2>
             <p className="text-gray-600 text-lg mt-4">
               Everything you need to know before getting started.
@@ -338,34 +338,34 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-blue-600 text-white py-20">
+      <section className="bg-gradient-to-r from-primary-dark to-primary-darker text-white py-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-5xl font-bold mb-6">Ready to begin your fitness journey?</h2>
-          <p className="text-xl mb-8 text-blue-100">
+          <p className="text-xl mb-8 text-gray-200">
             Join hundreds of Nigerians who've transformed their health with structured, expert-led fitness programs.
           </p>
           <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
             <Link
               href="/book-session"
-              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 rounded-full font-semibold transition"
+              className="bg-accent text-primary-dark hover:bg-accent-dark px-8 py-3 rounded-full font-semibold transition"
             >
               Book a Session
             </Link>
             <Link
               href="/signup"
-              className="border-2 border-white text-white hover:bg-blue-700 px-8 py-3 rounded-full font-semibold transition"
+              className="border-2 border-white text-white hover:bg-primary-dark px-8 py-3 rounded-full font-semibold transition"
             >
               Create Free Account
             </Link>
           </div>
-          <p className="text-blue-200 mt-6 text-sm">
+          <p className="text-gray-300 mt-6 text-sm">
             ✓ No hidden fees &nbsp;&nbsp; ✓ Certified trainers &nbsp;&nbsp; ✓ Cancel anytime
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
+      <footer className="bg-primary-dark text-gray-400 py-12">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <p>© 2025 PhysiFit NG · All rights reserved · Built for Nigerian wellness</p>
         </div>

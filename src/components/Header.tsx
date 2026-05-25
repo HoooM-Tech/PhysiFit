@@ -20,13 +20,16 @@ export default function Header() {
       <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <span className="text-2xl font-bold">Physi</span>
-          <span className="text-2xl font-bold text-blue-600">Fit</span>
+          <span className="text-2xl font-bold text-accent">Fit</span>
           <span className="text-2xl font-bold">NG</span>
         </div>
 
         <div className="hidden md:flex items-center gap-8">
           <Link href="/" className="text-gray-600 hover:text-gray-900 transition">
             Home
+          </Link>
+          <Link href="/event" className="text-gray-600 hover:text-gray-900 transition">
+            Event
           </Link>
           <Link href="/#services" className="text-gray-600 hover:text-gray-900 transition">
             Services
@@ -37,7 +40,7 @@ export default function Header() {
           <Link href="/#faq" className="text-gray-600 hover:text-gray-900 transition">
             FAQ
           </Link>
-          <Link href="/trainer-portal" className="text-blue-600 hover:text-blue-700 transition">
+          <Link href="/trainer-portal" className="text-accent hover:text-accent-dark transition">
             Trainer Portal
           </Link>
         </div>
@@ -48,7 +51,7 @@ export default function Header() {
           </Link>
           <Link
             href="/signup"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full transition"
+            className="bg-accent hover:bg-accent-dark text-primary-dark px-6 py-2 rounded-full transition font-semibold"
           >
             Get Started
           </Link>

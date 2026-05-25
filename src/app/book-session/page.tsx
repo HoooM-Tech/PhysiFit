@@ -260,27 +260,6 @@ export default function BookSession() {
         <div className="max-w-4xl mx-auto px-6 py-12">
           <h2 className="text-3xl font-bold mb-8">PAYMENT DETAILS</h2>
 
-          {/* Card Display */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-2xl p-8 mb-12">
-            <div className="flex justify-between items-start mb-12">
-              <div className="w-12 h-8 bg-yellow-400 rounded"></div>
-              <div className="text-sm text-blue-200">CARD HOLDER</div>
-            </div>
-            <div className="mb-8">
-              <p className="text-lg tracking-widest">•••• •••• •••• 4242</p>
-            </div>
-            <div className="flex justify-between">
-              <div>
-                <p className="text-xs text-blue-200 mb-1">CARD HOLDER</p>
-                <p className="font-semibold">{formData.cardholderName}</p>
-              </div>
-              <div>
-                <p className="text-xs text-blue-200 mb-1">EXPIRES</p>
-                <p className="font-semibold">03/27</p>
-              </div>
-            </div>
-          </div>
-
           {/* Payment Form */}
           <div className="space-y-6 mb-12">
             <div>

@@ -36,7 +36,7 @@ export default function EventPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 mt-16">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mt-16">
             <div>
               <p className="text-4xl font-bold text-accent">6+</p>
               <p className="text-gray-300">Wellness Stations</p>
@@ -134,7 +134,7 @@ export default function EventPage() {
                 Every activity station addresses one or more critical dimensions of healthy aging, proven effective through clinical research.
               </p>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-primary-darker bg-opacity-50 border border-accent border-opacity-30 rounded-lg p-4">
                   <span className="text-accent">●</span>
                   <p className="text-white font-semibold">Balance & Stability</p>
@@ -346,10 +346,14 @@ export default function EventPage() {
       <footer className="bg-primary-dark text-white py-12">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <div className="flex items-center gap-1 mb-4">
-              <span className="text-2xl font-bold">Physi</span>
-              <span className="text-2xl font-bold text-accent">Fit</span>
-              <span className="text-2xl font-bold">NG</span>
+            <div className="mb-4">
+              <Image
+                src="/images/logo.png"
+                alt="PhysiFit NG Logo"
+                width={150}
+                height={40}
+                className="object-contain h-10 w-auto brightness-0 invert"
+              />
             </div>
             <p className="text-gray-300 mb-2">Active lifestyle, healthy lifetime.</p>
             <p className="text-gray-400 text-sm">

@@ -14,11 +14,11 @@ export default function RegisterPage() {
           This registration process uses the official event form. Complete the form below, then return here to proceed with payment.
         </p>
 
-        <div className="bg-gray-50 rounded-3xl overflow-hidden border border-gray-200 mb-8">
+        <div className="bg-gray-50 rounded-3xl border border-gray-200 mb-8 w-full overflow-x-auto">
           <iframe
             title="Event Registration Form"
             src="https://docs.google.com/forms/d/e/1FAIpQLSc9uweKQ7X7GtFrN2EnEW_lSl8vhw34le6MSGL2p8J2BW_xrw/viewform?embedded=true"
-            className="w-full min-h-[900px]"
+            className="w-full min-w-[320px] min-h-[900px]"
             frameBorder="0"
             marginHeight={0}
             marginWidth={0}

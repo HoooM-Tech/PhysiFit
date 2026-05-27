@@ -12,7 +12,7 @@ export default function ReservePage() {
         <h1 className="text-4xl font-bold text-primary-dark mb-4">Reserve Your Spot</h1>
         <p className="text-gray-600 mb-8">Quick reservation — we will hold your spot and send payment instructions to your email.</p>
 
-        <form className="bg-gray-50 p-8 rounded-lg shadow-sm">
+        <form className="bg-gray-50 p-6 sm:p-8 rounded-lg shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <input className="p-3 rounded border border-gray-200" placeholder="Full name" />
             <input className="p-3 rounded border border-gray-200" placeholder="Number of attendees" />

@@ -25,9 +25,46 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false)
   const [consent, setConsent] = useState(false)
   const [termsAgreed, setTermsAgreed] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const passwordsMatch = formData.password === formData.confirmPassword
   const canContinue = consent && formData.password && formData.confirmPassword && passwordsMatch
   const canCreateAccount = termsAgreed
+
+  const handleRegister = async () => {
+    setError('')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          fullName: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone || undefined,
+          role: 'client',
+          weightKg: Number(formData.weight) || undefined,
+          heightCm: Number(formData.height) || undefined,
+          dizzinessHistory: formData.dizziness === 'Yes',
+          medicalNotes: formData.medicalConditions || undefined,
+        }),
+      })
+
+      const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json.error?.message || json.message || 'Failed to create account')
+      }
+
+      router.push('/dashboard')
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -35,7 +72,7 @@ export default function Signup() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 min-h-[calc(100vh-80px)]">
         {/* Left Side - Branding */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-12 flex flex-col justify-center">
+        <div className="hidden md:flex bg-gradient-to-br from-blue-600 to-blue-800 text-white p-12 flex-col justify-center">
           <h2 className="text-4xl font-bold mb-8">
             "The journey of a thousand miles begins with a single step — and the right support."
           </h2>
@@ -43,7 +80,7 @@ export default function Signup() {
         </div>
 
         {/* Right Side - Form */}
-        <div className="p-12 flex flex-col justify-center max-w-md mx-auto w-full">
+        <div className="p-6 sm:p-10 md:p-12 flex flex-col justify-center max-w-md mx-auto w-full">
           {step === 'personal' && (
             <>
               <div className="mb-2 inline-block">
@@ -309,20 +346,22 @@ export default function Signup() {
 
               </div>
 
+              {error && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded text-left">
+                  <p className="text-red-700 text-sm font-semibold">{error}</p>
+                </div>
+              )}
+
               <button
-                disabled={!canCreateAccount}
-                onClick={() => {
-                  // In a real app, this would call an API to create the account
-                  // For now, we'll redirect to dashboard
-                  router.push('/dashboard')
-                }}
+                disabled={!canCreateAccount || loading}
+                onClick={handleRegister}
                 className={`w-full py-3 rounded-lg font-bold transition mb-4 ${
-                  canCreateAccount
+                  canCreateAccount && !loading
                     ? 'bg-blue-600 hover:bg-blue-700 text-white'
                     : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                 }`}
               >
-                Create Account & Continue
+                {loading ? 'Creating Account...' : 'Create Account & Continue'}
               </button>
 
               <button

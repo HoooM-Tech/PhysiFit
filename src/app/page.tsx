@@ -20,23 +20,23 @@ export default function Home() {
           <p className="text-gray-600 text-lg mb-8">
             PhysiFit NG offers personalized, structured training for seniors, postpartum women, and corporate teams — with dedicated trainers and full progress tracking.
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/book-session"
-              className="bg-primary-dark hover:bg-primary-darker text-white px-8 py-3 rounded-full font-semibold transition"
+              className="bg-primary-dark hover:bg-primary-darker text-white px-8 py-3 rounded-full font-semibold transition text-center"
             >
               Book a Session
             </Link>
             <Link
               href="/signup"
-              className="border-2 border-gray-300 hover:border-gray-400 text-gray-900 px-8 py-3 rounded-full font-semibold transition"
+              className="border-2 border-gray-300 hover:border-gray-400 text-gray-900 px-8 py-3 rounded-full font-semibold transition text-center"
             >
               Create Account
             </Link>
           </div>
 
           {/* Stats */}
-          <div className="flex gap-12 mt-16">
+          <div className="flex flex-wrap gap-6 sm:gap-12 mt-16">
             <div>
               <p className="text-4xl font-bold">500+</p>
               <p className="text-gray-600">Active Clients</p>
@@ -344,16 +344,16 @@ export default function Home() {
           <p className="text-xl mb-8 text-gray-200">
             Join hundreds of Nigerians who've transformed their health with structured, expert-led fitness programs.
           </p>
-          <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               href="/book-session"
-              className="bg-accent text-primary-dark hover:bg-accent-dark px-8 py-3 rounded-full font-semibold transition"
+              className="bg-accent text-primary-dark hover:bg-accent-dark px-8 py-3 rounded-full font-semibold transition text-center w-full sm:w-auto"
             >
               Book a Session
             </Link>
             <Link
               href="/signup"
-              className="border-2 border-white text-white hover:bg-primary-dark px-8 py-3 rounded-full font-semibold transition"
+              className="border-2 border-white text-white hover:bg-primary-dark px-8 py-3 rounded-full font-semibold transition text-center w-full sm:w-auto"
             >
               Create Free Account
             </Link>

@@ -2,366 +2,446 @@
 
 import Header from '@/components/Header'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Script from 'next/script'
+
+interface Service {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  priceNairaPerSession: number;
+}
 
 export default function BookSession() {
-  const [step, setStep] = useState<'service' | 'payment' | 'terms' | 'confirmed'>('service')
+  const router = useRouter()
+  const [step, setStep] = useState<'service' | 'terms' | 'payment_loading' | 'confirmed'>('service')
   const [termsAgreed, setTermsAgreed] = useState(false)
-  const [formData, setFormData] = useState({
-    service: 'Senior Fitness',
-    sessionType: 'One-on-One',
-    sessions: 8,
-    startDate: '02/10/2025',
-    timeSlot: 'Afternoon (3:00 PM – 6:00 PM)',
-    cardNumber: '1234 5678 9012 3456',
-    expiryDate: 'MM/YY',
-    cvv: '',
-    cardholderName: 'Amaka Okonkwo',
+  const [services, setServices] = useState<Service[]>([])
+  const [selectedService, setSelectedService] = useState<Service | null>(null)
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  
+  // Booking options
+  const [sessionType, setSessionType] = useState<'one_on_one' | 'group'>('one_on_one')
+  const [sessionsCount, setSessionsCount] = useState<4 | 6 | 8 | 12>(8)
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date()
+    today.setDate(today.getDate() + 3) // Default to 3 days from now
+    return today.toISOString().split('T')[0]
   })
+  const [timeSlot, setTimeSlot] = useState<'morning' | 'midday' | 'afternoon' | 'evening'>('afternoon')
 
-  const pricePerSession = 15000
-  const totalPrice = formData.sessions * pricePerSession
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true)
+      try {
+        // Fetch services
+        const svcRes = await fetch('/api/services')
+        if (svcRes.ok) {
+          const json = await svcRes.json()
+          const fetchedServices = json.data?.services || []
+          setServices(fetchedServices)
+          if (fetchedServices.length > 0) {
+            // Prefer Senior Fitness, else first available
+            const defaultSvc = fetchedServices.find((s: Service) => s.slug === 'senior_fitness') || fetchedServices[0]
+            setSelectedService(defaultSvc)
+          }
+        }
+
+        // Fetch current user email
+        const userRes = await fetch('/api/users/me')
+        if (userRes.ok) {
+          const userJson = await userRes.json()
+          if (userJson.data?.user?.email) {
+            setEmail(userJson.data.user.email)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load dynamic details:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  const pricePerSession = selectedService?.priceNairaPerSession ?? 15000
+  const totalPrice = sessionsCount * pricePerSession
+
+  const getServiceIcon = (name: string) => {
+    const n = name.toLowerCase()
+    if (n.includes('postpartum')) return '👶'
+    if (n.includes('senior')) return '😊'
+    return '🏢'
+  }
+
+  const handleProceedToPayment = async () => {
+    if (!selectedService) return
+    setError('')
+    setStep('payment_loading')
+
+    let bookingId = ''
+    try {
+      // 1. Create the pending booking record
+      const bookingPayload = {
+        serviceId: selectedService.id,
+        sessionType,
+        sessionCount: sessionsCount,
+        startDate,
+        preferredTimeSlots: [timeSlot],
+        termsAccepted: true,
+      }
+
+      const bookingRes = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': crypto.randomUUID(),
+        },
+        body: JSON.stringify(bookingPayload),
+      })
+
+      const bookingJson = await bookingRes.json()
+      if (!bookingRes.ok) {
+        throw new Error(bookingJson.error?.message || bookingJson.message || 'Failed to create booking')
+      }
+
+      const booking = bookingJson.data?.booking
+      if (!booking?.id) {
+        throw new Error('Booking response was missing the reference ID')
+      }
+      bookingId = booking.id
+
+      // 2. Launch the Paystack checkout inline popup
+      const transactionRef = 'pay_' + Math.random().toString(36).substring(2, 15) + Date.now();
+      const handler = window.PaystackPop.setup({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_03b79b66317c1b3573e6e746245b654b14a4d88f',
+        email: email || 'client@physifit.ng',
+        amount: totalPrice * 100, // in kobo
+        currency: 'NGN',
+        ref: transactionRef,
+        callback: async function (response: { reference: string }) {
+          try {
+            // 3. Register payment intent
+            const paymentRes = await fetch('/api/payments', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Idempotency-Key': crypto.randomUUID(),
+              },
+              body: JSON.stringify({
+                bookingId: bookingId,
+                provider: 'paystack',
+                providerRef: response.reference,
+              }),
+            })
+
+            const paymentJson = await paymentRes.json()
+            if (!paymentRes.ok) {
+              throw new Error(paymentJson.error?.message || paymentJson.message || 'Failed to submit payment')
+            }
+
+            setStep('confirmed')
+          } catch (err: any) {
+            setError(err.message || 'An issue occurred recording the payment. Please contact support.')
+            setStep('service')
+          }
+        },
+        onClose: function () {
+          setStep('terms')
+        },
+      })
+      handler.openIframe()
+    } catch (err: any) {
+      setError(err.message || 'An unexpected issue occurred. Please retry shortly.')
+      setStep('service')
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
+      <Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
 
       {/* Page Header */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <Link href="/" className="text-gray-600 hover:text-gray-900 transition">
+        <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition flex items-center gap-1 font-semibold">
           ← Back to Dashboard
         </Link>
-        <h1 className="text-4xl font-bold my-6">Book a Session</h1>
+        <h1 className="text-4xl font-bold my-4 text-primary-dark">Book a Session</h1>
         <p className="text-gray-600">Select your service and configure your training plan.</p>
       </div>
 
-      {step === 'service' && (
-        <div className="max-w-4xl mx-auto px-6 py-12">
-          {/* Service Selection */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">1. CHOOSE YOUR SERVICE</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {['Postpartum Fitness', 'Senior Fitness', 'Corporate Wellness'].map((service) => (
-                <div
-                  key={service}
-                  onClick={() => setFormData({ ...formData, service })}
-                  className={`p-6 rounded-xl border-2 cursor-pointer transition ${
-                    formData.service === service
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="text-4xl mb-4">
-                    {service === 'Postpartum Fitness'
-                      ? '👶'
-                      : service === 'Senior Fitness'
-                      ? '😊'
-                      : '🏢'}
+      {loading ? (
+        <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+          <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
+          <p className="text-gray-600">Retrieving PhysiFit programs...</p>
+        </div>
+      ) : (
+        <>
+          {error && (
+            <div className="max-w-4xl mx-auto px-6 mb-6">
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded text-left">
+                <p className="text-red-700 font-semibold">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {step === 'service' && (
+            <div className="max-w-4xl mx-auto px-6 py-4">
+              {/* Service Selection */}
+              <div className="mb-12">
+                <h2 className="text-xl font-bold mb-6 text-gray-800 pb-2 border-b">1. CHOOSE YOUR SERVICE</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {services.map((service) => (
+                    <div
+                      key={service.id}
+                      onClick={() => setSelectedService(service)}
+                      className={`p-6 rounded-xl border-2 cursor-pointer transition ${
+                        selectedService?.id === service.id
+                          ? 'border-blue-600 bg-blue-50/50 shadow-sm'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-4xl mb-4">
+                        {getServiceIcon(service.name)}
+                      </div>
+                      <h3 className="font-bold text-lg mb-2 text-primary-dark">{service.name}</h3>
+                      <p className="text-gray-600 text-sm">{service.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Session Type */}
+              <div className="mb-12">
+                <h2 className="text-xl font-bold mb-6 text-gray-800 pb-2 border-b">2. SESSION TYPE</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div
+                    onClick={() => setSessionType('one_on_one')}
+                    className={`p-6 rounded-xl border-2 cursor-pointer transition ${
+                      sessionType === 'one_on_one'
+                        ? 'border-blue-600 bg-blue-50/50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <h3 className="font-bold text-lg mb-2 text-primary-dark">One-on-One</h3>
+                    <p className="text-gray-600 text-sm">Personal, focused training with your dedicated trainer</p>
                   </div>
-                  <h3 className="font-bold text-lg mb-2">{service}</h3>
-                  <p className="text-gray-600 text-sm">
-                    {service === 'Postpartum Fitness'
-                      ? 'Safe recovery programs for new mothers'
-                      : service === 'Senior Fitness'
-                      ? 'Low-impact mobility & strength for seniors'
-                      : 'Group programs for workplace teams'}
-                  </p>
+                  <div
+                    onClick={() => setSessionType('group')}
+                    className={`p-6 rounded-xl border-2 cursor-pointer transition ${
+                      sessionType === 'group'
+                        ? 'border-blue-600 bg-blue-50/50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <h3 className="font-bold text-lg mb-2 text-primary-dark">Group Session</h3>
+                    <p className="text-gray-600 text-sm">Train with others — cost shared among participants</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Session Type */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">2. SESSION TYPE</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {['One-on-One', 'Group Session'].map((type) => (
-                <div
-                  key={type}
-                  onClick={() => setFormData({ ...formData, sessionType: type })}
-                  className={`p-6 rounded-xl border-2 cursor-pointer transition ${
-                    formData.sessionType === type
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+              {/* Additional Options */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                  <label className="block font-bold mb-2 text-gray-700 text-sm">Number of Sessions</label>
+                  <select
+                    value={sessionsCount}
+                    onChange={(e) => setSessionsCount(Number(e.target.value) as any)}
+                    className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    {[4, 6, 8, 12].map((num) => (
+                      <option key={num} value={num}>
+                        {num} sessions
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-2 text-gray-700 text-sm">Preferred Start Date</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-12">
+                <label className="block font-bold mb-2 text-gray-700 text-sm">Preferred Time Slot</label>
+                <select
+                  value={timeSlot}
+                  onChange={(e) => setTimeSlot(e.target.value as any)}
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
-                  <h3 className="font-bold text-lg mb-2">{type}</h3>
-                  <p className="text-gray-600 text-sm">
-                    {type === 'One-on-One'
-                      ? 'Personal, focused training with your dedicated trainer'
-                      : 'Train with others — cost shared among participants'}
-                  </p>
+                  <option value="morning">Morning (6:00 AM – 9:00 AM)</option>
+                  <option value="midday">Midday (12:00 PM – 2:00 PM)</option>
+                  <option value="afternoon">Afternoon (3:00 PM – 6:00 PM)</option>
+                  <option value="evening">Evening (6:00 PM – 8:00 PM)</option>
+                </select>
+              </div>
+
+              {/* Session Summary */}
+              <div className="bg-gray-50 rounded-2xl p-8 mb-12 border border-gray-200">
+                <h3 className="text-xl font-bold mb-6 text-gray-800">Session Summary</h3>
+                <div className="space-y-4 mb-6">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Service</span>
+                    <span className="font-bold text-gray-900">{selectedService?.name}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Session type</span>
+                    <span className="font-bold text-gray-900">{sessionType === 'one_on_one' ? 'One-on-One' : 'Group Session'}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Sessions</span>
+                    <span className="font-bold text-gray-900">{sessionsCount} sessions</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Per session</span>
+                    <span className="font-bold text-blue-600">₦{pricePerSession.toLocaleString()}</span>
+                  </div>
+                  <div className="border-t pt-4 flex justify-between text-lg font-bold text-gray-900">
+                    <span>Total</span>
+                    <span className="text-blue-600">₦{totalPrice.toLocaleString()}</span>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Additional Options */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <div>
-              <label className="block font-bold mb-2">Number of Sessions</label>
-              <select
-                value={formData.sessions}
-                onChange={(e) => setFormData({ ...formData, sessions: parseInt(e.target.value) })}
-                className="w-full border border-gray-300 rounded-lg p-3"
+                <button
+                  onClick={() => setStep('terms')}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-full font-bold transition shadow-md hover:shadow"
+                >
+                  Continue to Terms →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 'terms' && (
+            <div className="max-w-4xl mx-auto px-6 py-4">
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold mb-2 text-primary-dark">TERMS & CONDITIONS</h2>
+                <p className="text-gray-600 mb-8">Please read carefully before proceeding</p>
+
+                <div className="bg-gray-50 rounded-2xl p-8 mb-8 space-y-4 border border-gray-200">
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-2">• Session Policy:</h3>
+                    <p className="text-gray-600">
+                      Sessions are primarily one-on-one unless you specifically selected a group session.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-2">• Physical Assessment:</h3>
+                    <p className="text-gray-600">
+                      Your first session will always be a Physical Assessment Session. Your trainer will evaluate your fitness level and create your personalized plan.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-2">• Rescheduling:</h3>
+                    <p className="text-gray-600">
+                      You may reschedule a session, but must give at least 24 hours' notice before the scheduled time.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-2">• Missed Sessions:</h3>
+                    <p className="text-gray-600">
+                      Sessions missed without 24-hour notice are automatically logged as completed and deducted from your total. No refunds or replacements.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-2">• Communication:</h3>
+                    <p className="text-gray-600">
+                      All communication with your trainer must happen within the PhysiFit NG platform. No external contact is permitted.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mb-8">
+                  <input
+                    type="checkbox"
+                    id="agree"
+                    checked={termsAgreed}
+                    onChange={(e) => setTermsAgreed(e.target.checked)}
+                    className="w-5 h-5"
+                  />
+                  <label htmlFor="agree" className="text-gray-900 font-semibold cursor-pointer">
+                    I have read, understood, and agree to the above Terms & Conditions.
+                  </label>
+                </div>
+
+                {!termsAgreed && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 text-left">
+                    <p className="text-red-700 font-semibold">⚠️ Please agree to the Terms & Conditions before proceeding.</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setStep('service')}
+                    className="border-2 border-gray-300 hover:border-gray-400 text-gray-900 py-3 rounded-full font-bold transition"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    disabled={!termsAgreed}
+                    onClick={handleProceedToPayment}
+                    className={`py-3 rounded-full font-bold transition shadow-md ${
+                      termsAgreed
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow'
+                        : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    }`}
+                  >
+                    Proceed to Payment →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 'payment_loading' && (
+            <div className="max-w-2xl mx-auto px-6 py-20 text-center">
+              <div className="animate-spin inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mb-6"></div>
+              <h2 className="text-2xl font-bold mb-2">Connecting to Secure Payment...</h2>
+              <p className="text-gray-600">Please complete the payment in the secure Paystack popup overlay.</p>
+            </div>
+          )}
+
+          {step === 'confirmed' && (
+            <div className="max-w-2xl mx-auto px-6 py-20 text-center">
+              <div className="mb-8">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <span className="text-5xl text-green-600">✓</span>
+                </div>
+              </div>
+
+              <h2 className="text-4xl font-bold mb-4 text-primary-dark">Booking Confirmed!</h2>
+              <p className="text-gray-600 mb-2">Your payment of <strong>₦{totalPrice.toLocaleString()}</strong> has been initiated securely.</p>
+              <p className="text-gray-600 mb-12">{sessionsCount} {selectedService?.name} sessions have been booked.</p>
+
+              <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-12 text-left rounded shadow-sm">
+                <p className="flex items-start gap-3">
+                  <span className="text-2xl">🔔</span>
+                  <span className="text-gray-700">
+                    A trainer will be assigned to you within 24–48 hours. Once matched, your program will show up active in your profile!
+                  </span>
+                </p>
+              </div>
+
+              <Link
+                href="/dashboard"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-bold transition inline-block shadow-md hover:shadow-lg"
               >
-                {[4, 6, 8, 12].map((num) => (
-                  <option key={num} value={num}>
-                    {num} sessions
-                  </option>
-                ))}
-              </select>
+                Go to Dashboard →
+              </Link>
             </div>
-
-            <div>
-              <label className="block font-bold mb-2">Preferred Start Date</label>
-              <input
-                type="text"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                placeholder="MM/DD/YYYY"
-                className="w-full border border-gray-300 rounded-lg p-3"
-              />
-            </div>
-          </div>
-
-          <div className="mb-12">
-            <label className="block font-bold mb-2">Preferred Time Slot</label>
-            <select
-              value={formData.timeSlot}
-              onChange={(e) => setFormData({ ...formData, timeSlot: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-3"
-            >
-              <option>Morning (6:00 AM – 9:00 AM)</option>
-              <option>Midday (12:00 PM – 2:00 PM)</option>
-              <option>Afternoon (3:00 PM – 6:00 PM)</option>
-              <option>Evening (6:00 PM – 8:00 PM)</option>
-            </select>
-          </div>
-
-          {/* Session Summary */}
-          <div className="bg-gray-50 rounded-lg p-8 mb-12">
-            <h3 className="text-2xl font-bold mb-6">Session Summary</h3>
-            <div className="space-y-4 mb-6">
-              <div className="flex justify-between">
-                <span>Service</span>
-                <span className="font-bold">{formData.service}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Session type</span>
-                <span className="font-bold">{formData.sessionType}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Sessions</span>
-                <span className="font-bold">{formData.sessions} sessions</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Per session</span>
-                <span className="font-bold text-blue-600">₦{pricePerSession.toLocaleString()}</span>
-              </div>
-              <div className="border-t pt-4 flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span className="text-blue-600">₦{totalPrice.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setStep('terms')}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-full font-bold transition"
-            >
-              Continue to Terms →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 'terms' && (
-        <div className="max-w-4xl mx-auto px-6 py-12">
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold mb-4">TERMS & CONDITIONS</h2>
-            <p className="text-gray-600 mb-8">Please read carefully before proceeding</p>
-
-            <div className="bg-gray-50 rounded-lg p-8 mb-8 space-y-4">
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">• Session Policy:</h3>
-                <p className="text-gray-600">
-                  Sessions are primarily one-on-one unless you specifically selected a group session.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">• Physical Assessment:</h3>
-                <p className="text-gray-600">
-                  Your first session will always be a Physical Assessment Session. Your trainer will evaluate your fitness level and create your personalized plan.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">• Rescheduling:</h3>
-                <p className="text-gray-600">
-                  You may reschedule a session, but must give at least 24 hours' notice before the scheduled time.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">• Missed Sessions:</h3>
-                <p className="text-gray-600">
-                  Sessions missed without 24-hour notice are automatically logged as completed and deducted from your total. No refunds or replacements.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">• Communication:</h3>
-                <p className="text-gray-600">
-                  All communication with your trainer must happen within the PhysiFit NG platform. No external contact is permitted.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 mb-8">
-              <input
-                type="checkbox"
-                id="agree"
-                checked={termsAgreed}
-                onChange={(e) => setTermsAgreed(e.target.checked)}
-                className="w-5 h-5"
-              />
-              <label htmlFor="agree" className="text-gray-900">
-                I have read, understood, and agree to the above Terms & Conditions.
-              </label>
-            </div>
-
-            {!termsAgreed && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 text-left">
-                <p className="text-red-700 font-semibold">⚠️ Please agree to the Terms & Conditions before proceeding.</p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button
-                onClick={() => setStep('service')}
-                className="border-2 border-gray-300 hover:border-gray-400 text-gray-900 py-3 rounded-full font-bold transition"
-              >
-                ← Back
-              </button>
-              <button
-                disabled={!termsAgreed}
-                onClick={() => setStep('payment')}
-                className={`py-3 rounded-full font-bold transition ${
-                  termsAgreed
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                }`}
-              >
-                Proceed to Payment →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {step === 'payment' && (
-        <div className="max-w-4xl mx-auto px-6 py-12">
-          <h2 className="text-3xl font-bold mb-8">PAYMENT DETAILS</h2>
-
-          {/* Payment Form */}
-          <div className="space-y-6 mb-12">
-            <div>
-              <label className="block font-bold mb-2">Card Number</label>
-              <input
-                type="text"
-                placeholder="1234 5678 9012 3456"
-                className="w-full border border-gray-300 rounded-lg p-3"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block font-bold mb-2">Expiry Date</label>
-                <input
-                  type="text"
-                  placeholder="MM/YY"
-                  className="w-full border border-gray-300 rounded-lg p-3"
-                />
-              </div>
-              <div>
-                <label className="block font-bold mb-2">CVV</label>
-                <input
-                  type="text"
-                  placeholder="•••"
-                  className="w-full border border-gray-300 rounded-lg p-3"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-bold mb-2">Cardholder Name</label>
-              <input
-                type="text"
-                placeholder="Amaka Okonkwo"
-                className="w-full border border-gray-300 rounded-lg p-3"
-              />
-            </div>
-          </div>
-
-          {/* Order Summary */}
-          <div className="bg-gray-50 rounded-lg p-8 mb-8">
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between">
-                <span>{formData.sessions} sessions ({formData.service}, 1-on-1)</span>
-                <span>₦{totalPrice.toLocaleString()}</span>
-              </div>
-            </div>
-            <div className="border-t pt-4 flex justify-between text-2xl font-bold">
-              <span>Total Charge</span>
-              <span className="text-blue-600">₦{totalPrice.toLocaleString()}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              onClick={() => {
-                setTermsAgreed(false)
-                setStep('terms')
-              }}
-              className="border-2 border-gray-300 hover:border-gray-400 text-gray-900 py-3 rounded-full font-bold transition"
-            >
-              ← Back
-            </button>
-            <button
-              onClick={() => setStep('confirmed')}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-full font-bold transition"
-            >
-              Pay ₦{totalPrice.toLocaleString()} →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 'confirmed' && (
-        <div className="max-w-2xl mx-auto px-6 py-20 text-center">
-          <div className="mb-8">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-5xl">✓</span>
-            </div>
-          </div>
-
-          <h2 className="text-4xl font-bold mb-4">Booking Confirmed!</h2>
-          <p className="text-gray-600 mb-2">Your payment of ₦{totalPrice.toLocaleString()} was successful.</p>
-          <p className="text-gray-600 mb-12">{formData.sessions} {formData.service} sessions have been booked.</p>
-
-          <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-12 text-left">
-            <p className="flex items-start gap-3">
-              <span className="text-2xl">🔔</span>
-              <span>
-                A trainer will be assigned to you within 24–48 hours. You'll receive a push notification as soon as they're matched to your profile.
-              </span>
-            </p>
-          </div>
-
-          <Link
-            href="/dashboard"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold transition inline-block"
-          >
-            Go to Dashboard →
-          </Link>
-        </div>
+          )}
+        </>
       )}
     </div>
   )

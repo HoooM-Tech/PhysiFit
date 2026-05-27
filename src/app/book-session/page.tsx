@@ -74,7 +74,7 @@ export default function BookSession() {
     loadData()
   }, [])
 
-  const pricePerSession = selectedService?.priceNairaPerSession ?? 15000
+  const pricePerSession = selectedService?.priceNairaPerSession ?? 33333
   const totalPrice = sessionsCount * pricePerSession
 
   const getServiceIcon = (name: string) => {

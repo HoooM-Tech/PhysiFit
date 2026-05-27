@@ -12,5 +12,6 @@ export * from "./messages";
 export * from "./fitness-plans";
 export * from "./events";
 export * from "./event-registrations";
+export * from "./event-parq-submissions";
 export * from "./idempotency-keys";
 export * from "./rate-limits";

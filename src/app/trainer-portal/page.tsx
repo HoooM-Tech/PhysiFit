@@ -57,6 +57,7 @@ export default function TrainerPortal() {
   
   // Data States
   const [trainerUser, setTrainerUser] = useState<any>(null)
+  const [trainerProfile, setTrainerProfile] = useState<any>(null)
   const [clients, setClients] = useState<Client[]>([])
   const [sessions, setSessions] = useState<TrainingSession[]>([])
   const [threads, setThreads] = useState<ChatThread[]>([])
@@ -95,6 +96,7 @@ export default function TrainerPortal() {
           return
         }
         setTrainerUser(user)
+        setTrainerProfile(meJson.data?.profile ?? null)
 
         // Fetch Clients
         const clientRes = await fetch('/api/trainers/clients')
@@ -447,6 +449,20 @@ export default function TrainerPortal() {
 
         {/* Content area */}
         <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
+
+          {trainerProfile && !trainerProfile.approvedAt && (
+            <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 rounded p-4 flex items-start gap-3">
+              <span className="text-yellow-600 text-xl leading-none" aria-hidden>⏳</span>
+              <div>
+                <p className="font-bold text-yellow-900">Account pending approval</p>
+                <p className="text-sm text-yellow-900 mt-1">
+                  Your trainer account is being reviewed by an admin. You can explore the portal,
+                  but you won't appear in client matching or receive client assignments until your
+                  account is approved.
+                </p>
+              </div>
+            </div>
+          )}
 
           {activeTab === 'clients' && (
             <div>

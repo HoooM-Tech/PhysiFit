@@ -13,7 +13,7 @@ export default function EventPage() {
       <section className="bg-gradient-to-b from-primary-dark to-primary-darker py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="inline-block bg-accent bg-opacity-20 text-accent px-4 py-2 rounded-full text-sm font-semibold mb-6">
-            • PHYSIF IT WELLNESS DAY 2025
+            • PHYSIFIT WELLNESS DAY 2025
           </div>
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             Move Safer,
@@ -58,7 +58,7 @@ export default function EventPage() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-4xl font-bold text-primary-dark mb-8">Event Details</h2>
-            
+
             <div className="space-y-6">
               <div className="flex gap-4">
                 <div className="flex-shrink-0 text-3xl">📅</div>
@@ -67,7 +67,7 @@ export default function EventPage() {
                   <p className="text-gray-600">Saturday, July 12, 2026</p>
                 </div>
               </div>
-              
+
               <div className="flex gap-4">
                 <div className="flex-shrink-0 text-3xl">🕐</div>
                 <div>
@@ -133,7 +133,7 @@ export default function EventPage() {
               <p className="text-gray-200 mb-8">
                 Every activity station addresses one or more critical dimensions of healthy aging, proven effective through clinical research.
               </p>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-primary-darker bg-opacity-50 border border-accent border-opacity-30 rounded-lg p-4">
                   <span className="text-accent">●</span>
@@ -386,7 +386,7 @@ export default function EventPage() {
             <h3 className="text-accent font-semibold mb-4 uppercase">CONTACT</h3>
             <ul className="space-y-2 text-gray-300">
               <li>info@physifit.co</li>
-              <li>+234 800 000 0000</li>
+              <li>+234 805 755 7588</li>
               <li>Lagos, Nigeria</li>
             </ul>
           </div>

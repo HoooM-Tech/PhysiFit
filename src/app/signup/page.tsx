@@ -6,10 +6,33 @@ import Image from 'next/image'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+type Role = 'client' | 'trainer'
+type Specialization = 'senior_fitness' | 'postpartum' | 'corporate_wellness'
+type Step = 'role' | 'personal' | 'health' | 'specialization' | 'confirm'
+
+const SPECIALIZATION_OPTIONS: { value: Specialization; label: string; description: string }[] = [
+  {
+    value: 'senior_fitness',
+    label: 'Senior Fitness',
+    description: 'Specialized training for older adults focused on mobility, balance, and strength.',
+  },
+  {
+    value: 'postpartum',
+    label: 'Postpartum',
+    description: 'Recovery-focused training for new mothers, including core and pelvic floor.',
+  },
+  {
+    value: 'corporate_wellness',
+    label: 'Corporate Wellness',
+    description: 'Workplace fitness programs, posture correction, and stress management.',
+  },
+]
+
 export default function Signup() {
   const router = useRouter()
-  const [step, setStep] = useState<'personal' | 'health' | 'confirm'>('personal')
+  const [step, setStep] = useState<Step>('role')
   const [formData, setFormData] = useState({
+    role: null as Role | null,
     firstName: '',
     lastName: '',
     email: '',
@@ -21,6 +44,7 @@ export default function Signup() {
     height: 165,
     dizziness: 'No',
     medicalConditions: '',
+    specialization: '' as '' | Specialization,
   })
   const [showPassword, setShowPassword] = useState(false)
   const [consent, setConsent] = useState(false)
@@ -29,28 +53,59 @@ export default function Signup() {
   const [loading, setLoading] = useState(false)
   const passwordsMatch = formData.password === formData.confirmPassword
   const canContinue = consent && formData.password && formData.confirmPassword && passwordsMatch
-  const canCreateAccount = termsAgreed
+  const canPickSpecialization = !!formData.specialization
+  const isTrainer = formData.role === 'trainer'
+  const canCreateAccount = termsAgreed && (!isTrainer || canPickSpecialization)
+
+  const middleStepLabel = isTrainer ? 'Specialization' : 'Health Info'
+  const stepNumber: Record<Step, number> = {
+    role: 1,
+    personal: 2,
+    health: 3,
+    specialization: 3,
+    confirm: 4,
+  }
+
+  const pickRole = (role: Role) => {
+    setFormData((prev) => ({
+      ...prev,
+      role,
+      specialization: role === 'trainer' ? prev.specialization : '',
+    }))
+    setStep('personal')
+  }
 
   const handleRegister = async () => {
     setError('')
     setLoading(true)
     try {
+      const baseBody = {
+        email: formData.email,
+        password: formData.password,
+        fullName: `${formData.firstName} ${formData.lastName}`.trim(),
+        phone: formData.phone || undefined,
+      }
+      const body = isTrainer
+        ? {
+            ...baseBody,
+            role: 'trainer' as const,
+            specialization: formData.specialization || undefined,
+          }
+        : {
+            ...baseBody,
+            role: 'client' as const,
+            weightKg: Number(formData.weight) || undefined,
+            heightCm: Number(formData.height) || undefined,
+            dizzinessHistory: formData.dizziness === 'Yes',
+            medicalNotes: formData.medicalConditions || undefined,
+          }
+
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          fullName: `${formData.firstName} ${formData.lastName}`,
-          phone: formData.phone || undefined,
-          role: 'client',
-          weightKg: Number(formData.weight) || undefined,
-          heightCm: Number(formData.height) || undefined,
-          dizzinessHistory: formData.dizziness === 'Yes',
-          medicalNotes: formData.medicalConditions || undefined,
-        }),
+        body: JSON.stringify(body),
       })
 
       const json = await res.json()
@@ -58,7 +113,14 @@ export default function Signup() {
         throw new Error(json.error?.message || json.message || 'Failed to create account')
       }
 
-      router.push('/dashboard')
+      const createdRole = json.data?.user?.role
+      router.push(
+        createdRole === 'admin'
+          ? '/admin'
+          : createdRole === 'trainer'
+            ? '/trainer-portal'
+            : '/dashboard'
+      )
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred')
     } finally {
@@ -81,14 +143,79 @@ export default function Signup() {
 
         {/* Right Side - Form */}
         <div className="p-6 sm:p-10 md:p-12 flex flex-col justify-center max-w-md mx-auto w-full">
+          {step === 'role' && (
+            <>
+              <div className="mb-2 inline-block">
+                <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
+                <span className="text-gray-600 text-sm">Step 1 of 4 — Choose your account type</span>
+              </div>
+
+              <h1 className="text-4xl font-bold mb-2">Join PhysiFit NG</h1>
+              <p className="text-gray-600 mb-8">Tell us how you'll be using the platform.</p>
+
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => pickRole('client')}
+                  className="w-full text-left border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 rounded-lg p-6 transition group"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-bold text-lg">I'm a Client</h3>
+                    <span className="text-blue-600 opacity-0 group-hover:opacity-100 transition">→</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Book sessions, message trainers, and track your health progress.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => pickRole('trainer')}
+                  className="w-full text-left border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 rounded-lg p-6 transition group"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-bold text-lg">I'm a Trainer</h3>
+                    <span className="text-blue-600 opacity-0 group-hover:opacity-100 transition">→</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Manage assigned clients, run sessions, and message clients from the trainer portal.
+                  </p>
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-500 mt-8">
+                Already have an account?{' '}
+                <Link href="/login" className="text-blue-600 hover:underline font-semibold">
+                  Sign in
+                </Link>
+              </p>
+            </>
+          )}
+
           {step === 'personal' && (
             <>
               <div className="mb-2 inline-block">
                 <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
-                <span className="text-gray-600 text-sm">Step 1 of 3 — Personal Information</span>
+                <span className="text-gray-600 text-sm">
+                  Step {stepNumber.personal} of 4 — Personal Information
+                </span>
               </div>
 
-              <h1 className="text-4xl font-bold mb-8">Create your account</h1>
+              <h1 className="text-4xl font-bold mb-2">Create your account</h1>
+              <p className="text-gray-600 mb-8">
+                Signing up as{' '}
+                <span className="font-semibold text-blue-700">
+                  {isTrainer ? 'a Trainer' : 'a Client'}
+                </span>
+                .{' '}
+                <button
+                  type="button"
+                  onClick={() => setStep('role')}
+                  className="text-blue-600 hover:underline"
+                >
+                  Change
+                </button>
+              </p>
 
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -188,7 +315,7 @@ export default function Signup() {
 
                 <button
                   disabled={!canContinue}
-                  onClick={() => setStep('health')}
+                  onClick={() => setStep(isTrainer ? 'specialization' : 'health')}
                   className={`w-full py-3 rounded-lg font-bold transition ${
                     canContinue
                       ? 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -205,7 +332,9 @@ export default function Signup() {
             <>
               <div className="mb-2 inline-block">
                 <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
-                <span className="text-gray-600 text-sm">Step 2 of 3 — Required for safe training</span>
+                <span className="text-gray-600 text-sm">
+                  Step {stepNumber.health} of 4 — Required for safe training
+                </span>
               </div>
 
               <h1 className="text-4xl font-bold mb-8">Health Information</h1>
@@ -287,11 +416,73 @@ export default function Signup() {
             </>
           )}
 
+          {step === 'specialization' && (
+            <>
+              <div className="mb-2 inline-block">
+                <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
+                <span className="text-gray-600 text-sm">
+                  Step {stepNumber.specialization} of 4 — Your training focus
+                </span>
+              </div>
+
+              <h1 className="text-4xl font-bold mb-2">Specialization</h1>
+              <p className="text-gray-600 mb-8">
+                Pick the area you train in. Clients are matched to trainers by specialization.
+              </p>
+
+              <div className="space-y-3">
+                {SPECIALIZATION_OPTIONS.map((opt) => {
+                  const selected = formData.specialization === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, specialization: opt.value })}
+                      className={`w-full text-left border-2 rounded-lg p-4 transition ${
+                        selected
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-300 hover:border-blue-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-bold">{opt.label}</h3>
+                        {selected && <span className="text-blue-600 font-bold">✓</span>}
+                      </div>
+                      <p className="text-sm text-gray-600">{opt.description}</p>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="flex gap-4 mt-8">
+                <button
+                  onClick={() => setStep('personal')}
+                  className="flex-1 border-2 border-gray-300 hover:border-gray-400 text-gray-900 py-3 rounded-lg font-bold transition"
+                >
+                  ← Back
+                </button>
+                <button
+                  disabled={!canPickSpecialization}
+                  onClick={() => setStep('confirm')}
+                  className={`flex-1 py-3 rounded-lg font-bold transition ${
+                    canPickSpecialization
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  Continue →
+                </button>
+              </div>
+            </>
+          )}
+
           {step === 'confirm' && (
             <>
               <div className="mb-2 inline-block">
                 <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
-                <span className="text-gray-600 text-sm">Step 3 of 3 — Review & Confirm</span>
+                <span className="text-gray-600 text-sm">
+                  Step {stepNumber.confirm} of 4 — Review & Confirm
+                </span>
               </div>
 
               <h1 className="text-4xl font-bold mb-8">You're all set!</h1>
@@ -299,6 +490,10 @@ export default function Signup() {
               <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8">
                 <h3 className="font-bold mb-6">Account Summary</h3>
                 <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Account Type</span>
+                    <span className="font-bold capitalize">{formData.role}</span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Name</span>
                     <span className="font-bold">
@@ -313,12 +508,32 @@ export default function Signup() {
                     <span className="text-gray-600">Phone</span>
                     <span className="font-bold">{formData.phone}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Health data</span>
-                    <span className="font-bold text-green-600">✓ Completed</span>
-                  </div>
+                  {isTrainer ? (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Specialization</span>
+                      <span className="font-bold">
+                        {SPECIALIZATION_OPTIONS.find((o) => o.value === formData.specialization)?.label ||
+                          '—'}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Health data</span>
+                      <span className="font-bold text-green-600">✓ Completed</span>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {isTrainer && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-yellow-900">
+                    <strong>Heads up:</strong> Trainer accounts are reviewed by an admin before being
+                    matched with clients. You'll be signed in immediately and can explore the trainer
+                    portal while you wait for approval.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-4 mb-8">
                 <div className="border border-gray-200 rounded-lg p-4 bg-blue-50">
@@ -365,7 +580,7 @@ export default function Signup() {
               </button>
 
               <button
-                onClick={() => setStep('health')}
+                onClick={() => setStep(isTrainer ? 'specialization' : 'health')}
                 className="w-full border-2 border-gray-300 hover:border-gray-400 text-gray-900 py-3 rounded-lg font-bold transition"
               >
                 ← Back

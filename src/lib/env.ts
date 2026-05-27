@@ -29,6 +29,15 @@ const envSchema = z.object({
   RATE_LIMIT_AUTH_PER_MINUTE: z.coerce.number().int().positive().default(10),
   PAYSTACK_SECRET_KEY: z.string().min(1, "PAYSTACK_SECRET_KEY is required"),
   NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY: z.string().min(1, "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY is required"),
+  // Mailchimp — optional. When all three are set, event PAR-Q submissions are
+  // synced to the configured audience. When any is missing, sync is skipped
+  // silently and the DB record still saves.
+  MAILCHIMP_API_KEY: z.string().min(1).optional(),
+  MAILCHIMP_AUDIENCE_ID: z.string().min(1).optional(),
+  MAILCHIMP_SERVER_PREFIX: z
+    .string()
+    .regex(/^[a-z]{2}\d+$/i, "MAILCHIMP_SERVER_PREFIX must look like 'us21'")
+    .optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

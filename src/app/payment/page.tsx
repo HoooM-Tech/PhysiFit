@@ -165,11 +165,17 @@ function PaymentPageContent() {
           <h1 className="text-3xl font-bold text-primary-dark mb-4">Payment Pending Confirmation</h1>
           <p className="text-gray-600 mb-8 max-w-lg mx-auto">
             Thank you! Your payment transaction of <strong>₦{amountNaira.toLocaleString()}</strong> has been initiated securely via Paystack.
-            Once confirmed by the provider webhook, your booking status will automatically flip to active.
+            Once confirmed by the provider webhook, your {eventRegistrationId ? 'event registration' : 'booking'} status will automatically flip to active.
           </p>
-          <Link href="/dashboard" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold transition">
-            Go to Dashboard
-          </Link>
+          {eventRegistrationId ? (
+            <Link href="/event" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold transition">
+              Back to Events
+            </Link>
+          ) : (
+            <Link href="/dashboard" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold transition">
+              Go to Dashboard
+            </Link>
+          )}
         </main>
       </div>
     )

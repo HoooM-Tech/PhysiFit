@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { payments, bookings, users, authSessions } from "@/db/schema";
+import { payments, bookings, users, authSessions, eventParqSubmissions } from "@/db/schema";
 import { withAuth, withRoute, readSessionToken, hashToken } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
@@ -126,20 +126,37 @@ export const POST = withRoute(async ({ req }) => {
 
       // Find or create guest user
       const [existingUser] = await tx
-        .select({ id: users.id })
+        .select({ id: users.id, fullName: users.fullName })
         .from(users)
         .where(eq(users.email, body.email))
         .limit(1);
 
+      // Check if there is an event PAR-Q submission with this email to get their real name!
+      const [parq] = await tx
+        .select({ fullName: eventParqSubmissions.fullName })
+        .from(eventParqSubmissions)
+        .where(eq(eventParqSubmissions.email, body.email))
+        .orderBy(desc(eventParqSubmissions.createdAt))
+        .limit(1);
+
+      const guestName = parq?.fullName || "Event Guest";
+
       if (existingUser) {
         targetUserId = existingUser.id;
+        // If the user currently has "Event Guest" but we found a real name, update their name in users table!
+        if (existingUser.fullName === "Event Guest" && guestName !== "Event Guest") {
+          await tx
+            .update(users)
+            .set({ fullName: guestName })
+            .where(eq(users.id, existingUser.id));
+        }
       } else {
         const [newUser] = await tx
           .insert(users)
           .values({
             email: body.email,
             passwordHash: "placeholder_guest_account_hash",
-            fullName: "Event Guest",
+            fullName: guestName,
             role: "client",
           })
           .returning({ id: users.id });

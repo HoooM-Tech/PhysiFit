@@ -169,7 +169,16 @@ export default function TrainerPortal() {
         const threadsRes = await fetch('/api/messages')
         if (threadsRes.ok) {
           const thJson = await threadsRes.json()
-          setThreads(thJson.data?.threads || [])
+          const serverThreads = (thJson.data?.threads || []) as ChatThread[]
+          setThreads(prev => {
+            // Find if there is an active local thread that is not in the server threads yet
+            const activeLocal = prev.find(t => t.thread_id === activeThreadIdRef.current)
+            const existsInServer = serverThreads.some(t => t.thread_id === activeThreadIdRef.current)
+            if (activeLocal && !existsInServer) {
+              return [activeLocal, ...serverThreads]
+            }
+            return serverThreads
+          })
         }
 
         // Poll messages of active thread

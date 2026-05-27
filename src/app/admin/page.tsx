@@ -424,7 +424,7 @@ export default function AdminDashboard() {
                   <p className="text-4xl font-bold text-slate-800">{metrics?.new_signups_week ?? 0}</p>
                   <p className="text-xs text-gray-500 mt-2">Signups over the last 7 days.</p>
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm bg-gradient-to-br from-blue-600 to-blue-700 text-white border-none shadow-md">
+                <div className="bg-white rounded-2xl border border-gray-200 p-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white border-none shadow-md animate-fade-in">
                   <p className="text-xs uppercase tracking-wider text-blue-200 font-bold mb-4">MONTHLY REVENUE</p>
                   <p className="text-4xl font-bold">₦{(metrics?.monthly_revenue_naira ?? 0).toLocaleString()}</p>
                   <p className="text-xs text-blue-100 mt-2">Naira payments confirmed in 30d.</p>

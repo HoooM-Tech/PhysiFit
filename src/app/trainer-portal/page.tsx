@@ -72,11 +72,19 @@ export default function TrainerPortal() {
   const [savingPlan, setSavingPlan] = useState(false)
   const [planSuccessMsg, setPlanSuccessMsg] = useState('')
   const [planErrorMsg, setPlanErrorMsg] = useState('')
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [messageText, setMessageText] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
   const [checkingInId, setCheckingInId] = useState<string | null>(null)
+
+  // Cancel Session State
+  const [cancellingSessionId, setCancellingSessionId] = useState<string | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelSubmitting, setCancelSubmitting] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelTargetSession, setCancelTargetSession] = useState<TrainingSession | null>(null)
 
   const activeMessagesEndRef = useRef<HTMLDivElement>(null)
   const activeThreadIdRef = useRef<string | null>(null)
@@ -294,6 +302,52 @@ export default function TrainerPortal() {
     }
   }
 
+  // Open cancel confirmation modal
+  const openCancelModal = (session: TrainingSession) => {
+    setCancelTargetSession(session)
+    setCancelReason('')
+    setShowCancelModal(true)
+  }
+
+  // Cancel a session
+  const handleCancelSession = async () => {
+    if (!cancelTargetSession) return
+    setCancelSubmitting(true)
+    try {
+      const res = await fetch(`/api/sessions/${cancelTargetSession.id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: cancelReason.trim() || undefined }),
+      })
+
+      if (res.ok) {
+        // Refetch sessions
+        const sessRes = await fetch('/api/sessions')
+        if (sessRes.ok) {
+          const sessJson = await sessRes.json()
+          setSessions(sessJson.data?.sessions || [])
+        }
+        // Refetch clients
+        const clientRes = await fetch('/api/trainers/clients')
+        if (clientRes.ok) {
+          const clientJson = await clientRes.json()
+          setClients(clientJson.data?.clients || [])
+        }
+        setShowCancelModal(false)
+        setCancelTargetSession(null)
+        setCancelReason('')
+      } else {
+        const json = await res.json()
+        alert(json.error?.message || 'Failed to cancel session')
+      }
+    } catch (err) {
+      console.error('Cancel session failed:', err)
+      alert('An error occurred while cancelling the session.')
+    } finally {
+      setCancelSubmitting(false)
+    }
+  }
+
   // Find or create conversation with a client
   const handleMessageClientClick = async (clientName: string, clientId: string) => {
     // Check if thread exists
@@ -338,8 +392,40 @@ export default function TrainerPortal() {
 
   // Pre-select client and switch tab to builder
   const handleAssignPlanClick = (clientId: string) => {
+    setEditingPlanId(null)
     setPlanClientId(clientId)
     setActiveTab('plans')
+  }
+
+  // Load an existing plan into the builder for editing
+  const handleEditPlan = (plan: any) => {
+    setEditingPlanId(plan.id)
+    setPlanClientId(plan.clientId)
+    setPlanNotes(plan.notes || '')
+    setPlanExercises(
+      plan.exercises.map((ex: any) => ({
+        name: ex.name,
+        sets: ex.sets,
+        reps: ex.reps,
+        focus: ex.focus,
+      }))
+    )
+    setPlanSuccessMsg('')
+    setPlanErrorMsg('')
+    // Scroll builder into view on mobile
+    setTimeout(() => {
+      document.getElementById('plan-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+  }
+
+  // Reset the form back to create mode
+  const handleResetPlanForm = () => {
+    setEditingPlanId(null)
+    setPlanClientId('')
+    setPlanNotes('')
+    setPlanExercises([{ name: '', sets: 3, reps: 10, focus: 'strength' }])
+    setPlanSuccessMsg('')
+    setPlanErrorMsg('')
   }
 
   // Exercise builder handlers
@@ -361,7 +447,7 @@ export default function TrainerPortal() {
     }))
   }
 
-  // Submit and assign plan
+  // Submit and assign plan (create or update)
   const handlePublishPlan = async () => {
     setPlanErrorMsg('')
     setPlanSuccessMsg('')
@@ -379,33 +465,41 @@ export default function TrainerPortal() {
 
     setSavingPlan(true)
     try {
-      const res = await fetch('/api/fitness-plans', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': crypto.randomUUID(),
-        },
-        body: JSON.stringify({
-          clientId: planClientId,
-          notes: planNotes.trim() || undefined,
-          exercises: planExercises.map(ex => ({
-            name: ex.name.trim(),
-            sets: Number(ex.sets),
-            reps: Number(ex.reps),
-            focus: ex.focus,
-          })),
-        }),
+      const isEditing = !!editingPlanId
+      const url = isEditing ? `/api/fitness-plans/${editingPlanId}` : '/api/fitness-plans'
+      const method = isEditing ? 'PUT' : 'POST'
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (!isEditing) {
+        headers['Idempotency-Key'] = crypto.randomUUID()
+      }
+
+      const payload: Record<string, unknown> = {
+        notes: planNotes.trim() || undefined,
+        exercises: planExercises.map(ex => ({
+          name: ex.name.trim(),
+          sets: Number(ex.sets),
+          reps: Number(ex.reps),
+          focus: ex.focus,
+        })),
+      }
+      if (!isEditing) {
+        payload.clientId = planClientId
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: JSON.stringify(payload),
       })
 
       const json = await res.json()
       if (res.ok) {
-        setPlanSuccessMsg('Fitness plan published successfully!')
-        setPlanNotes('')
-        setPlanClientId('')
-        setPlanExercises([{ name: '', sets: 3, reps: 10, focus: 'strength' }])
+        setPlanSuccessMsg(isEditing ? 'Fitness plan updated successfully!' : 'Fitness plan published successfully!')
+        handleResetPlanForm()
         fetchFitnessPlans()
       } else {
-        setPlanErrorMsg(json.error?.message || json.message || 'Failed to publish fitness plan.')
+        setPlanErrorMsg(json.error?.message || json.message || 'Failed to save fitness plan.')
       }
     } catch (err) {
       setPlanErrorMsg('An error occurred. Please try again.')
@@ -750,7 +844,7 @@ export default function TrainerPortal() {
                           <p className="text-2xl font-bold text-primary-dark mb-2">{session.clientName}</p>
                           <p className="text-gray-600 text-sm">{session.serviceName} · {session.status === 'assessment' ? 'Physical Assessment' : 'One-on-One Session'}</p>
                         </div>
-                        <div className="flex gap-3 w-full md:w-auto">
+                        <div className="flex gap-3 w-full md:w-auto flex-wrap">
                           <button
                             onClick={() => handleMessageClientClick(session.clientName, session.clientId)}
                             className="flex-1 md:flex-initial text-center px-5 py-2.5 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition text-sm font-semibold"
@@ -764,12 +858,39 @@ export default function TrainerPortal() {
                           >
                             {checkingInId === session.id ? 'Verifying...' : '✓ I\'m Here'}
                           </button>
+                          <button
+                            onClick={() => openCancelModal(session)}
+                            className="flex-1 md:flex-initial text-center px-5 py-2.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition text-sm font-semibold"
+                          >
+                            ✕ Cancel
+                          </button>
                         </div>
                       </div>
                     ))
                 ) : (
                   <div className="bg-white rounded-xl p-12 border border-gray-200 text-center text-gray-500 shadow-sm">
                     No remaining scheduled sessions requiring verification today.
+                  </div>
+                )}
+
+                {/* Cancelled Sessions List */}
+                {sessions.filter(s => s.status === 'cancelled').length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-bold text-gray-500 mb-4">Cancelled Sessions</h3>
+                    <div className="space-y-3">
+                      {sessions.filter(s => s.status === 'cancelled').map(session => (
+                        <div key={session.id} className="border-l-4 border-l-red-300 bg-white rounded-lg p-5 border border-gray-200 shadow-sm opacity-70">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-red-500 mb-0.5">{formatDateTime(session.scheduledAt)}</p>
+                              <p className="text-lg font-bold text-gray-400 line-through">{session.clientName}</p>
+                              <p className="text-gray-400 text-xs">{session.serviceName}</p>
+                            </div>
+                            <span className="bg-red-50 text-red-500 text-xs px-3 py-1 rounded-full font-bold uppercase">Cancelled</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -912,7 +1033,7 @@ export default function TrainerPortal() {
                     {fitnessPlans.length > 0 ? (
                       <div className="space-y-6 max-h-[600px] overflow-y-auto pr-1">
                         {fitnessPlans.map((plan) => (
-                          <div key={plan.id} className="border border-gray-150 rounded-xl p-5 hover:shadow-md transition bg-gray-50/30">
+                          <div key={plan.id} className={`border rounded-xl p-5 hover:shadow-md transition ${editingPlanId === plan.id ? 'border-blue-400 bg-blue-50/20 ring-2 ring-blue-200' : 'border-gray-150 bg-gray-50/30'}`}>
                             <div className="flex justify-between items-start mb-3 pb-3 border-b border-gray-100">
                               <div>
                                 <h4 className="font-bold text-base text-primary-dark flex items-center gap-2">
@@ -920,11 +1041,26 @@ export default function TrainerPortal() {
                                 </h4>
                                 <p className="text-[10px] text-gray-400 font-mono mt-0.5">
                                   Published: {new Date(plan.createdAt).toLocaleDateString('en-NG')}
+                                  {plan.updatedAt !== plan.createdAt && (
+                                    <> · Updated: {new Date(plan.updatedAt).toLocaleDateString('en-NG')}</>
+                                  )}
                                 </p>
                               </div>
-                              <span className="bg-emerald-50 text-emerald-600 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-                                {plan.status}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleEditPlan(plan)}
+                                  className={`text-xs font-bold px-2.5 py-1 rounded-full transition ${
+                                    editingPlanId === plan.id
+                                      ? 'bg-blue-600 text-white'
+                                      : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                  }`}
+                                >
+                                  {editingPlanId === plan.id ? '✏️ Editing...' : '✏️ Edit'}
+                                </button>
+                                <span className="bg-emerald-50 text-emerald-600 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+                                  {plan.status}
+                                </span>
+                              </div>
                             </div>
 
                             {plan.notes && (
@@ -970,23 +1106,35 @@ export default function TrainerPortal() {
                 </div>
 
                 {/* 2. Right side: Fitness Plan Builder Form */}
-                <div className="lg:col-span-5">
-                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm sticky top-6">
+                <div className="lg:col-span-5" id="plan-builder">
+                  <div className={`bg-white rounded-2xl border p-6 shadow-sm sticky top-6 ${
+                    editingPlanId ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200'
+                  }`}>
                     <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b flex items-center justify-between">
-                      <span>⚡ Fitness Plan Builder</span>
-                      <button 
-                        onClick={() => {
-                          setPlanClientId('')
-                          setPlanNotes('')
-                          setPlanExercises([{ name: '', sets: 3, reps: 10, focus: 'strength' }])
-                          setPlanSuccessMsg('')
-                          setPlanErrorMsg('')
-                        }}
-                        className="text-[10px] text-blue-600 font-bold hover:underline"
-                      >
-                        Reset Form
-                      </button>
+                      <span>{editingPlanId ? '✏️ Edit Fitness Plan' : '⚡ Fitness Plan Builder'}</span>
+                      <div className="flex items-center gap-2">
+                        {editingPlanId && (
+                          <button
+                            onClick={handleResetPlanForm}
+                            className="text-[10px] text-gray-500 font-bold hover:underline"
+                          >
+                            ✕ Cancel Edit
+                          </button>
+                        )}
+                        <button 
+                          onClick={handleResetPlanForm}
+                          className="text-[10px] text-blue-600 font-bold hover:underline"
+                        >
+                          {editingPlanId ? 'New Plan' : 'Reset Form'}
+                        </button>
+                      </div>
                     </h3>
+
+                    {editingPlanId && (
+                      <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-3 rounded text-xs font-semibold flex items-center gap-2">
+                        ✏️ Editing existing plan for <strong>{clients.find(c => c.id === planClientId)?.fullName || 'Client'}</strong>. Make your changes and save.
+                      </div>
+                    )}
 
                     {planSuccessMsg && (
                       <div className="mb-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-3 rounded text-sm font-semibold">
@@ -1007,13 +1155,19 @@ export default function TrainerPortal() {
                         <select
                           value={planClientId}
                           onChange={(e) => setPlanClientId(e.target.value)}
-                          className="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-sm"
+                          disabled={!!editingPlanId}
+                          className={`w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm ${
+                            editingPlanId ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'
+                          }`}
                         >
                           <option value="">-- Choose Client --</option>
                           {clients.map(c => (
                             <option key={c.id} value={c.id}>{c.fullName} ({c.serviceName})</option>
                           ))}
                         </select>
+                        {editingPlanId && (
+                          <p className="text-[10px] text-gray-400 mt-1">Client cannot be changed when editing. Create a new plan instead.</p>
+                        )}
                       </div>
 
                       {/* Notes / Objectives */}
@@ -1115,9 +1269,14 @@ export default function TrainerPortal() {
                         type="button"
                         onClick={handlePublishPlan}
                         disabled={savingPlan || clients.length === 0}
-                        className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg disabled:bg-blue-300"
+                        className={`w-full text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg disabled:bg-blue-300 ${
+                          editingPlanId ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
                       >
-                        {savingPlan ? 'Publishing Plan...' : 'Publish & Assign Plan'}
+                        {savingPlan
+                          ? (editingPlanId ? 'Saving Changes...' : 'Publishing Plan...')
+                          : (editingPlanId ? '💾 Save Changes' : 'Publish & Assign Plan')
+                        }
                       </button>
                     </div>
                   </div>
@@ -1127,6 +1286,67 @@ export default function TrainerPortal() {
           )}
         </main>
         </div>
+
+        {/* Cancel Session Confirmation Modal */}
+        {showCancelModal && cancelTargetSession && (
+          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowCancelModal(false)}>
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-0 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="bg-red-50 border-b border-red-100 px-6 py-5 flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-lg">
+                  ⚠️
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-lg">Cancel Session</h3>
+                  <p className="text-xs text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="px-6 py-5 space-y-4">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-sm text-gray-500 mb-1">Session Details</p>
+                  <p className="font-bold text-gray-900">{cancelTargetSession.clientName}</p>
+                  <p className="text-sm text-gray-600">{cancelTargetSession.serviceName} · {formatDateTime(cancelTargetSession.scheduledAt)}</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Reason for cancellation (optional)</label>
+                  <textarea
+                    rows={3}
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    placeholder="e.g. I have a scheduling conflict, personal emergency..."
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent placeholder:text-gray-300 bg-white resize-none"
+                    maxLength={500}
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1 text-right">{cancelReason.length}/500</p>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end">
+                <button
+                  onClick={() => { setShowCancelModal(false); setCancelTargetSession(null); setCancelReason('') }}
+                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition text-sm font-semibold"
+                  disabled={cancelSubmitting}
+                >
+                  Keep Session
+                </button>
+                <button
+                  onClick={handleCancelSession}
+                  disabled={cancelSubmitting}
+                  className="px-5 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition text-sm font-bold shadow-sm disabled:bg-red-400 disabled:cursor-not-allowed"
+                >
+                  {cancelSubmitting ? 'Cancelling...' : 'Yes, Cancel Session'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
 }

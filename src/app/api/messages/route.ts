@@ -46,6 +46,7 @@ export const GET = withAuth(async ({ user }) => {
       )::int as unread_count
     from latest l
     join ${users} u on u.id = case when l.sender_id = ${user.id} then l.recipient_id else l.sender_id end
+    where u.password_hash != 'placeholder_guest_account_hash'
     order by l.created_at desc
   `);
 

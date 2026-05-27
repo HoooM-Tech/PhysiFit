@@ -1,4 +1,4 @@
-import { and, eq, or, sql, desc } from "drizzle-orm";
+import { and, eq, or, sql, desc, ne } from "drizzle-orm";
 import { db } from "@/db/client";
 import { users, clientProfiles, bookings, services, trainingSessions } from "@/db/schema";
 import { withAuth } from "@/lib/api/handler";
@@ -23,6 +23,7 @@ export const GET = withAuth(async ({ user }) => {
     .where(
       and(
         eq(users.role, "client"),
+        ne(users.passwordHash, "placeholder_guest_account_hash"),
         or(
           eq(clientProfiles.assignedTrainerId, user.id),
           eq(bookings.trainerId, user.id)

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db/client";
 import { users, clientProfiles } from "@/db/schema";
@@ -40,7 +40,12 @@ export const GET = withAuth(
       .from(users)
       .leftJoin(clientProfiles, eq(clientProfiles.userId, users.id))
       .leftJoin(trainerUsers, eq(trainerUsers.id, clientProfiles.assignedTrainerId))
-      .where(eq(users.role, "client"))
+      .where(
+        and(
+          eq(users.role, "client"),
+          ne(users.passwordHash, "placeholder_guest_account_hash")
+        )
+      )
       .orderBy(users.fullName);
 
     return { data: { clients: rows } };

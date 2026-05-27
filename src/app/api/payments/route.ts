@@ -100,6 +100,9 @@ export const POST = withRoute(async ({ req }) => {
       amountNaira = booking.totalAmountNaira;
       targetUserId = sessionUser.id;
 
+      const isDev = process.env.NODE_ENV === "development";
+      const paymentStatus = isDev ? "confirmed" : "pending";
+
       const [payment] = await tx
         .insert(payments)
         .values({
@@ -108,9 +111,19 @@ export const POST = withRoute(async ({ req }) => {
           amountNaira,
           provider: body.provider,
           providerRef: body.providerRef,
-          status: "pending",
+          status: paymentStatus,
         })
         .returning();
+
+      if (isDev) {
+        await tx
+          .update(bookings)
+          .set({
+            status: "confirmed",
+            updatedAt: new Date(),
+          })
+          .where(eq(bookings.id, booking.id));
+      }
 
       return { data: { payment }, status: 201 } as const;
     }
@@ -164,6 +177,9 @@ export const POST = withRoute(async ({ req }) => {
       }
     }
 
+    const isDev = process.env.NODE_ENV === "development";
+    const paymentStatus = isDev ? "confirmed" : "pending";
+
     amountNaira = 50000; // Default event spot price
     const [payment] = await tx
       .insert(payments)
@@ -173,7 +189,7 @@ export const POST = withRoute(async ({ req }) => {
         amountNaira,
         provider: body.provider,
         providerRef: body.providerRef,
-        status: "pending",
+        status: paymentStatus,
       })
       .returning();
 

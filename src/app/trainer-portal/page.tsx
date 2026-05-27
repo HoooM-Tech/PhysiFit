@@ -51,7 +51,7 @@ interface ChatMessage {
 
 export default function TrainerPortal() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'clients' | 'today' | 'messages'>('clients')
+  const [activeTab, setActiveTab] = useState<'clients' | 'today' | 'messages' | 'plans'>('clients')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileChatActive, setMobileChatActive] = useState(false)
   
@@ -63,6 +63,15 @@ export default function TrainerPortal() {
   const [threads, setThreads] = useState<ChatThread[]>([])
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
   const [activeMessages, setActiveMessages] = useState<ChatMessage[]>([])
+
+  // Fitness Plans State
+  const [fitnessPlans, setFitnessPlans] = useState<any[]>([])
+  const [planClientId, setPlanClientId] = useState('')
+  const [planNotes, setPlanNotes] = useState('')
+  const [planExercises, setPlanExercises] = useState<any[]>([{ name: '', sets: 3, reps: 10, focus: 'strength' }])
+  const [savingPlan, setSavingPlan] = useState(false)
+  const [planSuccessMsg, setPlanSuccessMsg] = useState('')
+  const [planErrorMsg, setPlanErrorMsg] = useState('')
 
   const [loading, setLoading] = useState(true)
   const [messageText, setMessageText] = useState('')
@@ -121,6 +130,13 @@ export default function TrainerPortal() {
           if (ths.length > 0 && !activeThreadIdRef.current) {
             setActiveThreadId(ths[0].thread_id)
           }
+        }
+
+        // Fetch Fitness Plans
+        const plansRes = await fetch('/api/fitness-plans')
+        if (plansRes.ok) {
+          const plansJson = await plansRes.json()
+          setFitnessPlans(plansJson.data?.plans || [])
         }
       } catch (err) {
         console.error('Error loading trainer portal:', err)
@@ -307,6 +323,98 @@ export default function TrainerPortal() {
     }
   }
 
+  // Fetch fitness plans authored by this trainer
+  const fetchFitnessPlans = async () => {
+    try {
+      const res = await fetch('/api/fitness-plans')
+      if (res.ok) {
+        const json = await res.json()
+        setFitnessPlans(json.data?.plans || [])
+      }
+    } catch (err) {
+      console.error('Error fetching plans:', err)
+    }
+  }
+
+  // Pre-select client and switch tab to builder
+  const handleAssignPlanClick = (clientId: string) => {
+    setPlanClientId(clientId)
+    setActiveTab('plans')
+  }
+
+  // Exercise builder handlers
+  const handleAddExerciseInput = () => {
+    setPlanExercises(prev => [...prev, { name: '', sets: 3, reps: 10, focus: 'strength' }])
+  }
+
+  const handleRemoveExerciseInput = (index: number) => {
+    if (planExercises.length === 1) return
+    setPlanExercises(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleExerciseChange = (index: number, field: string, value: any) => {
+    setPlanExercises(prev => prev.map((ex, i) => {
+      if (i === index) {
+        return { ...ex, [field]: value }
+      }
+      return ex
+    }))
+  }
+
+  // Submit and assign plan
+  const handlePublishPlan = async () => {
+    setPlanErrorMsg('')
+    setPlanSuccessMsg('')
+    
+    if (!planClientId) {
+      setPlanErrorMsg('Please select a client to assign the plan to.')
+      return
+    }
+
+    const invalidEx = planExercises.some(ex => !ex.name.trim() || ex.sets <= 0 || ex.reps <= 0)
+    if (invalidEx) {
+      setPlanErrorMsg('Please fill in name, sets, and reps for all exercises.')
+      return
+    }
+
+    setSavingPlan(true)
+    try {
+      const res = await fetch('/api/fitness-plans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': crypto.randomUUID(),
+        },
+        body: JSON.stringify({
+          clientId: planClientId,
+          notes: planNotes.trim() || undefined,
+          exercises: planExercises.map(ex => ({
+            name: ex.name.trim(),
+            sets: Number(ex.sets),
+            reps: Number(ex.reps),
+            focus: ex.focus,
+          })),
+        }),
+      })
+
+      const json = await res.json()
+      if (res.ok) {
+        setPlanSuccessMsg('Fitness plan published successfully!')
+        setPlanNotes('')
+        setPlanClientId('')
+        setPlanExercises([{ name: '', sets: 3, reps: 10, focus: 'strength' }])
+        fetchFitnessPlans()
+      } else {
+        setPlanErrorMsg(json.error?.message || json.message || 'Failed to publish fitness plan.')
+      }
+    } catch (err) {
+      setPlanErrorMsg('An error occurred. Please try again.')
+      console.error(err)
+    } finally {
+      setSavingPlan(false)
+    }
+  }
+
   // Date Formatting helper
   const formatDateTime = (dtStr: string) => {
     try {
@@ -406,6 +514,17 @@ export default function TrainerPortal() {
                   {threads.some(t => t.unread_count > 0) && (
                     <span className="absolute top-2 right-3 w-2 h-2 bg-red-500 rounded-full"></span>
                   )}
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('plans')
+                    if (window.innerWidth < 768) setSidebarOpen(false)
+                  }}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition ${
+                    activeTab === 'plans' ? 'bg-blue-600' : 'text-gray-300 hover:bg-gray-800'
+                  }`}
+                >
+                  📋 Fitness Plans
                 </button>
               </nav>
             </div>
@@ -541,12 +660,20 @@ export default function TrainerPortal() {
                                 {client.nextSessionDate ? formatDateTime(client.nextSessionDate) : 'Not scheduled'}
                               </td>
                               <td className="px-6 py-4">
-                                <button
-                                  onClick={() => handleMessageClientClick(client.fullName, client.id)}
-                                  className="text-blue-600 font-semibold hover:text-blue-700 text-sm"
-                                >
-                                  Message Chat →
-                                </button>
+                                <div className="flex flex-col gap-1.5 items-start">
+                                  <button
+                                    onClick={() => handleMessageClientClick(client.fullName, client.id)}
+                                    className="text-blue-600 font-semibold hover:text-blue-700 text-sm flex items-center gap-1"
+                                  >
+                                    💬 Chat
+                                  </button>
+                                  <button
+                                    onClick={() => handleAssignPlanClick(client.id)}
+                                    className="text-emerald-600 font-semibold hover:text-emerald-700 text-sm flex items-center gap-1"
+                                  >
+                                    📋 Assign Plan
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -581,12 +708,20 @@ export default function TrainerPortal() {
 
                           <div className="flex justify-between items-center text-sm pt-2">
                             <span className="text-gray-500">📅 {client.nextSessionDate ? formatDateTime(client.nextSessionDate) : 'Not scheduled'}</span>
-                            <button
-                              onClick={() => handleMessageClientClick(client.fullName, client.id)}
-                              className="text-blue-600 font-bold hover:text-blue-700"
-                            >
-                              Message Chat →
-                            </button>
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => handleMessageClientClick(client.fullName, client.id)}
+                                className="text-blue-600 font-bold hover:text-blue-700"
+                              >
+                                💬 Chat
+                              </button>
+                              <button
+                                onClick={() => handleAssignPlanClick(client.id)}
+                                className="text-emerald-600 font-bold hover:text-emerald-700"
+                              >
+                                📋 Plan
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -762,7 +897,235 @@ export default function TrainerPortal() {
               )}
             </div>
           )}
-          </main>
+
+          {activeTab === 'plans' && (
+            <div>
+              <h1 className="text-4xl font-bold mb-2 text-primary-dark">Client Fitness Plans</h1>
+              <p className="text-gray-600 mb-8">Design, publish, and assign custom workout programs directly to your active clients.</p>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* 1. Left side: Published Plans List */}
+                <div className="lg:col-span-7 space-y-6">
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Published Workout Regimens</h3>
+                    
+                    {fitnessPlans.length > 0 ? (
+                      <div className="space-y-6 max-h-[600px] overflow-y-auto pr-1">
+                        {fitnessPlans.map((plan) => (
+                          <div key={plan.id} className="border border-gray-150 rounded-xl p-5 hover:shadow-md transition bg-gray-50/30">
+                            <div className="flex justify-between items-start mb-3 pb-3 border-b border-gray-100">
+                              <div>
+                                <h4 className="font-bold text-base text-primary-dark flex items-center gap-2">
+                                  👤 {plan.clientName}
+                                </h4>
+                                <p className="text-[10px] text-gray-400 font-mono mt-0.5">
+                                  Published: {new Date(plan.createdAt).toLocaleDateString('en-NG')}
+                                </p>
+                              </div>
+                              <span className="bg-emerald-50 text-emerald-600 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+                                {plan.status}
+                              </span>
+                            </div>
+
+                            {plan.notes && (
+                              <div className="mb-4 text-xs text-gray-600 bg-blue-50/40 p-3 rounded-lg border border-blue-50 italic">
+                                <span className="font-bold text-blue-800 not-italic block mb-0.5">Trainer Notes:</span>
+                                "{plan.notes}"
+                              </div>
+                            )}
+
+                            <div>
+                              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Exercise List ({plan.exercises.length})</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {plan.exercises.map((ex: any, idx: number) => (
+                                  <div key={idx} className="bg-white border border-gray-100 rounded-lg p-2.5 flex items-center justify-between text-xs shadow-sm">
+                                    <div>
+                                      <p className="font-bold text-gray-800">{ex.name}</p>
+                                      <p className="text-[10px] text-gray-400 mt-0.5">{ex.sets} Sets x {ex.reps} Reps</p>
+                                    </div>
+                                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
+                                      ex.focus === 'strength' ? 'bg-blue-50 text-blue-600' :
+                                      ex.focus === 'balance' ? 'bg-yellow-50 text-yellow-600' :
+                                      ex.focus === 'mobility' ? 'bg-sky-50 text-sky-600' :
+                                      ex.focus === 'core' ? 'bg-emerald-50 text-emerald-600' :
+                                      'bg-indigo-50 text-indigo-600'
+                                    }`}>
+                                      {ex.focus}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 text-gray-400">
+                        <p className="text-3xl mb-2">📋</p>
+                        <p className="text-sm font-semibold">No fitness plans published yet.</p>
+                        <p className="text-xs text-gray-400 mt-1">Use the builder to assign the first plan.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Right side: Fitness Plan Builder Form */}
+                <div className="lg:col-span-5">
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm sticky top-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b flex items-center justify-between">
+                      <span>⚡ Fitness Plan Builder</span>
+                      <button 
+                        onClick={() => {
+                          setPlanClientId('')
+                          setPlanNotes('')
+                          setPlanExercises([{ name: '', sets: 3, reps: 10, focus: 'strength' }])
+                          setPlanSuccessMsg('')
+                          setPlanErrorMsg('')
+                        }}
+                        className="text-[10px] text-blue-600 font-bold hover:underline"
+                      >
+                        Reset Form
+                      </button>
+                    </h3>
+
+                    {planSuccessMsg && (
+                      <div className="mb-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-3 rounded text-sm font-semibold">
+                        ✓ {planSuccessMsg}
+                      </div>
+                    )}
+
+                    {planErrorMsg && (
+                      <div className="mb-4 bg-red-50 border-l-4 border-red-500 text-red-800 p-3 rounded text-sm font-semibold">
+                        ⚠ {planErrorMsg}
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
+                      {/* Select Client */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Select Assigned Client</label>
+                        <select
+                          value={planClientId}
+                          onChange={(e) => setPlanClientId(e.target.value)}
+                          className="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-sm"
+                        >
+                          <option value="">-- Choose Client --</option>
+                          {clients.map(c => (
+                            <option key={c.id} value={c.id}>{c.fullName} ({c.serviceName})</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Notes / Objectives */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Trainer Objectives & Notes</label>
+                        <textarea
+                          rows={2}
+                          value={planNotes}
+                          onChange={(e) => setPlanNotes(e.target.value)}
+                          placeholder="e.g. Focus on balance exercises twice a week. Increase resistance band sets if stable."
+                          className="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm placeholder:text-gray-300 bg-white"
+                        />
+                      </div>
+
+                      {/* Exercises Dynamic Rows */}
+                      <div>
+                        <div className="flex justify-between items-center mb-2 pb-1 border-b border-gray-100">
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Exercise List</label>
+                          <button
+                            type="button"
+                            onClick={handleAddExerciseInput}
+                            className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-xs font-bold hover:bg-blue-100 transition"
+                          >
+                            + Add Row
+                          </button>
+                        </div>
+
+                        <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
+                          {planExercises.map((ex, idx) => (
+                            <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-200 relative space-y-2.5">
+                              {planExercises.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveExerciseInput(idx)}
+                                  className="absolute top-1 right-2 text-gray-400 hover:text-red-500 font-bold text-sm bg-white"
+                                  title="Delete exercise"
+                                >
+                                  ✕
+                                </button>
+                              )}
+
+                              {/* Exercise Name */}
+                              <div>
+                                <input
+                                  type="text"
+                                  value={ex.name}
+                                  onChange={(e) => handleExerciseChange(idx, 'name', e.target.value)}
+                                  placeholder="Exercise name (e.g. Calf Raises)"
+                                  className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-3 gap-2">
+                                {/* Sets */}
+                                <div>
+                                  <label className="block text-[10px] text-gray-400 font-semibold mb-0.5">Sets</label>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={ex.sets}
+                                    onChange={(e) => handleExerciseChange(idx, 'sets', e.target.value)}
+                                    className="w-full border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-gray-800"
+                                  />
+                                </div>
+                                {/* Reps */}
+                                <div>
+                                  <label className="block text-[10px] text-gray-400 font-semibold mb-0.5">Reps</label>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={ex.reps}
+                                    onChange={(e) => handleExerciseChange(idx, 'reps', e.target.value)}
+                                    className="w-full border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-gray-800"
+                                  />
+                                </div>
+                                {/* Focus */}
+                                <div>
+                                  <label className="block text-[10px] text-gray-400 font-semibold mb-0.5">Focus</label>
+                                  <select
+                                    value={ex.focus}
+                                    onChange={(e) => handleExerciseChange(idx, 'focus', e.target.value)}
+                                    className="w-full border border-gray-200 rounded-lg p-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-gray-800"
+                                  >
+                                    <option value="strength">Strength</option>
+                                    <option value="balance">Balance</option>
+                                    <option value="mobility">Mobility</option>
+                                    <option value="core">Core</option>
+                                    <option value="cardio">Cardio</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Submit */}
+                      <button
+                        type="button"
+                        onClick={handlePublishPlan}
+                        disabled={savingPlan || clients.length === 0}
+                        className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg disabled:bg-blue-300"
+                      >
+                        {savingPlan ? 'Publishing Plan...' : 'Publish & Assign Plan'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
         </div>
       </div>
     )

@@ -12,7 +12,7 @@ import { hashPassword, createSession } from "@/lib/auth";
 const registerSchema = z
   .object({
     email: z.string().email().max(254).transform((s) => s.toLowerCase().trim()),
-    password: z.string().min(10, "Password must be at least 10 characters").max(200),
+    password: z.string().min(8, "Password must be at least 8 characters").max(200),
     fullName: z.string().min(2).max(100).transform((s) => s.trim()),
     phone: z.string().min(7).max(20).optional(),
     role: z.enum(["client", "trainer"]).default("client"),

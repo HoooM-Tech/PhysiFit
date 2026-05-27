@@ -20,21 +20,21 @@ const SERVICES = [
     name: "Senior Fitness",
     description:
       "Low-impact strength, balance, and mobility programming for adults 55+. Includes a physical assessment.",
-    priceNairaPerSession: 15000,
+    priceNairaPerSession: 33333,
   },
   {
     slug: "postpartum-fitness",
     name: "Postpartum Fitness",
     description:
       "Core re-engagement, pelvic-floor recovery, and progressive strength training for new mothers.",
-    priceNairaPerSession: 15000,
+    priceNairaPerSession: 33333,
   },
   {
     slug: "corporate-wellness",
     name: "Corporate Wellness",
     description:
       "Group sessions for teams — energy, stress relief, posture, and movement at the workplace.",
-    priceNairaPerSession: 15000,
+    priceNairaPerSession: 33333,
   },
 ] as const;
 

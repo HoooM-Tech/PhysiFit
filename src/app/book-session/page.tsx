@@ -52,7 +52,7 @@ export default function BookSession() {
           setServices(fetchedServices)
           if (fetchedServices.length > 0) {
             // Prefer Senior Fitness, else first available
-            const defaultSvc = fetchedServices.find((s: Service) => s.slug === 'senior_fitness') || fetchedServices[0]
+            const defaultSvc = fetchedServices.find((s: Service) => s.slug === 'senior-fitness') || fetchedServices[0]
             setSelectedService(defaultSvc)
           }
         }

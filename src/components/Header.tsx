@@ -12,7 +12,10 @@ export default function Header() {
   const isLoggedIn =
     pathname.includes('/dashboard') ||
     pathname.includes('/trainer-portal') ||
-    pathname.includes('/admin')
+    pathname.includes('/admin') ||
+    pathname.includes('/book-session') ||
+    pathname.includes('/payment') ||
+    pathname.includes('/reserve')
 
   // Close mobile menu when pathname changes
   useEffect(() => {

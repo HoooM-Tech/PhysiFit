@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db/client";
-import { users, clientProfiles } from "@/db/schema";
+import { users, clientProfiles, bookings, trainingSessions } from "@/db/schema";
 import { withAuth } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
@@ -71,39 +71,64 @@ export const PATCH = withAuth(
       }
     }
 
-    // Check if the client profile exists
-    const [existingProfile] = await db
-      .select({ id: clientProfiles.id })
-      .from(clientProfiles)
-      .where(eq(clientProfiles.userId, body.clientId))
-      .limit(1);
-
-    let updated;
-    if (existingProfile) {
-      [updated] = await db
-        .update(clientProfiles)
-        .set({
-          assignedTrainerId: body.assignedTrainerId,
-          updatedAt: new Date(),
-        })
+    // Cascade trainer assignment to client profile, bookings, and training sessions in a transaction
+    const updated = await db.transaction(async (tx) => {
+      // Check if the client profile exists
+      const [existingProfile] = await tx
+        .select({ id: clientProfiles.id })
+        .from(clientProfiles)
         .where(eq(clientProfiles.userId, body.clientId))
-        .returning({
-          id: clientProfiles.id,
-          assignedTrainerId: clientProfiles.assignedTrainerId,
-        });
-    } else {
-      [updated] = await db
-        .insert(clientProfiles)
-        .values({
-          userId: body.clientId,
-          assignedTrainerId: body.assignedTrainerId,
-          dizzinessHistory: false,
-        })
-        .returning({
-          id: clientProfiles.id,
-          assignedTrainerId: clientProfiles.assignedTrainerId,
-        });
-    }
+        .limit(1);
+
+      let up;
+      if (existingProfile) {
+        [up] = await tx
+          .update(clientProfiles)
+          .set({
+            assignedTrainerId: body.assignedTrainerId,
+            updatedAt: new Date(),
+          })
+          .where(eq(clientProfiles.userId, body.clientId))
+          .returning({
+            id: clientProfiles.id,
+            assignedTrainerId: clientProfiles.assignedTrainerId,
+          });
+      } else {
+        [up] = await tx
+          .insert(clientProfiles)
+          .values({
+            userId: body.clientId,
+            assignedTrainerId: body.assignedTrainerId,
+            dizzinessHistory: false,
+          })
+          .returning({
+            id: clientProfiles.id,
+            assignedTrainerId: clientProfiles.assignedTrainerId,
+          });
+      }
+
+      // Proactively update all bookings for this client
+      await tx
+        .update(bookings)
+        .set({ trainerId: body.assignedTrainerId })
+        .where(eq(bookings.clientId, body.clientId));
+
+      // Update all upcoming or assessment training sessions for this client to assign/reassign the trainer!
+      await tx
+        .update(trainingSessions)
+        .set({ trainerId: body.assignedTrainerId })
+        .where(
+          and(
+            eq(trainingSessions.clientId, body.clientId),
+            or(
+              eq(trainingSessions.status, "upcoming"),
+              eq(trainingSessions.status, "assessment")
+            )
+          )
+        );
+
+      return up;
+    });
 
     if (!updated) {
       throw new ApiError("INTERNAL_ERROR", "Failed to update or create client profile");

@@ -43,6 +43,7 @@ function PaymentPageContent() {
   const [confirmed, setConfirmed] = useState(false)
   const [error, setError] = useState('')
   const [paystackReady, setPaystackReady] = useState(false)
+  const [hasSessionEmail, setHasSessionEmail] = useState(false)
 
   useEffect(() => {
     async function fetchDetails() {
@@ -67,6 +68,7 @@ function PaymentPageContent() {
           const userJson = await userRes.json()
           if (userJson.data?.user?.email) {
             setEmail(userJson.data.user.email)
+            setHasSessionEmail(true)
           }
         }
       } catch (err) {
@@ -93,13 +95,14 @@ function PaymentPageContent() {
 
     try {
       const transactionRef = 'pay_' + Math.random().toString(36).substring(2, 15) + Date.now();
-      const handler = window.PaystackPop.setup({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_03b79b66317c1b3573e6e746245b654b14a4d88f',
+      const popup = new window.PaystackPop();
+      popup.newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
         email: email,
         amount: amountNaira * 100, // Paystack requires amount in kobo
         currency: 'NGN',
         ref: transactionRef,
-        callback: async function (response: { reference: string }) {
+        onSuccess: async function (response: { reference: string }) {
           // Paystack callback on success
           try {
             const paymentPayload = {
@@ -130,13 +133,16 @@ function PaymentPageContent() {
             setPaying(false)
           }
         },
+        onCancel: function () {
+          setPaying(false)
+        },
         onClose: function () {
           setPaying(false)
         },
       })
-      handler.openIframe()
-    } catch (err) {
-      setError('Failed to load payment checkout. Please refresh and try again.')
+    } catch (err: any) {
+      console.error('Paystack checkout error:', err)
+      setError(`Payment checkout failed: ${err.message || 'Unknown error'}. Please refresh and try again.`)
       setPaying(false)
     }
   }
@@ -166,7 +172,7 @@ function PaymentPageContent() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <Script
-        src="https://js.paystack.co/v1/inline.js"
+        src="https://js.paystack.co/v2/inline.js"
         strategy="afterInteractive"
         onReady={() => setPaystackReady(true)}
         onError={() => setError('Failed to load Paystack SDK. Check your internet connection or disable ad-blockers.')}
@@ -209,7 +215,7 @@ function PaymentPageContent() {
               </div>
 
               {/* Email Address collection if not logged in */}
-              {!email && (
+              {!hasSessionEmail && (
                 <div className="mb-6">
                   <label className="block font-bold mb-2 text-sm text-gray-700">Billing Email Address</label>
                   <input

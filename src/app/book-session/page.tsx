@@ -6,6 +6,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Script from 'next/script'
 
+declare global {
+  interface Window {
+    PaystackPop: any;
+  }
+}
+
 interface Service {
   id: string;
   name: string;
@@ -117,13 +123,14 @@ export default function BookSession() {
 
       // 2. Launch the Paystack checkout inline popup
       const transactionRef = 'pay_' + Math.random().toString(36).substring(2, 15) + Date.now();
-      const handler = window.PaystackPop.setup({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_03b79b66317c1b3573e6e746245b654b14a4d88f',
+      const popup = new window.PaystackPop();
+      popup.newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
         email: email || 'client@physifit.co',
         amount: totalPrice * 100, // in kobo
         currency: 'NGN',
         ref: transactionRef,
-        callback: async function (response: { reference: string }) {
+        onSuccess: async function (response: { reference: string }) {
           try {
             // 3. Register payment intent
             const paymentRes = await fetch('/api/payments', {
@@ -150,11 +157,13 @@ export default function BookSession() {
             setStep('service')
           }
         },
+        onCancel: function () {
+          setStep('terms')
+        },
         onClose: function () {
           setStep('terms')
         },
       })
-      handler.openIframe()
     } catch (err: any) {
       setError(err.message || 'An unexpected issue occurred. Please retry shortly.')
       setStep('service')
@@ -164,7 +173,7 @@ export default function BookSession() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
+      <Script src="https://js.paystack.co/v2/inline.js" strategy="afterInteractive" />
 
       {/* Page Header */}
       <div className="max-w-7xl mx-auto px-6 py-8">

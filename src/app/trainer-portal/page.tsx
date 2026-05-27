@@ -330,24 +330,21 @@ export default function TrainerPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-
-      <div className="flex relative">
-        {/* Mobile Sidebar backdrop */}
-        {sidebarOpen && (
-          <div
-            onClick={() => setSidebarOpen(false)}
-            className="md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity"
-          />
-        )}
-
-        {/* Sidebar */}
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile Sidebar backdrop */}
+      {sidebarOpen && (
         <div
-          className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white min-h-screen p-6 transition-all duration-300 ease-in-out shadow-2xl md:shadow-none flex flex-col justify-between ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'
-          }`}
-        >
+          onClick={() => setSidebarOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity"
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white min-h-screen p-6 transition-all duration-300 ease-in-out shadow-2xl md:shadow-none flex flex-col justify-between ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'
+        }`}
+      >
           <div>
             <div className="mb-12 flex items-center justify-between">
               <span className="text-2xl font-bold tracking-wide">PhysiFit <span className="text-blue-500">Trainer</span></span>
@@ -478,55 +475,98 @@ export default function TrainerPortal() {
               </div>
 
               {/* Clients Table */}
-              <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto shadow-sm">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 {clients.length > 0 ? (
-                  <table className="w-full min-w-[600px]">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-bold">CLIENT</th>
-                        <th className="px-6 py-4 text-left text-sm font-bold">PROGRAM</th>
-                        <th className="px-6 py-4 text-left text-sm font-bold">PROGRESS</th>
-                        <th className="px-6 py-4 text-left text-sm font-bold">NEXT SESSION</th>
-                        <th className="px-6 py-4 text-left text-sm font-bold">ACTION</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-sm font-bold">CLIENT</th>
+                            <th className="px-6 py-4 text-left text-sm font-bold">PROGRAM</th>
+                            <th className="px-6 py-4 text-left text-sm font-bold">PROGRESS</th>
+                            <th className="px-6 py-4 text-left text-sm font-bold">NEXT SESSION</th>
+                            <th className="px-6 py-4 text-left text-sm font-bold">ACTION</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {clients.map((client) => (
+                            <tr key={client.id} className="border-b border-gray-200 hover:bg-gray-50">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-sm">
+                                    {client.fullName.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <span className="font-bold text-primary-dark block">{client.fullName}</span>
+                                    <span className="text-xs text-gray-500 block">{client.email}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold uppercase">
+                                  {client.serviceName}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-semibold text-gray-700">
+                                {client.completedSessions}/{client.totalSessions} sessions
+                              </td>
+                              <td className="px-6 py-4 text-gray-600 text-sm">
+                                {client.nextSessionDate ? formatDateTime(client.nextSessionDate) : 'Not scheduled'}
+                              </td>
+                              <td className="px-6 py-4">
+                                <button
+                                  onClick={() => handleMessageClientClick(client.fullName, client.id)}
+                                  className="text-blue-600 font-semibold hover:text-blue-700 text-sm"
+                                >
+                                  Message Chat →
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden divide-y divide-gray-100">
                       {clients.map((client) => (
-                        <tr key={client.id} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-sm">
-                                {client.fullName.charAt(0)}
-                              </div>
-                              <div>
-                                <span className="font-bold text-primary-dark block">{client.fullName}</span>
-                                <span className="text-xs text-gray-500 block">{client.email}</span>
-                              </div>
+                        <div key={client.id} className="p-5 space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-sm">
+                              {client.fullName.charAt(0)}
                             </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold uppercase">
-                              {client.serviceName}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 font-semibold text-gray-700">
-                            {client.completedSessions}/{client.totalSessions} sessions
-                          </td>
-                          <td className="px-6 py-4 text-gray-600 text-sm">
-                            {client.nextSessionDate ? formatDateTime(client.nextSessionDate) : 'Not scheduled'}
-                          </td>
-                          <td className="px-6 py-4">
+                            <div>
+                              <span className="font-bold text-primary-dark block text-base">{client.fullName}</span>
+                              <span className="text-xs text-gray-500 block">{client.email}</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg text-sm">
+                            <div>
+                              <span className="text-xs text-gray-400 block uppercase font-semibold">Program</span>
+                              <span className="font-semibold text-gray-700">{client.serviceName}</span>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-400 block uppercase font-semibold">Progress</span>
+                              <span className="font-semibold text-gray-700">{client.completedSessions}/{client.totalSessions}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center text-sm pt-2">
+                            <span className="text-gray-500">📅 {client.nextSessionDate ? formatDateTime(client.nextSessionDate) : 'Not scheduled'}</span>
                             <button
                               onClick={() => handleMessageClientClick(client.fullName, client.id)}
-                              className="text-blue-600 font-semibold hover:text-blue-700 text-sm"
+                              className="text-blue-600 font-bold hover:text-blue-700"
                             >
                               Message Chat →
                             </button>
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  </>
                 ) : (
                   <div className="p-12 text-center text-gray-500">No assigned clients registered yet.</div>
                 )}
@@ -700,6 +740,5 @@ export default function TrainerPortal() {
           </main>
         </div>
       </div>
-    </div>
-  )
+    )
 }

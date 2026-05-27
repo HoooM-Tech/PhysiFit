@@ -299,24 +299,21 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-
-      <div className="flex relative">
-        {/* Mobile Sidebar backdrop */}
-        {sidebarOpen && (
-          <div
-            onClick={() => setSidebarOpen(false)}
-            className="md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity"
-          />
-        )}
-
-        {/* Sidebar */}
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile Sidebar backdrop */}
+      {sidebarOpen && (
         <div
-          className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 min-h-screen p-6 transition-all duration-300 ease-in-out shadow-2xl md:shadow-none flex flex-col justify-between ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'
-          }`}
-        >
+          onClick={() => setSidebarOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity"
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 min-h-screen p-6 transition-all duration-300 ease-in-out shadow-2xl md:shadow-none flex flex-col justify-between ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'
+        }`}
+      >
           <div>
             <div className="mb-8 flex items-center justify-between">
               <span className="text-2xl font-bold text-primary-dark tracking-wide">PhysiFit <span className="text-blue-600">NG</span></span>
@@ -518,29 +515,52 @@ export default function Dashboard() {
                   </button>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto shadow-sm">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                   {sessions.filter(s => s.status === 'upcoming').length > 0 ? (
-                    <table className="w-full min-w-[600px]">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-sm font-bold">SERVICE</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold">DATE & TIME</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold">STATUS</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                    <>
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                              <th className="px-6 py-4 text-left text-sm font-bold">SERVICE</th>
+                              <th className="px-6 py-4 text-left text-sm font-bold">DATE & TIME</th>
+                              <th className="px-6 py-4 text-left text-sm font-bold">STATUS</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sessions
+                              .filter(s => s.status === 'upcoming')
+                              .slice(0, 3)
+                              .map((session) => (
+                                <tr key={session.id} className="border-b border-gray-200 hover:bg-gray-50">
+                                  <td className="px-6 py-4 font-bold">{session.serviceName || 'Personal Session'}</td>
+                                  <td className="px-6 py-4">{formatDateTime(session.scheduledAt)}</td>
+                                  <td className="px-6 py-4">{formatSessionStatus(session.status)}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Card View */}
+                      <div className="md:hidden divide-y divide-gray-100">
                         {sessions
                           .filter(s => s.status === 'upcoming')
                           .slice(0, 3)
-                          .map((session, index) => (
-                            <tr key={session.id} className="border-b border-gray-200 hover:bg-gray-50">
-                              <td className="px-6 py-4 font-bold">{session.serviceName || 'Personal Session'}</td>
-                              <td className="px-6 py-4">{formatDateTime(session.scheduledAt)}</td>
-                              <td className="px-6 py-4">{formatSessionStatus(session.status)}</td>
-                            </tr>
+                          .map((session) => (
+                            <div key={session.id} className="p-5 space-y-3">
+                              <div className="flex justify-between items-start">
+                                <span className="font-bold text-gray-900">{session.serviceName || 'Personal Session'}</span>
+                                {formatSessionStatus(session.status)}
+                              </div>
+                              <div className="text-sm text-gray-500 flex items-center gap-1.5">
+                                <span>📅</span> {formatDateTime(session.scheduledAt)}
+                              </div>
+                            </div>
                           ))}
-                      </tbody>
-                    </table>
+                      </div>
+                    </>
                   ) : (
                     <div className="p-8 text-center text-gray-500">No upcoming sessions. Book a new program to schedule sessions.</div>
                   )}
@@ -562,26 +582,46 @@ export default function Dashboard() {
                   </Link>
                 </div>
                 
-                <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto shadow-sm">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                   {sessions.length > 0 ? (
-                    <table className="w-full min-w-[600px]">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-sm font-bold">SERVICE</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold">DATE & TIME</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold">STATUS</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                    <>
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                              <th className="px-6 py-4 text-left text-sm font-bold">SERVICE</th>
+                              <th className="px-6 py-4 text-left text-sm font-bold">DATE & TIME</th>
+                              <th className="px-6 py-4 text-left text-sm font-bold">STATUS</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sessions.map((session) => (
+                              <tr key={session.id} className="border-b border-gray-200 hover:bg-gray-50">
+                                <td className="px-6 py-4 font-bold">{session.serviceName}</td>
+                                <td className="px-6 py-4">{formatDateTime(session.scheduledAt)}</td>
+                                <td className="px-6 py-4">{formatSessionStatus(session.status)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Card View */}
+                      <div className="md:hidden divide-y divide-gray-100">
                         {sessions.map((session) => (
-                          <tr key={session.id} className="border-b border-gray-200 hover:bg-gray-50">
-                            <td className="px-6 py-4 font-bold">{session.serviceName}</td>
-                            <td className="px-6 py-4">{formatDateTime(session.scheduledAt)}</td>
-                            <td className="px-6 py-4">{formatSessionStatus(session.status)}</td>
-                          </tr>
+                          <div key={session.id} className="p-5 space-y-3">
+                            <div className="flex justify-between items-start">
+                              <span className="font-bold text-gray-900">{session.serviceName}</span>
+                              {formatSessionStatus(session.status)}
+                            </div>
+                            <div className="text-sm text-gray-500 flex items-center gap-1.5">
+                              <span>📅</span> {formatDateTime(session.scheduledAt)}
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
+                      </div>
+                    </>
                   ) : (
                     <div className="p-12 text-center text-gray-500">No sessions recorded yet. Book a session to get started.</div>
                   )}
@@ -779,6 +819,5 @@ export default function Dashboard() {
           </main>
         </div>
       </div>
-    </div>
-  )
+    )
 }

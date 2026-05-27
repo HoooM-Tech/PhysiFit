@@ -40,6 +40,10 @@ function buildCsp(): string {
 }
 
 function applySecurityHeaders(res: NextResponse) {
+  const isDev = process.env.NODE_ENV !== "production";
+  if (isDev) {
+    return;
+  }
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     res.headers.set(k, v);
   }

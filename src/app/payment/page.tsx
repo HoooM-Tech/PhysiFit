@@ -33,10 +33,10 @@ function PaymentPageContent() {
   const searchParams = useSearchParams()
   const bookingId = searchParams.get('bookingId')
   const eventRegistrationId = searchParams.get('eventRegistrationId')
-  
+
   // Dynamic payment details
   const [email, setEmail] = useState('')
-  const [amountNaira, setAmountNaira] = useState(15000) // Default ₦15,000 if generic event
+  const [amountNaira, setAmountNaira] = useState(50000) // Default ₦15,000 if generic event
   const [description, setDescription] = useState('Event Spot Reservation')
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
@@ -61,7 +61,7 @@ function PaymentPageContent() {
             }
           }
         }
-        
+
         // 2. Fetch logged in user email if authenticated
         const userRes = await fetch('/api/users/me')
         if (userRes.ok) {
@@ -70,6 +70,8 @@ function PaymentPageContent() {
             setEmail(userJson.data.user.email)
             setHasSessionEmail(true)
           }
+        } else if (userRes.status === 401 && bookingId) {
+          setError('Authentication required. Please log in first to complete your payment.')
         }
       } catch (err) {
         console.error('Error fetching details:', err)
@@ -82,6 +84,10 @@ function PaymentPageContent() {
   }, [bookingId])
 
   const handlePaySecurely = () => {
+    if (!hasSessionEmail && bookingId) {
+      setError('Authentication required. Please log in first to complete your payment.')
+      return
+    }
     if (!email) {
       setError('Please provide a valid email address for receipt.')
       return
@@ -110,6 +116,7 @@ function PaymentPageContent() {
               eventRegistrationId: eventRegistrationId || undefined,
               provider: 'paystack' as const,
               providerRef: response.reference,
+              email: email || undefined,
             }
 
             const apiRes = await fetch('/api/payments', {
@@ -192,7 +199,7 @@ function PaymentPageContent() {
             {/* Payment Summary */}
             <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
               <h2 className="text-xl font-bold mb-6 text-gray-800 pb-4 border-b">Order Summary</h2>
-              
+
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-gray-600">
                   <span>Description</span>
@@ -229,8 +236,16 @@ function PaymentPageContent() {
               )}
 
               {error && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded text-left">
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded text-left flex flex-col gap-2">
                   <p className="text-red-700 text-sm font-semibold">{error}</p>
+                  {error.includes('log in') && (
+                    <Link
+                      href={`/login?redirect=/payment${bookingId ? `?bookingId=${bookingId}` : ''}${eventRegistrationId ? `?eventRegistrationId=${eventRegistrationId}` : ''}`}
+                      className="text-blue-600 hover:text-blue-700 font-bold text-sm underline"
+                    >
+                      Click here to Login →
+                    </Link>
+                  )}
                 </div>
               )}
 

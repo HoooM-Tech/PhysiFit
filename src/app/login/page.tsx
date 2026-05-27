@@ -30,7 +30,12 @@ export default function LoginPage() {
       }
 
       const user = json.data?.user
-      if (user?.role === 'trainer') {
+      const searchParams = new URLSearchParams(window.location.search)
+      const redirect = searchParams.get('redirect')
+      
+      if (redirect) {
+        router.push(redirect)
+      } else if (user?.role === 'trainer') {
         router.push('/trainer-portal')
       } else {
         router.push('/dashboard')

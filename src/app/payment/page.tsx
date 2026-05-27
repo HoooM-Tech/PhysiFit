@@ -42,6 +42,7 @@ function PaymentPageContent() {
   const [paying, setPaying] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [error, setError] = useState('')
+  const [paystackReady, setPaystackReady] = useState(false)
 
   useEffect(() => {
     async function fetchDetails() {
@@ -81,6 +82,10 @@ function PaymentPageContent() {
   const handlePaySecurely = () => {
     if (!email) {
       setError('Please provide a valid email address for receipt.')
+      return
+    }
+    if (!paystackReady || !window.PaystackPop) {
+      setError('Payment SDK is still loading. Please wait a moment and try again.')
       return
     }
     setError('')
@@ -160,7 +165,12 @@ function PaymentPageContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
+      <Script
+        src="https://js.paystack.co/v1/inline.js"
+        strategy="afterInteractive"
+        onReady={() => setPaystackReady(true)}
+        onError={() => setError('Failed to load Paystack SDK. Check your internet connection or disable ad-blockers.')}
+      />
 
       <main className="max-w-3xl mx-auto px-6 py-20">
         <h1 className="text-3xl font-bold text-primary-dark mb-2">Secure Checkout</h1>

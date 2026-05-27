@@ -367,7 +367,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-primary-dark text-gray-400 py-12">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p>© 2025 PhysiFit NG · All rights reserved · Built for Nigerian wellness</p>
+          <p>© 2026 PhysiFit · <a href="https://physifit.co" className="hover:text-white transition">physifit.co</a> · All rights reserved · Built for Nigerian wellness</p>
         </div>
       </footer>
     </div>

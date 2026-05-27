@@ -385,7 +385,7 @@ export default function EventPage() {
           <div>
             <h3 className="text-accent font-semibold mb-4 uppercase">CONTACT</h3>
             <ul className="space-y-2 text-gray-300">
-              <li>info@physif it.ng</li>
+              <li>info@physifit.co</li>
               <li>+234 800 000 0000</li>
               <li>Lagos, Nigeria</li>
             </ul>

@@ -119,7 +119,7 @@ export default function BookSession() {
       const transactionRef = 'pay_' + Math.random().toString(36).substring(2, 15) + Date.now();
       const handler = window.PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_03b79b66317c1b3573e6e746245b654b14a4d88f',
-        email: email || 'client@physifit.ng',
+        email: email || 'client@physifit.co',
         amount: totalPrice * 100, // in kobo
         currency: 'NGN',
         ref: transactionRef,

@@ -28,14 +28,14 @@ function buildCsp(): string {
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
-    "connect-src 'self' https://*.neon.tech wss://*.neon.tech https://api.paystack.co",
-    "frame-src 'self' https://js.paystack.co",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self' https://*.neon.tech wss://*.neon.tech https://*.paystack.co",
+    "frame-src 'self' https://js.paystack.co https://standard.paystack.co https://docs.google.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    "form-action 'self' https://docs.google.com",
   ].join("; ");
 }
 

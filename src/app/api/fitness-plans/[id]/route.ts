@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { fitnessPlans } from "@/db/schema";
+import { fitnessPlans, users } from "@/db/schema";
 import { withAuth } from "@/lib/api/handler";
 import { parseJsonBody, uuidSchema } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
+import { notifyFitnessPlanUpdated } from "@/lib/email/notify";
 
 const exerciseSchema = z.object({
   name: z.string().min(1).max(100),
@@ -28,7 +29,7 @@ export const PUT = withAuth(async ({ req, user, params }) => {
     throw new ApiError("VALIDATION_ERROR", "At least one field (notes, exercises, status) must be provided");
   }
 
-  const result = await db.transaction(async (tx) => {
+  const { updated, client } = await db.transaction(async (tx) => {
     const [plan] = await tx
       .select()
       .from(fitnessPlans)
@@ -49,14 +50,29 @@ export const PUT = withAuth(async ({ req, user, params }) => {
     if (body.exercises) updates.exercises = body.exercises;
     if (body.status) updates.status = body.status;
 
-    const [updated] = await tx
+    const [updatedPlan] = await tx
       .update(fitnessPlans)
       .set(updates)
       .where(eq(fitnessPlans.id, planId))
       .returning();
 
-    return updated;
+    const [clientUser] = await tx
+      .select({ email: users.email, fullName: users.fullName })
+      .from(users)
+      .where(eq(users.id, plan.clientId))
+      .limit(1);
+
+    return { updated: updatedPlan, client: clientUser };
   });
 
-  return { data: { plan: result } };
+  if (client) {
+    notifyFitnessPlanUpdated({
+      clientEmail: client.email,
+      clientName: client.fullName,
+      trainerName: user.fullName,
+      exerciseCount: updated.exercises.length,
+    });
+  }
+
+  return { data: { plan: updated } };
 }, { roles: ["trainer", "admin"] });

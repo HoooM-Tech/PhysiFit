@@ -86,6 +86,15 @@ export default function TrainerPortal() {
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelTargetSession, setCancelTargetSession] = useState<TrainingSession | null>(null)
 
+  // Reschedule Session State
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false)
+  const [rescheduleTargetSession, setRescheduleTargetSession] = useState<TrainingSession | null>(null)
+  const [rescheduleDate, setRescheduleDate] = useState('')
+  const [rescheduleTime, setRescheduleTime] = useState('')
+  const [rescheduleReason, setRescheduleReason] = useState('')
+  const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false)
+  const [rescheduleError, setRescheduleError] = useState('')
+
   const activeMessagesEndRef = useRef<HTMLDivElement>(null)
   const activeThreadIdRef = useRef<string | null>(null)
   activeThreadIdRef.current = activeThreadId
@@ -345,6 +354,76 @@ export default function TrainerPortal() {
       alert('An error occurred while cancelling the session.')
     } finally {
       setCancelSubmitting(false)
+    }
+  }
+
+  // Open reschedule modal
+  const openRescheduleModal = (session: TrainingSession) => {
+    setRescheduleTargetSession(session)
+    setRescheduleDate('')
+    setRescheduleTime('')
+    setRescheduleReason('')
+    setRescheduleError('')
+    setShowRescheduleModal(true)
+  }
+
+  // Reschedule a session
+  const handleRescheduleSession = async () => {
+    if (!rescheduleTargetSession) return
+    if (!rescheduleDate || !rescheduleTime) {
+      setRescheduleError('Please select both a date and time.')
+      return
+    }
+
+    const newDateTime = new Date(`${rescheduleDate}T${rescheduleTime}`)
+    if (isNaN(newDateTime.getTime())) {
+      setRescheduleError('Invalid date or time selected.')
+      return
+    }
+    if (newDateTime.getTime() < Date.now()) {
+      setRescheduleError('The new session time must be in the future.')
+      return
+    }
+
+    setRescheduleSubmitting(true)
+    setRescheduleError('')
+    try {
+      const res = await fetch(`/api/sessions/${rescheduleTargetSession.id}/reschedule`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': crypto.randomUUID(),
+        },
+        body: JSON.stringify({
+          toScheduledAt: newDateTime.toISOString(),
+          reason: rescheduleReason.trim() || undefined,
+        }),
+      })
+
+      if (res.ok) {
+        // Refetch sessions
+        const sessRes = await fetch('/api/sessions')
+        if (sessRes.ok) {
+          const sessJson = await sessRes.json()
+          setSessions(sessJson.data?.sessions || [])
+        }
+        // Refetch clients
+        const clientRes = await fetch('/api/trainers/clients')
+        if (clientRes.ok) {
+          const clientJson = await clientRes.json()
+          setClients(clientJson.data?.clients || [])
+        }
+        setShowRescheduleModal(false)
+        setRescheduleTargetSession(null)
+      } else {
+        const json = await res.json()
+        setRescheduleError(json.error?.message || 'Failed to reschedule session.')
+      }
+    } catch (err) {
+      console.error('Reschedule session failed:', err)
+      setRescheduleError('An error occurred. Please try again.')
+    } finally {
+      setRescheduleSubmitting(false)
     }
   }
 
@@ -859,6 +938,12 @@ export default function TrainerPortal() {
                             {checkingInId === session.id ? 'Verifying...' : '✓ I\'m Here'}
                           </button>
                           <button
+                            onClick={() => openRescheduleModal(session)}
+                            className="flex-1 md:flex-initial text-center px-5 py-2.5 border border-amber-200 text-amber-600 rounded-lg hover:bg-amber-50 transition text-sm font-semibold"
+                          >
+                            🔄 Reschedule
+                          </button>
+                          <button
                             onClick={() => openCancelModal(session)}
                             className="flex-1 md:flex-initial text-center px-5 py-2.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition text-sm font-semibold"
                           >
@@ -1342,6 +1427,99 @@ export default function TrainerPortal() {
                   className="px-5 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition text-sm font-bold shadow-sm disabled:bg-red-400 disabled:cursor-not-allowed"
                 >
                   {cancelSubmitting ? 'Cancelling...' : 'Yes, Cancel Session'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reschedule Session Modal */}
+        {showRescheduleModal && rescheduleTargetSession && (
+          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowRescheduleModal(false)}>
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-0 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="bg-amber-50 border-b border-amber-100 px-6 py-5 flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-lg">
+                  🔄
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-lg">Reschedule Session</h3>
+                  <p className="text-xs text-gray-500">Choose a new date and time</p>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="px-6 py-5 space-y-4">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-sm text-gray-500 mb-1">Current Session</p>
+                  <p className="font-bold text-gray-900">{rescheduleTargetSession.clientName}</p>
+                  <p className="text-sm text-gray-600">{rescheduleTargetSession.serviceName} · {formatDateTime(rescheduleTargetSession.scheduledAt)}</p>
+                </div>
+
+                <div className="bg-amber-50 border-l-4 border-amber-400 rounded p-3 text-xs text-amber-800">
+                  <strong>Note:</strong> Reschedules require at least 24 hours notice before the original session time.
+                </div>
+
+                {rescheduleError && (
+                  <div className="bg-red-50 border-l-4 border-red-500 text-red-800 p-3 rounded text-sm font-semibold">
+                    ⚠ {rescheduleError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">New Date</label>
+                    <input
+                      type="date"
+                      value={rescheduleDate}
+                      onChange={(e) => setRescheduleDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">New Time</label>
+                    <input
+                      type="time"
+                      value={rescheduleTime}
+                      onChange={(e) => setRescheduleTime(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Reason (optional)</label>
+                  <textarea
+                    rows={3}
+                    value={rescheduleReason}
+                    onChange={(e) => setRescheduleReason(e.target.value)}
+                    placeholder="e.g. Client requested a different time, scheduling conflict..."
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder:text-gray-300 bg-white resize-none"
+                    maxLength={500}
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1 text-right">{rescheduleReason.length}/500</p>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end">
+                <button
+                  onClick={() => { setShowRescheduleModal(false); setRescheduleTargetSession(null) }}
+                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition text-sm font-semibold"
+                  disabled={rescheduleSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRescheduleSession}
+                  disabled={rescheduleSubmitting || !rescheduleDate || !rescheduleTime}
+                  className="px-5 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition text-sm font-bold shadow-sm disabled:bg-amber-300 disabled:cursor-not-allowed"
+                >
+                  {rescheduleSubmitting ? 'Rescheduling...' : 'Confirm Reschedule'}
                 </button>
               </div>
             </div>

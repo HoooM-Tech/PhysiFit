@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { trainingSessions } from "@/db/schema";
+import { trainingSessions, users, bookings, services } from "@/db/schema";
 import { withAuth } from "@/lib/api/handler";
 import { parseJsonBody, uuidSchema } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
+import { notifySessionCancelled } from "@/lib/email/notify";
 
 const cancelSchema = z.object({
   reason: z.string().max(500).optional(),
@@ -47,8 +48,34 @@ export const POST = withAuth(async ({ req, user, params }) => {
       .where(eq(trainingSessions.id, sessionId))
       .returning();
 
-    return updated;
+    return { updated, scheduledAt: session.scheduledAt };
   });
 
-  return { data: { session: result } };
+  // Resolve client info + service name for notification
+  const [info] = await db
+    .select({
+      clientEmail: users.email,
+      clientName: users.fullName,
+      serviceName: services.name,
+    })
+    .from(trainingSessions)
+    .innerJoin(users, eq(users.id, trainingSessions.clientId))
+    .innerJoin(bookings, eq(bookings.id, trainingSessions.bookingId))
+    .innerJoin(services, eq(services.id, bookings.serviceId))
+    .where(eq(trainingSessions.id, sessionId))
+    .limit(1);
+
+  if (info) {
+    notifySessionCancelled({
+      clientEmail: info.clientEmail,
+      clientName: info.clientName,
+      trainerName: user.fullName,
+      serviceName: info.serviceName,
+      scheduledAt: result.scheduledAt,
+      reason: body.reason,
+    });
+  }
+
+  return { data: { session: result.updated } };
 }, { roles: ["trainer", "admin"] });
+

@@ -38,6 +38,14 @@ const envSchema = z.object({
     .string()
     .regex(/^[a-z]{2}\d+$/i, "MAILCHIMP_SERVER_PREFIX must look like 'us21'")
     .optional(),
+  // Resend — transactional emails. When RESEND_API_KEY is missing, emails
+  // are silently skipped and the app continues to function normally.
+  RESEND_API_KEY: z.string().min(1).optional(),
+  EMAIL_FROM: z
+    .string()
+    .min(1)
+    .default("PhysiFit <onboarding@resend.dev>"),
+  ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -8,6 +8,7 @@ import { ApiError, successResponse } from "@/lib/api/errors";
 import { enforceRateLimit, getClientIp } from "@/lib/api/rate-limit";
 import { env } from "@/lib/env";
 import { hashPassword, createSession } from "@/lib/auth";
+import { notifyNewRegistration } from "@/lib/email/notify";
 
 const registerSchema = z
   .object({
@@ -83,6 +84,9 @@ export const POST = withRoute(async ({ req, requestId }) => {
     }
     return u;
   });
+
+  // Email notification — fire-and-forget, never blocks response
+  notifyNewRegistration({ fullName: newUser.fullName, email: newUser.email, role: newUser.role });
 
   const { token, expiresAt } = await createSession(newUser.id, getRequestMeta(req));
 

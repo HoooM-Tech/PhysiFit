@@ -6,6 +6,7 @@ import { messages, users } from "@/db/schema";
 import { withAuth, withIdempotency } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
+import { notifyNewMessage } from "@/lib/email/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,12 @@ export const POST = withIdempotency(async ({ req, user }) => {
 
   // Verify recipient exists and is active.
   const [recipient] = await db
-    .select({ id: users.id, status: users.status })
+    .select({
+      id: users.id,
+      status: users.status,
+      email: users.email,
+      fullName: users.fullName,
+    })
     .from(users)
     .where(eq(users.id, body.recipientId))
     .limit(1);
@@ -98,6 +104,15 @@ export const POST = withIdempotency(async ({ req, user }) => {
       body: body.body,
     })
     .returning();
+
+  // Send a debounced new message notification to the recipient
+  notifyNewMessage({
+    threadId,
+    senderName: user.fullName,
+    recipientEmail: recipient.email,
+    recipientName: recipient.fullName,
+    preview: body.body,
+  });
 
   return { data: { message: msg }, status: 201 };
 });

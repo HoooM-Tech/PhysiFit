@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { trainingSessions, sessionReschedules } from "@/db/schema";
+import { trainingSessions, sessionReschedules, users, bookings, services } from "@/db/schema";
 import { withIdempotency } from "@/lib/api/handler";
 import { parseJsonBody, uuidSchema } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
+import { notifySessionRescheduled } from "@/lib/email/notify";
 
 const rescheduleSchema = z.object({
   toScheduledAt: z.string().datetime(),
@@ -65,8 +66,58 @@ export const POST = withIdempotency(async ({ req, user, params }) => {
       .where(eq(trainingSessions.id, sessionId))
       .returning();
 
-    return updated;
+    return { updated, oldDate: session.scheduledAt, isOwner, isTrainer };
   });
 
-  return { data: { session: result } };
+  // Notify the other party about the reschedule
+  const [info] = await db
+    .select({
+      clientId: trainingSessions.clientId,
+      clientEmail: users.email,
+      clientName: users.fullName,
+      serviceName: services.name,
+    })
+    .from(trainingSessions)
+    .innerJoin(users, eq(users.id, trainingSessions.clientId))
+    .innerJoin(bookings, eq(bookings.id, trainingSessions.bookingId))
+    .innerJoin(services, eq(services.id, bookings.serviceId))
+    .where(eq(trainingSessions.id, sessionId))
+    .limit(1);
+
+  if (info) {
+    // If client rescheduled → notify trainer; if trainer rescheduled → notify client
+    if (result.isOwner && result.updated.trainerId) {
+      // Client rescheduled — notify trainer
+      const [trainer] = await db
+        .select({ email: users.email, fullName: users.fullName })
+        .from(users)
+        .where(eq(users.id, result.updated.trainerId))
+        .limit(1);
+      if (trainer) {
+        notifySessionRescheduled({
+          recipientEmail: trainer.email,
+          recipientName: trainer.fullName,
+          serviceName: info.serviceName,
+          oldDate: result.oldDate,
+          newDate: result.updated.scheduledAt,
+          requestedByName: user.fullName,
+          reason: body.reason,
+        });
+      }
+    }
+    if (result.isTrainer || (!result.isOwner && !result.isTrainer)) {
+      // Trainer or admin rescheduled — notify client
+      notifySessionRescheduled({
+        recipientEmail: info.clientEmail,
+        recipientName: info.clientName,
+        serviceName: info.serviceName,
+        oldDate: result.oldDate,
+        newDate: result.updated.scheduledAt,
+        requestedByName: user.fullName,
+        reason: body.reason,
+      });
+    }
+  }
+
+  return { data: { session: result.updated } };
 });

@@ -11,6 +11,7 @@ import {
 import { withAuth, withIdempotency } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
+import { notifySessionBooked } from "@/lib/email/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,7 @@ export const POST = withIdempotency(async ({ req, user }) => {
     const [svc] = await tx
       .select({
         id: services.id,
+        name: services.name,
         priceNairaPerSession: services.priceNairaPerSession,
         active: services.active,
       })
@@ -118,12 +120,22 @@ export const POST = withIdempotency(async ({ req, user }) => {
     });
     await tx.insert(trainingSessions).values(placeholders);
 
-    return booking;
+    return { booking, serviceName: svc.name, sessionCount, totalAmountNaira };
+  });
+
+  // Email notification — fire-and-forget
+  notifySessionBooked({
+    clientEmail: user.email,
+    clientName: user.fullName,
+    serviceName: result.serviceName,
+    sessionCount: result.sessionCount,
+    startDate: body.startDate,
+    totalAmountNaira: result.totalAmountNaira,
   });
 
   return {
     data: {
-      booking: result,
+      booking: result.booking,
     },
     status: 201,
   };

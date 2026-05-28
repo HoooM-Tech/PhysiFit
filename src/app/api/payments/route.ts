@@ -5,6 +5,7 @@ import { payments, bookings, users, authSessions, eventParqSubmissions } from "@
 import { withAuth, withRoute, readSessionToken, hashToken } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
+import { notifyPaymentConfirmed } from "@/lib/email/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ export const POST = withRoute(async ({ req }) => {
 
   // 1. Resolve user session if available
   const token = readSessionToken(req);
-  let sessionUser: { id: string; email: string } | null = null;
+  let sessionUser: { id: string; email: string; fullName: string } | null = null;
   if (token) {
     try {
       const tokenHash = hashToken(token);
@@ -62,7 +63,14 @@ export const POST = withRoute(async ({ req }) => {
         .where(eq(authSessions.tokenHash, tokenHash))
         .limit(1);
       if (row) {
-        sessionUser = { id: row.userId, email: row.userEmail };
+        sessionUser = { id: row.userId, email: row.userEmail, fullName: "" };
+        // Fetch fullName for the notification
+        const [u] = await db
+          .select({ fullName: users.fullName })
+          .from(users)
+          .where(eq(users.id, row.userId))
+          .limit(1);
+        if (u) sessionUser.fullName = u.fullName;
       }
     } catch (err) {
       // ignore and treat as guest
@@ -125,12 +133,22 @@ export const POST = withRoute(async ({ req }) => {
           .where(eq(bookings.id, booking.id));
       }
 
+      // Email notification — fire-and-forget
+      notifyPaymentConfirmed({
+        userEmail: sessionUser!.email,
+        userName: sessionUser!.fullName,
+        amountNaira,
+        providerRef: body.providerRef,
+      });
+
       return { data: { payment }, status: 201 } as const;
     }
 
     // B. Event Payment Flow (Guests allowed!)
+    let payName = "Event Guest";
     if (sessionUser) {
       targetUserId = sessionUser.id;
+      payName = sessionUser.fullName;
     } else {
       // Unauthenticated / Guest payment: require billing email
       if (!body.email) {
@@ -153,6 +171,7 @@ export const POST = withRoute(async ({ req }) => {
         .limit(1);
 
       const guestName = parq?.fullName || "Event Guest";
+      payName = guestName;
 
       if (existingUser) {
         targetUserId = existingUser.id;
@@ -192,6 +211,17 @@ export const POST = withRoute(async ({ req }) => {
         status: paymentStatus,
       })
       .returning();
+
+    // Email notification for event payment — fire-and-forget
+    const payEmail = sessionUser?.email || body.email || "";
+    if (payEmail) {
+      notifyPaymentConfirmed({
+        userEmail: payEmail,
+        userName: payName,
+        amountNaira,
+        providerRef: body.providerRef,
+      });
+    }
 
     return { data: { payment }, status: 201 } as const;
   });

@@ -5,6 +5,7 @@ import { fitnessPlans, users, fitnessPlanStatusEnum } from "@/db/schema";
 import { withAuth, withIdempotency } from "@/lib/api/handler";
 import { parseJsonBody, parseSearchParams } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
+import { notifyFitnessPlanAssigned } from "@/lib/email/notify";
 
 const exerciseSchema = z.object({
   name: z.string().min(1).max(100),
@@ -74,7 +75,12 @@ export const POST = withIdempotency(
     const body = await parseJsonBody(req, createSchema);
 
     const [client] = await db
-      .select({ id: users.id, role: users.role })
+      .select({
+        id: users.id,
+        role: users.role,
+        email: users.email,
+        fullName: users.fullName,
+      })
       .from(users)
       .where(eq(users.id, body.clientId))
       .limit(1);
@@ -92,6 +98,14 @@ export const POST = withIdempotency(
         status: "active",
       })
       .returning();
+
+    notifyFitnessPlanAssigned({
+      clientEmail: client.email,
+      clientName: client.fullName,
+      trainerName: user.fullName,
+      exerciseCount: body.exercises.length,
+      notes: body.notes,
+    });
 
     return { data: { plan }, status: 201 };
   },

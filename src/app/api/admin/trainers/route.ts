@@ -5,6 +5,7 @@ import { users, trainerProfiles } from "@/db/schema";
 import { withAuth } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
+import { notifyTrainerApproved } from "@/lib/email/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,16 @@ export const PATCH = withAuth(
   async ({ req }) => {
     const body = await parseJsonBody(req, approvalSchema);
 
+    const [trainer] = await db
+      .select({ email: users.email, fullName: users.fullName })
+      .from(users)
+      .where(eq(users.id, body.trainerId))
+      .limit(1);
+
+    if (!trainer) {
+      throw new ApiError("NOT_FOUND", "Trainer user not found");
+    }
+
     // Update approvedAt in trainer profile
     const [updated] = await db
       .update(trainerProfiles)
@@ -62,6 +73,11 @@ export const PATCH = withAuth(
     if (!updated) {
       throw new ApiError("NOT_FOUND", "Trainer profile not found");
     }
+
+    notifyTrainerApproved({
+      email: trainer.email,
+      fullName: trainer.fullName,
+    });
 
     return { data: { profile: updated } };
   },

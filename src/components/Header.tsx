@@ -17,21 +17,21 @@ export default function Header() {
     pathname.includes('/payment') ||
     pathname.includes('/reserve')
 
-  // Close mobile menu when pathname changes
   useEffect(() => {
     setIsMobileMenuOpen(false)
   }, [pathname])
 
-  // Hide header when logged in or in admin
   if (isLoggedIn) {
     return null
   }
 
+  const navLinkClass =
+    "relative text-gray-700 hover:text-primary-darker transition font-medium text-sm uppercase tracking-[0.18em] after:content-[''] after:absolute after:left-0 after:-bottom-1.5 after:h-[2px] after:w-0 after:bg-accent hover:after:w-full after:transition-all after:duration-300"
+
   return (
     <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center focus:outline-none">
+        <Link href="/" className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">
           <Image
             src="/images/logo.png"
             alt="PhysiFit NG Logo"
@@ -42,47 +42,41 @@ export default function Header() {
           />
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <div className="hidden md:flex items-center gap-8">
-          <Link href="/" className="text-gray-600 hover:text-gray-900 transition font-medium">
-            Home
-          </Link>
-          <Link href="/event" className="text-gray-600 hover:text-gray-900 transition font-medium">
-            Event
-          </Link>
-          <Link href="/#services" className="text-gray-600 hover:text-gray-900 transition font-medium">
-            Services
-          </Link>
-          <Link href="/#how-it-works" className="text-gray-600 hover:text-gray-900 transition font-medium">
-            How It Works
-          </Link>
-          <Link href="/#faq" className="text-gray-600 hover:text-gray-900 transition font-medium">
-            FAQ
-          </Link>
-          <Link href="/trainer-portal" className="text-accent hover:text-accent-dark transition font-semibold">
+        <div className="hidden md:flex items-center gap-9">
+          <Link href="/" className={navLinkClass}>Home</Link>
+          <Link href="/event" className={navLinkClass}>Event</Link>
+          <Link href="/#services" className={navLinkClass}>Services</Link>
+          <Link href="/#how-it-works" className={navLinkClass}>How It Works</Link>
+          <Link href="/#faq" className={navLinkClass}>FAQ</Link>
+          <Link
+            href="/trainer-portal"
+            className="text-accent hover:text-accent-dark transition font-semibold text-sm uppercase tracking-[0.18em]"
+          >
             Trainer Portal
           </Link>
         </div>
 
-        {/* Desktop Buttons & Hamburger Trigger */}
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-4">
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 transition font-medium">
+          <div className="hidden md:flex items-center gap-5">
+            <Link
+              href="/login"
+              className="text-gray-700 hover:text-primary-darker transition font-medium text-sm uppercase tracking-[0.18em]"
+            >
               Login
             </Link>
             <Link
               href="/signup"
-              className="bg-accent hover:bg-accent-dark text-primary-dark px-6 py-2 rounded-full transition font-semibold shadow-sm"
+              className="bg-accent hover:bg-accent-dark text-primary-darker px-6 py-2.5 rounded-md transition font-bold uppercase tracking-wider text-sm shadow-sm"
             >
               Get Started
             </Link>
           </div>
 
-          {/* Hamburger Menu Toggle (Mobile only) */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition focus:outline-none"
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             aria-label="Toggle Navigation Menu"
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? (
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -97,38 +91,26 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* Mobile Drawer (Collapsible) */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-lg z-50">
-          <div className="px-6 py-4 flex flex-col gap-4 bg-gray-50 border-t border-gray-100">
-            <Link href="/" className="text-gray-700 hover:text-gray-900 py-2 border-b border-gray-100 font-medium transition">
-              Home
-            </Link>
-            <Link href="/event" className="text-gray-700 hover:text-gray-900 py-2 border-b border-gray-100 font-medium transition">
-              Event
-            </Link>
-            <Link href="/#services" className="text-gray-700 hover:text-gray-900 py-2 border-b border-gray-100 font-medium transition">
-              Services
-            </Link>
-            <Link href="/#how-it-works" className="text-gray-700 hover:text-gray-900 py-2 border-b border-gray-100 font-medium transition">
-              How It Works
-            </Link>
-            <Link href="/#faq" className="text-gray-700 hover:text-gray-900 py-2 border-b border-gray-100 font-medium transition">
-              FAQ
-            </Link>
-            <Link href="/trainer-portal" className="text-accent hover:text-accent-dark py-2 border-b border-gray-100 font-semibold transition">
-              Trainer Portal
-            </Link>
-            <div className="flex flex-col gap-3 pt-2">
+        <div className="md:hidden absolute top-full left-0 w-full bg-primary-darker text-white shadow-lg z-50">
+          <div className="px-6 py-6 flex flex-col gap-1">
+            <Link href="/" className="py-3 border-b border-white/10 font-medium uppercase tracking-wider text-sm hover:text-accent transition">Home</Link>
+            <Link href="/event" className="py-3 border-b border-white/10 font-medium uppercase tracking-wider text-sm hover:text-accent transition">Event</Link>
+            <Link href="/#services" className="py-3 border-b border-white/10 font-medium uppercase tracking-wider text-sm hover:text-accent transition">Services</Link>
+            <Link href="/#how-it-works" className="py-3 border-b border-white/10 font-medium uppercase tracking-wider text-sm hover:text-accent transition">How It Works</Link>
+            <Link href="/#faq" className="py-3 border-b border-white/10 font-medium uppercase tracking-wider text-sm hover:text-accent transition">FAQ</Link>
+            <Link href="/trainer-portal" className="py-3 border-b border-white/10 text-accent font-semibold uppercase tracking-wider text-sm transition">Trainer Portal</Link>
+
+            <div className="flex flex-col gap-3 pt-5">
               <Link
                 href="/login"
-                className="w-full text-center border border-gray-300 text-gray-700 py-2.5 rounded-full font-semibold hover:bg-gray-100 transition"
+                className="w-full text-center border border-white/40 text-white py-3 rounded-md font-bold uppercase tracking-wider text-sm hover:bg-white/10 transition"
               >
                 Login
               </Link>
               <Link
                 href="/signup"
-                className="w-full text-center bg-accent hover:bg-accent-dark text-primary-dark py-2.5 rounded-full font-semibold shadow-sm transition"
+                className="w-full text-center bg-accent hover:bg-accent-dark text-primary-darker py-3 rounded-md font-bold uppercase tracking-wider text-sm transition"
               >
                 Get Started
               </Link>
@@ -139,4 +121,3 @@ export default function Header() {
     </header>
   )
 }
-

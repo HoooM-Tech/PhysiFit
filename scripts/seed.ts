@@ -94,7 +94,11 @@ async function seedEvent() {
     .where(eq(events.name, name))
     .limit(1);
   if (existing) {
-    console.log(`✓ Event already exists: ${name}`);
+    await db
+      .update(events)
+      .set({ priceNaira: 50000 })
+      .where(eq(events.id, existing.id));
+    console.log(`✓ Event updated to 50000: ${name}`);
     return;
   }
   await db.insert(events).values({
@@ -105,8 +109,8 @@ async function seedEvent() {
     endTime: "10:00:00",
     venueRevealedOnRegister: true,
     venueAddress: "Venue revealed via email after registration",
-    capacity: 200,
-    priceNaira: 25000,
+    capacity: 50,
+    priceNaira: 50000,
   });
   console.log(`✓ Created event: ${name}`);
 }

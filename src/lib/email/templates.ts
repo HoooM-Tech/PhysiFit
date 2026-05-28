@@ -90,10 +90,10 @@ export function adminNewRegistrationEmail(fullName: string, email: string, role:
   return baseTemplate("New Registration", `
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">New ${role} registered</h2>
     ${infoBlock([
-      ["Name", fullName],
-      ["Email", email],
-      ["Role", role.charAt(0).toUpperCase() + role.slice(1)],
-    ])}
+    ["Name", fullName],
+    ["Email", email],
+    ["Role", role.charAt(0).toUpperCase() + role.slice(1)],
+  ])}
     ${ctaButton("View in Admin Dashboard", `${APP_URL()}/admin`)}
   `);
 }
@@ -118,11 +118,11 @@ export function bookingConfirmationEmail(
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">Booking Confirmed! ✅</h2>
     <p>Hi ${clientName}, your sessions have been booked successfully.</p>
     ${infoBlock([
-      ["Program", serviceName],
-      ["Sessions", `${sessionCount} session${sessionCount > 1 ? "s" : ""}`],
-      ["Start Date", startDate],
-      ["Total Amount", `₦${totalAmountNaira.toLocaleString()}`],
-    ])}
+    ["Program", serviceName],
+    ["Sessions", `${sessionCount} session${sessionCount > 1 ? "s" : ""}`],
+    ["Start Date", startDate],
+    ["Total Amount", `₦${totalAmountNaira.toLocaleString()}`],
+  ])}
     <p style="font-size:13px;color:#64748b;">Your trainer will be assigned shortly by our admin team.</p>
     ${ctaButton("View Dashboard", `${APP_URL()}/dashboard`)}
   `);
@@ -138,12 +138,12 @@ export function adminBookingEmail(
   return baseTemplate("New Booking Received", `
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">New Booking 📋</h2>
     ${infoBlock([
-      ["Client", clientName],
-      ["Email", clientEmail],
-      ["Program", serviceName],
-      ["Sessions", `${sessionCount}`],
-      ["Amount", `₦${totalAmountNaira.toLocaleString()}`],
-    ])}
+    ["Client", clientName],
+    ["Email", clientEmail],
+    ["Program", serviceName],
+    ["Sessions", `${sessionCount}`],
+    ["Amount", `₦${totalAmountNaira.toLocaleString()}`],
+  ])}
     ${ctaButton("Manage in Admin", `${APP_URL()}/admin`)}
   `);
 }
@@ -157,9 +157,9 @@ export function paymentConfirmedEmail(
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">Payment Received ✅</h2>
     <p>Hi ${name}, your payment has been confirmed.</p>
     ${infoBlock([
-      ["Amount", `₦${amountNaira.toLocaleString()}`],
-      ["Reference", providerRef],
-    ])}
+    ["Amount", `₦${amountNaira.toLocaleString()}`],
+    ["Reference", providerRef],
+  ])}
     ${ctaButton("View Dashboard", `${APP_URL()}/dashboard`)}
   `);
 }
@@ -172,10 +172,10 @@ export function adminPaymentEmail(
   return baseTemplate("Payment Received", `
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">Payment Received 💰</h2>
     ${infoBlock([
-      ["Client", clientName],
-      ["Amount", `₦${amountNaira.toLocaleString()}`],
-      ["Reference", providerRef],
-    ])}
+    ["Client", clientName],
+    ["Amount", `₦${amountNaira.toLocaleString()}`],
+    ["Reference", providerRef],
+  ])}
     ${ctaButton("View in Admin", `${APP_URL()}/admin`)}
   `);
 }
@@ -190,10 +190,10 @@ export function sessionCompletedEmail(
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">Session Completed ✅</h2>
     <p>Hi ${clientName}, your session has been verified and completed.</p>
     ${infoBlock([
-      ["Trainer", trainerName],
-      ["Program", serviceName],
-      ["Date", date],
-    ])}
+    ["Trainer", trainerName],
+    ["Program", serviceName],
+    ["Date", date],
+  ])}
     <p>Great work! Keep it up 💪</p>
     ${ctaButton("View Progress", `${APP_URL()}/dashboard`)}
   `);
@@ -210,11 +210,11 @@ export function sessionCancelledClientEmail(
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">Session Cancelled</h2>
     <p>Hi ${clientName}, your upcoming session has been cancelled by your trainer.</p>
     ${infoBlock([
-      ["Trainer", trainerName],
-      ["Program", serviceName],
-      ["Scheduled Date", date],
-      ...(reason ? [["Reason", reason] as [string, string]] : []),
-    ])}
+    ["Trainer", trainerName],
+    ["Program", serviceName],
+    ["Scheduled Date", date],
+    ...(reason ? [["Reason", reason] as [string, string]] : []),
+  ])}
     <p style="font-size:13px;color:#64748b;">Your session will be rescheduled. If you have any questions, please contact your trainer via the messaging feature.</p>
     ${ctaButton("View Dashboard", `${APP_URL()}/dashboard`)}
   `);
@@ -230,12 +230,12 @@ export function adminSessionCancelledEmail(
   return baseTemplate("Session Cancelled by Trainer", `
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">Session Cancelled ⚠️</h2>
     ${infoBlock([
-      ["Trainer", trainerName],
-      ["Client", clientName],
-      ["Program", serviceName],
-      ["Date", date],
-      ...(reason ? [["Reason", reason] as [string, string]] : []),
-    ])}
+    ["Trainer", trainerName],
+    ["Client", clientName],
+    ["Program", serviceName],
+    ["Date", date],
+    ...(reason ? [["Reason", reason] as [string, string]] : []),
+  ])}
     ${ctaButton("Manage Sessions", `${APP_URL()}/admin`)}
   `);
 }
@@ -252,12 +252,12 @@ export function sessionRescheduledEmail(
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">Session Rescheduled 📅</h2>
     <p>Hi ${recipientName}, a session has been rescheduled.</p>
     ${infoBlock([
-      ["Program", serviceName],
-      ["Previous Date", `<span style="text-decoration:line-through;color:#94a3b8;">${oldDate}</span>`],
-      ["New Date", `<strong style="color:#16a34a;">${newDate}</strong>`],
-      ["Rescheduled By", requestedBy],
-      ...(reason ? [["Reason", reason] as [string, string]] : []),
-    ])}
+    ["Program", serviceName],
+    ["Previous Date", `<span style="text-decoration:line-through;color:#94a3b8;">${oldDate}</span>`],
+    ["New Date", `<strong style="color:#16a34a;">${newDate}</strong>`],
+    ["Rescheduled By", requestedBy],
+    ...(reason ? [["Reason", reason] as [string, string]] : []),
+  ])}
     ${ctaButton("View Schedule", `${APP_URL()}/dashboard`)}
   `);
 }
@@ -285,10 +285,10 @@ export function fitnessPlanAssignedEmail(
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">New Fitness Plan Assigned 📋</h2>
     <p>Hi ${clientName}, your trainer <strong>${trainerName}</strong> has created a personalized fitness plan for you.</p>
     ${infoBlock([
-      ["Trainer", trainerName],
-      ["Exercises", `${exerciseCount} exercise${exerciseCount > 1 ? "s" : ""}`],
-      ...(notes ? [["Notes", notes.slice(0, 200)] as [string, string]] : []),
-    ])}
+    ["Trainer", trainerName],
+    ["Exercises", `${exerciseCount} exercise${exerciseCount > 1 ? "s" : ""}`],
+    ...(notes ? [["Notes", notes.slice(0, 200)] as [string, string]] : []),
+  ])}
     ${ctaButton("View Plan", `${APP_URL()}/dashboard`)}
   `);
 }
@@ -302,9 +302,9 @@ export function fitnessPlanUpdatedEmail(
     <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">Your Fitness Plan Was Updated ✏️</h2>
     <p>Hi ${clientName}, your trainer <strong>${trainerName}</strong> has updated your fitness plan.</p>
     ${infoBlock([
-      ["Trainer", trainerName],
-      ["Exercises", `${exerciseCount} exercise${exerciseCount > 1 ? "s" : ""}`],
-    ])}
+    ["Trainer", trainerName],
+    ["Exercises", `${exerciseCount} exercise${exerciseCount > 1 ? "s" : ""}`],
+  ])}
     <p style="font-size:13px;color:#64748b;">Check your updated plan to see the latest exercises and notes.</p>
     ${ctaButton("View Plan", `${APP_URL()}/dashboard`)}
   `);
@@ -318,12 +318,12 @@ export function trainerDailyDigestEmail(
 ): string {
   const sessionRows = todaySessions.length > 0
     ? todaySessions.map(s =>
-        `<tr>
+      `<tr>
           <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;">${s.time}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:600;">${s.clientName}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#64748b;">${s.service}</td>
         </tr>`
-      ).join("")
+    ).join("")
     : `<tr><td colspan="3" style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">No sessions scheduled today 🎉</td></tr>`;
 
   return baseTemplate("Your Daily Briefing", `
@@ -358,3 +358,41 @@ export function trainerDailyDigestEmail(
     ${ctaButton("Open Trainer Portal", `${APP_URL()}/trainer-portal`)}
   `);
 }
+
+export function eventConfirmationEmail(): string {
+  return baseTemplate("Event Confirmation & Access Details", `
+    <p>Dear Participant,</p>
+    <p>Congratulations on successfully registering for the <strong>Move Safer, Live Stronger</strong> Fitness & Wellness Event by Physifit Nigeria!</p>
+    <p>We are excited to welcome you to this special wellness experience.</p>
+    
+    <p>Please find your event details below:</p>
+    
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:${BRAND_LIGHT_BG};border-radius:10px;padding:16px;margin:16px 0;">
+      <tr>
+        <td style="padding:6px 0;font-size:13px;color:#64748b;width:100px;vertical-align:top;">📅 Event:</td>
+        <td style="padding:6px 0;font-size:14px;color:${BRAND_DARK};font-weight:600;">Move Safer, Live Stronger</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:13px;color:#64748b;width:100px;vertical-align:top;">📅 Date:</td>
+        <td style="padding:6px 0;font-size:14px;color:${BRAND_DARK};font-weight:600;">Saturday, 27th June 2026</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:13px;color:#64748b;width:100px;vertical-align:top;">🕗 Time:</td>
+        <td style="padding:6px 0;font-size:14px;color:${BRAND_DARK};font-weight:600;">8:00 AM – 10:00 AM</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:13px;color:#64748b;width:100px;vertical-align:top;">📍 Venue:</td>
+        <td style="padding:6px 0;font-size:14px;color:${BRAND_DARK};font-weight:600;">
+          Preskon Hotel, Victoria Island (VI)<br/>
+          <a href="https://maps.app.goo.gl/kuruFYeEQwcwcHXu6?g_st=ic" style="color:${BRAND_BLUE};text-decoration:none;word-break:break-all;">https://maps.app.goo.gl/kuruFYeEQwcwcHXu6?g_st=ic</a>
+        </td>
+      </tr>
+    </table>
+    
+    <p>This message serves as your event access confirmation. Kindly present it at the venue upon arrival.</p>
+    <p>We look forward to having you join us for an engaging and enriching experience.</p>
+    
+    <p style="margin-top:24px;">Warm regards,<br/><strong>Physifit Nigeria</strong></p>
+  `);
+}
+

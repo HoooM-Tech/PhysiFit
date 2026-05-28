@@ -2,374 +2,337 @@
 
 import Header from '@/components/Header'
 import Link from 'next/link'
- import Image from 'next/image'
+import Image from 'next/image'
+import HeroSlider, { type HeroSlide } from '@/components/HeroSlider'
+import SectionHeader from '@/components/SectionHeader'
+import Footer from '@/components/Footer'
+import CornerTriangle from '@/components/CornerTriangle'
+import DotPattern from '@/components/DotPattern'
+import CircleOrnament from '@/components/CircleOrnament'
+import Icon from '@/components/Icon'
+import ScrollReveal from '@/components/ScrollReveal'
+
+const heroSlides: HeroSlide[] = [
+  {
+    image: '/images/senior-fitness.jpg',
+    alt: 'Senior fitness training session',
+    eyebrow: 'WELCOME TO PHYSIFIT',
+    headline: 'Fitness designed for your journey',
+    accentWord: 'your',
+    body: 'PhysiFit NG offers personalized, structured training for seniors, postpartum women, and corporate teams — with dedicated trainers and full progress tracking.',
+    ctas: [
+      { label: 'Book a Session', href: '/book-session', variant: 'primary' },
+      { label: 'Create Account', href: '/signup', variant: 'outline' },
+    ],
+    tagline: 'Senior Fitness — strength, balance, independence',
+  },
+  {
+    image: '/images/Postpartum-fitness-1.jpg',
+    alt: 'Postpartum fitness training session',
+    eyebrow: 'WELCOME TO PHYSIFIT',
+    headline: 'Fitness designed for your journey',
+    accentWord: 'your',
+    body: 'PhysiFit NG offers personalized, structured training for seniors, postpartum women, and corporate teams — with dedicated trainers and full progress tracking.',
+    ctas: [
+      { label: 'Book a Session', href: '/book-session', variant: 'primary' },
+      { label: 'Create Account', href: '/signup', variant: 'outline' },
+    ],
+    tagline: 'Postpartum Recovery — safe, evidence-based',
+  },
+  {
+    image: '/images/cooperate-wellness.jpg',
+    alt: 'Corporate wellness team training',
+    eyebrow: 'WELCOME TO PHYSIFIT',
+    headline: 'Fitness designed for your journey',
+    accentWord: 'your',
+    body: 'PhysiFit NG offers personalized, structured training for seniors, postpartum women, and corporate teams — with dedicated trainers and full progress tracking.',
+    ctas: [
+      { label: 'Book a Session', href: '/book-session', variant: 'primary' },
+      { label: 'Create Account', href: '/signup', variant: 'outline' },
+    ],
+    tagline: 'Corporate Wellness — energize your team',
+  },
+]
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
+      <main id="main">
+        <HeroSlider slides={heroSlides} />
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <div>
-          <div className="mb-6 inline-block bg-accent bg-opacity-10 text-accent px-4 py-2 rounded-full text-sm font-semibold">
-            • Specialized Fitness Platform
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Fitness designed for <span className="text-primary-dark">your</span> journey
-          </h1>
-          <p className="text-gray-600 text-lg mb-8">
-            PhysiFit NG offers personalized, structured training for seniors, postpartum women, and corporate teams — with dedicated trainers and full progress tracking.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/book-session"
-              className="bg-primary-dark hover:bg-primary-darker text-white px-8 py-3 rounded-full font-semibold transition text-center"
-            >
-              Book a Session
-            </Link>
-            <Link
-              href="/signup"
-              className="border-2 border-gray-300 hover:border-gray-400 text-gray-900 px-8 py-3 rounded-full font-semibold transition text-center"
-            >
-              Create Account
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="flex flex-wrap gap-6 sm:gap-12 mt-16">
+        {/* Stats band */}
+        <section className="bg-primary-darker text-white py-10 border-y border-white/5">
+          <div className="max-w-7xl mx-auto px-6 grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-4xl font-bold">500+</p>
-              <p className="text-gray-600">Active Clients</p>
+              <p className="font-display text-4xl sm:text-5xl text-accent">500+</p>
+              <p className="text-gray-300 text-xs sm:text-sm uppercase tracking-[0.2em] mt-2">Active Clients</p>
+            </div>
+            <div className="border-x border-white/10">
+              <p className="font-display text-4xl sm:text-5xl text-accent">98%</p>
+              <p className="text-gray-300 text-xs sm:text-sm uppercase tracking-[0.2em] mt-2">Satisfaction Rate</p>
             </div>
             <div>
-              <p className="text-4xl font-bold">98%</p>
-              <p className="text-gray-600">Satisfaction Rate</p>
-            </div>
-            <div>
-              <p className="text-4xl font-bold">3</p>
-              <p className="text-gray-600">Specializations</p>
+              <p className="font-display text-4xl sm:text-5xl text-accent">3</p>
+              <p className="text-gray-300 text-xs sm:text-sm uppercase tracking-[0.2em] mt-2">Specializations</p>
             </div>
           </div>
-        </div>
+        </section>
 
-         {/* Hero Image */}
-        <div className="relative rounded-2xl overflow-hidden h-72 sm:h-96 md:h-[28rem] lg:h-[32rem]">
-          <Image
-            src="/images/hero-section-1.jpg"
-            alt="Fitness class in progress"
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
-      </section>
+        {/* Services Section */}
+        <section id="services" className="relative bg-gray-50 py-24 overflow-hidden">
+          <DotPattern className="absolute top-10 right-10 w-40 h-40 text-accent/40" />
+          <div className="max-w-7xl mx-auto px-6">
+            <ScrollReveal className="text-center flex flex-col items-center mb-14">
+              <SectionHeader
+                eyebrow="OUR SERVICES"
+                headline={
+                  <>
+                    Fitness for every <span className="italic text-accent">life stage</span>
+                  </>
+                }
+                subhead="Specialized programs built around your unique needs, delivered by certified trainers who understand your body and goals."
+                align="center"
+              />
+            </ScrollReveal>
 
-      {/* Services Section */}
-      <section id="services" className="bg-gray-50 py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <p className="text-accent font-semibold mb-2">OUR SERVICES</p>
-            <h2 className="text-5xl font-bold mb-4">
-              Fitness for every <span className="italic text-accent">life stage</span>
+            <ScrollReveal variant="stagger" className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  image: '/images/senior-fitness.jpg',
+                  alt: 'Senior fitness class',
+                  title: 'Senior Fitness',
+                  body: 'Low-impact, mobility-focused programs designed specifically for older adults to maintain strength, balance, and independence.',
+                },
+                {
+                  image: '/images/Postpartum-fitness-1.jpg',
+                  alt: 'Postpartum fitness class',
+                  title: 'Postpartum Fitness',
+                  body: 'Safe, evidence-based recovery programs helping new mothers regain strength, core stability, and overall wellbeing.',
+                },
+                {
+                  image: '/images/cooperate-wellness.jpg',
+                  alt: 'Corporate wellness class',
+                  title: 'Corporate Wellness',
+                  body: 'Group wellness programs for teams — improving productivity, reducing burnout, and building a healthier workplace culture.',
+                },
+              ].map((svc) => (
+                <article
+                  key={svc.title}
+                  className="group bg-white overflow-hidden border border-gray-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="relative h-56 w-full overflow-hidden">
+                    <Image
+                      src={svc.image}
+                      alt={svc.alt}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                    <CornerTriangle corner="tr" size={48} className="z-10" />
+                  </div>
+                  <div className="p-8">
+                    <h3 className="font-display text-3xl uppercase tracking-condensed text-primary-darker mb-3">{svc.title}</h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">{svc.body}</p>
+                    <Link
+                      href="/book-session"
+                      className="inline-flex items-center gap-2 text-primary-darker hover:text-accent font-bold uppercase tracking-wider text-sm group/link"
+                    >
+                      Explore Program
+                      <Icon name="arrowRight" size={18} className="transition-transform group-hover/link:translate-x-1" />
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* How It Works Section */}
+        <section id="how-it-works" className="relative bg-primary-darker text-white py-24 overflow-hidden">
+          <DotPattern className="absolute top-16 left-10 w-48 h-48 text-accent/20" />
+          <DotPattern className="absolute bottom-16 right-10 w-32 h-32 text-accent/20" />
+          <CornerTriangle corner="tl" size={48} color="bg-accent" />
+
+          <div className="relative max-w-7xl mx-auto px-6">
+            <ScrollReveal className="mb-16">
+              <SectionHeader
+                eyebrow="PROCESS"
+                headline="How PhysiFit NG works"
+                subhead="From sign-up to your first session in four simple steps."
+                tone="dark"
+              />
+            </ScrollReveal>
+
+            <ScrollReveal variant="stagger" className="grid grid-cols-1 md:grid-cols-4 gap-10">
+              {[
+                { n: '1', title: 'Create Account', body: 'Register with your basic info and complete a short health questionnaire so we understand your needs.' },
+                { n: '2', title: 'Book Sessions', body: 'Choose your service, session type, preferred dates, and the number of sessions you need.' },
+                { n: '3', title: 'Trainer Assigned', body: "A certified trainer is matched and assigned to you within 24–48 hours. You'll get a push notification as soon as they're matched to your profile." },
+                { n: '4', title: 'Train & Progress', body: 'Complete your assessment, follow your personalized plan, and track every session in your dashboard.' },
+              ].map((step) => (
+                <div key={step.n} className="relative">
+                  <div className="flex items-center gap-4 mb-5">
+                    <span className="font-display text-6xl text-accent leading-none">{step.n}</span>
+                    <span className="h-[2px] flex-1 bg-accent/30" />
+                  </div>
+                  <h3 className="font-display text-2xl uppercase tracking-wide mb-3">{step.title}</h3>
+                  <p className="text-gray-300 leading-relaxed text-[15px]">{step.body}</p>
+                </div>
+              ))}
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="bg-white py-24">
+          <div className="max-w-7xl mx-auto px-6">
+            <ScrollReveal className="mb-14">
+              <SectionHeader
+                eyebrow="TESTIMONIALS"
+                headline="What our clients say"
+                subhead="Real stories from people who've transformed their health with PhysiFit NG."
+              />
+            </ScrollReveal>
+
+            <ScrollReveal variant="stagger" className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  quote: "I've enjoyed excellent service so far. The trainer is professional and knows his beans. 100% recommend.",
+                  name: 'Pamilerinayo Ige.',
+                  role: 'Postpartum Client · Lagos',
+                  initials: 'PI',
+                },
+                {
+                  quote: 'A well equipped fitness center, attention to details and result driven coach.',
+                  name: 'Falaye Oluwamayowa',
+                  role: 'Senior Fitness Client · Abuja',
+                  initials: 'FO',
+                },
+                {
+                  quote: 'You need that snatched waist and summer body or general body fitness? This is the right plug. The trainers are so relatable and they will help you achieve your body goals.',
+                  name: 'Ngozi B., HR Director',
+                  role: 'Corporate Wellness · Port Harcourt',
+                  initials: 'NB',
+                },
+              ].map((t) => (
+                <div
+                  key={t.name}
+                  className="relative bg-white border border-gray-200 p-8 hover:shadow-xl transition"
+                >
+                  <Icon name="quote" size={40} className="text-accent mb-4" />
+                  <div className="flex gap-1 mb-4" aria-label="5 out of 5 stars">
+                    {[...Array(5)].map((_, i) => (
+                      <span key={i} aria-hidden="true" className="text-orange-400">★</span>
+                    ))}
+                  </div>
+                  <p className="text-gray-700 mb-6 italic leading-relaxed">"{t.quote}"</p>
+                  <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
+                    <div className="w-12 h-12 bg-accent text-primary-darker font-display text-xl flex items-center justify-center">
+                      {t.initials}
+                    </div>
+                    <div>
+                      <p className="font-bold text-primary-darker">{t.name}</p>
+                      <p className="text-gray-500 text-sm">{t.role}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section id="faq" className="bg-gray-50 py-24">
+          <div className="max-w-4xl mx-auto px-6">
+            <ScrollReveal className="text-center flex flex-col items-center mb-14">
+              <SectionHeader
+                eyebrow="FAQ"
+                headline="Common questions"
+                subhead="Everything you need to know before getting started."
+                align="center"
+              />
+            </ScrollReveal>
+
+            <div className="space-y-3">
+              {[
+                {
+                  q: 'What happens during the first session?',
+                  a: 'Your first session is always a Physical Assessment Session. Your trainer will evaluate your fitness level, take measurements, and discuss your health history before creating your personalized plan.',
+                },
+                {
+                  q: 'Can I reschedule a session?',
+                  a: "Yes, you may reschedule a session, but must give at least 24 hours' notice before the scheduled time.",
+                },
+                {
+                  q: 'How are trainers assigned?',
+                  a: "Our matching algorithm considers your fitness goals, availability, and trainer specialization to ensure you're paired with the best trainer for your needs.",
+                },
+                {
+                  q: 'Are group sessions available?',
+                  a: 'Yes, group sessions are available for certain programs at reduced rates. Train with others and share the cost.',
+                },
+                {
+                  q: 'How do I communicate with my trainer?',
+                  a: 'All communication with your trainer must happen within the PhysiFit NG platform. No external contact is permitted.',
+                },
+              ].map((item) => (
+                <details key={item.q} className="group border-b border-gray-300 py-5 cursor-pointer">
+                  <summary className="flex justify-between items-center gap-4 list-none">
+                    <span className="font-display text-lg sm:text-xl uppercase tracking-wide text-primary-darker pr-4">
+                      {item.q}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="flex-shrink-0 w-9 h-9 border-2 border-primary-darker text-primary-darker group-open:bg-accent group-open:border-accent group-open:text-primary-darker flex items-center justify-center transition"
+                    >
+                      <span className="group-open:hidden text-xl leading-none">+</span>
+                      <span className="hidden group-open:inline text-xl leading-none">−</span>
+                    </span>
+                  </summary>
+                  <p className="text-gray-600 mt-4 leading-relaxed pr-12">{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="relative bg-gradient-to-r from-primary-dark to-primary-darker text-white py-20 overflow-hidden">
+          <CornerTriangle corner="tl" size={48} color="bg-accent" />
+          <CornerTriangle corner="br" size={48} color="bg-accent" />
+          <DotPattern className="absolute top-10 right-10 w-32 h-32 text-accent/30" />
+          <ScrollReveal variant="zoom-in" className="relative max-w-4xl mx-auto px-6 text-center">
+            <h2 className="font-display text-4xl sm:text-5xl md:text-6xl uppercase tracking-condensed leading-[0.95] mb-6">
+              Ready to begin your <span className="text-accent">fitness journey?</span>
             </h2>
-            <p className="text-gray-600 text-lg">
-              Specialized programs built around your unique needs, delivered by certified trainers who understand your body and goals.
+            <p className="text-lg sm:text-xl mb-10 text-gray-200 max-w-2xl mx-auto leading-relaxed">
+              Join hundreds of Nigerians who've transformed their health with structured, expert-led fitness programs.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Senior Fitness */}
-            <div className="bg-white rounded-xl overflow-hidden hover:shadow-lg transition">
-              <div className="relative h-48 w-full">
-                 <Image
-                  src="/images/senior-fitness.jpg"
-                  alt="Senior fitness class"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-              <div className="p-8">
-                <h3 className="text-2xl font-bold mb-4">Senior Fitness</h3>
-                <p className="text-gray-600 mb-6">
-                  Low-impact, mobility-focused programs designed specifically for older adults to maintain strength, balance, and independence.
-                </p>
-                <Link href="/book-session" className="text-primary-dark hover:text-primary-darker font-semibold">
-                  Explore Program →
-                </Link>
-              </div>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link
+                href="/book-session"
+                className="bg-accent text-primary-darker hover:bg-accent-dark px-10 py-4 rounded-md font-bold uppercase tracking-wider text-sm transition text-center w-full sm:w-auto"
+              >
+                Book a Session
+              </Link>
+              <Link
+                href="/signup"
+                className="border-2 border-white text-white hover:bg-white hover:text-primary-darker px-10 py-4 rounded-md font-bold uppercase tracking-wider text-sm transition text-center w-full sm:w-auto"
+              >
+                Create Free Account
+              </Link>
             </div>
-
-            {/* Postpartum Fitness */}
-            <div className="bg-white rounded-xl overflow-hidden hover:shadow-lg transition">
-              <div className="relative h-48 w-full">
-                <Image
-                  src="/images/postpartum-fitness-1.jpg"
-                  alt="postpartum fitness class"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-              <div className="p-8">
-                <h3 className="text-2xl font-bold mb-4">Postpartum Fitness</h3>
-                <p className="text-gray-600 mb-6">
-                  Safe, evidence-based recovery programs helping new mothers regain strength, core stability, and overall wellbeing.
-                </p>
-                <Link href="/book-session" className="text-primary-dark hover:text-primary-darker font-semibold">
-                  Explore Program →
-                </Link>
-              </div>
-            </div>
-
-            {/* Corporate Wellness */}
-            <div className="bg-white rounded-xl overflow-hidden hover:shadow-lg transition">
-              <div className="relative h-48 w-full">
-                <Image
-                  src="/images/cooperate-wellness.jpg"
-                  alt="Corporate wellness class"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-              <div className="p-8">
-                <h3 className="text-2xl font-bold mb-4">Corporate Wellness</h3>
-                <p className="text-gray-600 mb-6">
-                  Group wellness programs for teams — improving productivity, reducing burnout, and building a healthier workplace culture.
-                </p>
-                <Link href="/book-session" className="text-primary-dark hover:text-primary-darker font-semibold">
-                  Explore Program →
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section id="how-it-works" className="bg-primary-dark text-white py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="mb-16">
-            <p className="text-accent font-semibold mb-2">PROCESS</p>
-            <h2 className="text-5xl font-bold">How PhysiFit NG works</h2>
-            <p className="text-gray-400 mt-4">From sign-up to your first session in four simple steps.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="bg-accent w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 text-primary-dark">
-                1
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Create Account</h3>
-              <p className="text-gray-400">
-                Register with your basic info and complete a short health questionnaire so we understand your needs.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="bg-accent w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 text-primary-dark">
-                2
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Book Sessions</h3>
-              <p className="text-gray-400">
-                Choose your service, session type, preferred dates, and the number of sessions you need.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="bg-accent w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 text-primary-dark">
-                3
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Trainer Assigned</h3>
-              <p className="text-gray-400">
-                A certified trainer is matched and assigned to you within 24–48 hours. You'll get a push notification as soon as they're matched to your profile.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="bg-accent w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 text-primary-dark">
-                4
-              </div>
-              <h3 className="text-2xl font-bold mb-3">Train & Progress</h3>
-              <p className="text-gray-400">
-                Complete your assessment, follow your personalized plan, and track every session in your dashboard.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="bg-white py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="mb-16">
-            <p className="text-accent font-semibold mb-2">TESTIMONIALS</p>
-            <h2 className="text-5xl font-bold">What our clients say</h2>
-            <p className="text-gray-600 text-lg mt-4">
-              Real stories from people who've transformed their health with PhysiFit NG.
+            <p className="text-gray-300 mt-8 text-sm flex flex-wrap justify-center items-center gap-x-6 gap-y-2">
+              <span className="inline-flex items-center gap-2"><Icon name="check" size={16} className="text-accent" /> No hidden fees</span>
+              <span className="inline-flex items-center gap-2"><Icon name="check" size={16} className="text-accent" /> Certified trainers</span>
+              <span className="inline-flex items-center gap-2"><Icon name="check" size={16} className="text-accent" /> Cancel anytime</span>
             </p>
-          </div>
+          </ScrollReveal>
+        </section>
+      </main>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
-            <div className="bg-white border border-gray-200 rounded-xl p-8">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-orange-400">★</span>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 italic">
-                "I've enjoyed excellent service so far. The trainer is professional and knows his beans. 100% recommend."
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-400 rounded-full"></div>
-                <div>
-                  <p className="font-bold">Pamilerinayo Ige.</p>
-                  <p className="text-gray-600 text-sm">Postpartum Client · Lagos</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 2 */}
-            <div className="bg-white border border-gray-200 rounded-xl p-8">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-orange-400">★</span>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 italic">
-                "A well equipped fitness center, attention to details and result driven coach."
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-yellow-400 rounded-full"></div>
-                <div>
-                  <p className="font-bold">Falaye Oluwamayowa</p>
-                  <p className="text-gray-600 text-sm">Senior Fitness Client · Abuja</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 3 */}
-            <div className="bg-white border border-gray-200 rounded-xl p-8">
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-orange-400">★</span>
-                ))}
-              </div>
-              <p className="text-gray-600 mb-6 italic">
-                "You need that snatched waist and summer body or general body fitness? This is the right plug. The trainers are so relatable and they will help you achieve your body goals."
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-600 rounded-full"></div>
-                <div>
-                  <p className="font-bold">Ngozi B., HR Director</p>
-                  <p className="text-gray-600 text-sm">Corporate Wellness · Port Harcourt</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section id="faq" className="bg-gray-50 py-20">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <p className="text-accent font-semibold mb-2">FAQ</p>
-            <h2 className="text-5xl font-bold">Common questions</h2>
-            <p className="text-gray-600 text-lg mt-4">
-              Everything you need to know before getting started.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <details className="border border-gray-200 rounded-lg p-6 cursor-pointer group">
-              <summary className="flex justify-between items-center font-bold text-lg">
-                What happens during the first session?
-                <span className="group-open:rotate-180 transition-transform">+</span>
-              </summary>
-              <p className="text-gray-600 mt-4">
-                Your first session is always a Physical Assessment Session. Your trainer will evaluate your fitness level, take measurements, and discuss your health history before creating your personalized plan.
-              </p>
-            </details>
-
-            <details className="border border-gray-200 rounded-lg p-6 cursor-pointer group">
-              <summary className="flex justify-between items-center font-bold text-lg">
-                Can I reschedule a session?
-                <span className="group-open:rotate-180 transition-transform">+</span>
-              </summary>
-              <p className="text-gray-600 mt-4">
-                Yes, you may reschedule a session, but must give at least 24 hours' notice before the scheduled time.
-              </p>
-            </details>
-
-            <details className="border border-gray-200 rounded-lg p-6 cursor-pointer group">
-              <summary className="flex justify-between items-center font-bold text-lg">
-                How are trainers assigned?
-                <span className="group-open:rotate-180 transition-transform">+</span>
-              </summary>
-              <p className="text-gray-600 mt-4">
-                Our matching algorithm considers your fitness goals, availability, and trainer specialization to ensure you're paired with the best trainer for your needs.
-              </p>
-            </details>
-
-            <details className="border border-gray-200 rounded-lg p-6 cursor-pointer group">
-              <summary className="flex justify-between items-center font-bold text-lg">
-                Are group sessions available?
-                <span className="group-open:rotate-180 transition-transform">+</span>
-              </summary>
-              <p className="text-gray-600 mt-4">
-                Yes, group sessions are available for certain programs at reduced rates. Train with others and share the cost.
-              </p>
-            </details>
-
-            <details className="border border-gray-200 rounded-lg p-6 cursor-pointer group">
-              <summary className="flex justify-between items-center font-bold text-lg">
-                How do I communicate with my trainer?
-                <span className="group-open:rotate-180 transition-transform">+</span>
-              </summary>
-              <p className="text-gray-600 mt-4">
-                All communication with your trainer must happen within the PhysiFit NG platform. No external contact is permitted.
-              </p>
-            </details>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-primary-dark to-primary-darker text-white py-20">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-5xl font-bold mb-6">Ready to begin your fitness journey?</h2>
-          <p className="text-xl mb-8 text-gray-200">
-            Join hundreds of Nigerians who've transformed their health with structured, expert-led fitness programs.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              href="/book-session"
-              className="bg-accent text-primary-dark hover:bg-accent-dark px-8 py-3 rounded-full font-semibold transition text-center w-full sm:w-auto"
-            >
-              Book a Session
-            </Link>
-            <Link
-              href="/signup"
-              className="border-2 border-white text-white hover:bg-primary-dark px-8 py-3 rounded-full font-semibold transition text-center w-full sm:w-auto"
-            >
-              Create Free Account
-            </Link>
-          </div>
-          <p className="text-gray-300 mt-6 text-sm">
-            ✓ No hidden fees &nbsp;&nbsp; ✓ Certified trainers &nbsp;&nbsp; ✓ Cancel anytime
-          </p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-primary-dark text-gray-400 py-12">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <p>© 2026 PhysiFit · <a href="https://physifit.co" className="hover:text-white transition">physifit.co</a> · All rights reserved · Built for Nigerian wellness</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

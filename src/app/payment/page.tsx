@@ -70,8 +70,31 @@ function PaymentPageContent() {
             setEmail(userJson.data.user.email)
             setHasSessionEmail(true)
           }
-        } else if (userRes.status === 401 && bookingId) {
-          setError('Authentication required. Please log in first to complete your payment.')
+        } else {
+          // If not logged in, prefill from query parameter
+          const paramEmail = searchParams.get('email')
+          if (paramEmail) {
+            setEmail(paramEmail)
+          }
+          if (bookingId) {
+            setError('Authentication required. Please log in first to complete your payment.')
+          }
+        }
+
+        // 3. If NOT a booking, it's an event payment!
+        if (!bookingId) {
+          const res = await fetch('/api/events')
+          if (res.ok) {
+            const json = await res.json()
+            const eventsList = json.data?.events
+            if (eventsList && eventsList.length > 0) {
+              const event = eventsList[0]
+              const basePrice = event.priceNaira || 50000
+              const attendeesCount = parseInt(searchParams.get('attendees') || '1', 10)
+              setAmountNaira(basePrice * attendeesCount)
+              setDescription(`${event.name} - ${attendeesCount} Spot${attendeesCount > 1 ? 's' : ''} Reservation`)
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching details:', err)
@@ -81,7 +104,7 @@ function PaymentPageContent() {
     }
 
     fetchDetails()
-  }, [bookingId])
+  }, [bookingId, searchParams])
 
   const handlePaySecurely = () => {
     if (!hasSessionEmail && bookingId) {
@@ -117,6 +140,7 @@ function PaymentPageContent() {
               provider: 'paystack' as const,
               providerRef: response.reference,
               email: email || undefined,
+              amountNaira: amountNaira,
             }
 
             const apiRes = await fetch('/api/payments', {

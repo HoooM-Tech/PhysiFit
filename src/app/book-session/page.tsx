@@ -175,18 +175,31 @@ export default function BookSession() {
       <Header />
       <Script src="https://js.paystack.co/v2/inline.js" strategy="afterInteractive" />
 
+      {/* Back bar */}
+      <div className="bg-primary-darker text-white">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-gray-300 hover:text-accent transition uppercase tracking-[0.18em] text-xs font-semibold"
+          >
+            ← Back to Dashboard
+          </Link>
+        </div>
+      </div>
+
       {/* Page Header */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition flex items-center gap-1 font-semibold">
-          ← Back to Dashboard
-        </Link>
-        <h1 className="text-4xl font-bold my-4 text-primary-dark">Book a Session</h1>
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        <div className="inline-flex items-center gap-3 mb-4">
+          <span aria-hidden="true" className="h-[2px] w-10 bg-accent" />
+          <span className="text-accent text-xs font-bold tracking-[0.25em] uppercase">BOOKING</span>
+        </div>
+        <h1 className="font-display text-5xl sm:text-6xl uppercase tracking-condensed leading-none text-primary-darker mb-3">Book a Session</h1>
         <p className="text-gray-600">Select your service and configure your training plan.</p>
       </div>
 
       {loading ? (
         <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-          <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
+          <div className="animate-spin inline-block w-8 h-8 border-4 border-primary-darker border-t-transparent rounded-full mb-4"></div>
           <p className="text-gray-600">Retrieving PhysiFit programs...</p>
         </div>
       ) : (
@@ -203,22 +216,22 @@ export default function BookSession() {
             <div className="max-w-4xl mx-auto px-6 py-4">
               {/* Service Selection */}
               <div className="mb-12">
-                <h2 className="text-xl font-bold mb-6 text-gray-800 pb-2 border-b">1. CHOOSE YOUR SERVICE</h2>
+                <h2 className="font-display text-2xl uppercase tracking-wide mb-6 text-primary-darker pb-2 border-b border-gray-200">1. Choose Your Service</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {services.map((service) => (
                     <div
                       key={service.id}
                       onClick={() => setSelectedService(service)}
-                      className={`p-6 rounded-xl border-2 cursor-pointer transition ${
+                      className={`p-6 rounded-md border-2 cursor-pointer transition ${
                         selectedService?.id === service.id
-                          ? 'border-blue-600 bg-blue-50/50 shadow-sm'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-primary-darker bg-accent/10 shadow-sm'
+                          : 'border-gray-200 hover:border-primary-darker/40'
                       }`}
                     >
                       <div className="text-4xl mb-4">
                         {getServiceIcon(service.name)}
                       </div>
-                      <h3 className="font-bold text-lg mb-2 text-primary-dark">{service.name}</h3>
+                      <h3 className="font-display text-xl uppercase tracking-wide mb-2 text-primary-darker">{service.name}</h3>
                       <p className="text-gray-600 text-sm">{service.description}</p>
                     </div>
                   ))}
@@ -227,28 +240,28 @@ export default function BookSession() {
 
               {/* Session Type */}
               <div className="mb-12">
-                <h2 className="text-xl font-bold mb-6 text-gray-800 pb-2 border-b">2. SESSION TYPE</h2>
+                <h2 className="font-display text-2xl uppercase tracking-wide mb-6 text-primary-darker pb-2 border-b border-gray-200">2. Session Type</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div
                     onClick={() => setSessionType('one_on_one')}
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition ${
+                    className={`p-6 rounded-md border-2 cursor-pointer transition ${
                       sessionType === 'one_on_one'
-                        ? 'border-blue-600 bg-blue-50/50 shadow-sm'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-primary-darker bg-accent/10 shadow-sm'
+                        : 'border-gray-200 hover:border-primary-darker/40'
                     }`}
                   >
-                    <h3 className="font-bold text-lg mb-2 text-primary-dark">One-on-One</h3>
+                    <h3 className="font-display text-xl uppercase tracking-wide mb-2 text-primary-darker">One-on-One</h3>
                     <p className="text-gray-600 text-sm">Personal, focused training with your dedicated trainer</p>
                   </div>
                   <div
                     onClick={() => setSessionType('group')}
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition ${
+                    className={`p-6 rounded-md border-2 cursor-pointer transition ${
                       sessionType === 'group'
-                        ? 'border-blue-600 bg-blue-50/50 shadow-sm'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-primary-darker bg-accent/10 shadow-sm'
+                        : 'border-gray-200 hover:border-primary-darker/40'
                     }`}
                   >
-                    <h3 className="font-bold text-lg mb-2 text-primary-dark">Group Session</h3>
+                    <h3 className="font-display text-xl uppercase tracking-wide mb-2 text-primary-darker">Group Session</h3>
                     <p className="text-gray-600 text-sm">Train with others — cost shared among participants</p>
                   </div>
                 </div>
@@ -261,7 +274,7 @@ export default function BookSession() {
                   <select
                     value={sessionsCount}
                     onChange={(e) => setSessionsCount(Number(e.target.value) as any)}
-                    className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full border border-gray-300 rounded-md p-3 bg-white focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                   >
                     {[4, 6, 8, 12].map((num) => (
                       <option key={num} value={num}>
@@ -277,7 +290,7 @@ export default function BookSession() {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full border border-gray-300 rounded-md p-3 bg-white focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                   />
                 </div>
               </div>
@@ -287,7 +300,7 @@ export default function BookSession() {
                 <select
                   value={timeSlot}
                   onChange={(e) => setTimeSlot(e.target.value as any)}
-                  className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full border border-gray-300 rounded-md p-3 bg-white focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                 >
                   <option value="morning">Morning (6:00 AM – 9:00 AM)</option>
                   <option value="midday">Midday (12:00 PM – 2:00 PM)</option>
@@ -297,8 +310,8 @@ export default function BookSession() {
               </div>
 
               {/* Session Summary */}
-              <div className="bg-gray-50 rounded-2xl p-8 mb-12 border border-gray-200">
-                <h3 className="text-xl font-bold mb-6 text-gray-800">Session Summary</h3>
+              <div className="bg-gray-50 rounded-md p-8 mb-12 border border-gray-200">
+                <h3 className="font-display text-2xl uppercase tracking-wide mb-6 text-primary-darker">Session Summary</h3>
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Service</span>
@@ -314,17 +327,17 @@ export default function BookSession() {
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Per session</span>
-                    <span className="font-bold text-blue-600">₦{pricePerSession.toLocaleString()}</span>
+                    <span className="font-bold text-accent">₦{pricePerSession.toLocaleString()}</span>
                   </div>
                   <div className="border-t pt-4 flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
-                    <span className="text-blue-600">₦{totalPrice.toLocaleString()}</span>
+                    <span className="text-accent">₦{totalPrice.toLocaleString()}</span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setStep('terms')}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-full font-bold transition shadow-md hover:shadow"
+                  className="w-full bg-primary-darker hover:bg-primary-dark text-white py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition shadow-md"
                 >
                   Continue to Terms →
                 </button>
@@ -335,10 +348,14 @@ export default function BookSession() {
           {step === 'terms' && (
             <div className="max-w-4xl mx-auto px-6 py-4">
               <div className="mb-12">
-                <h2 className="text-2xl font-bold mb-2 text-primary-dark">TERMS & CONDITIONS</h2>
+                <div className="inline-flex items-center gap-3 mb-4">
+                  <span aria-hidden="true" className="h-[2px] w-10 bg-accent" />
+                  <span className="text-accent text-xs font-bold tracking-[0.25em] uppercase">FINAL STEP</span>
+                </div>
+                <h2 className="font-display text-4xl uppercase tracking-condensed mb-2 text-primary-darker leading-none">Terms & Conditions</h2>
                 <p className="text-gray-600 mb-8">Please read carefully before proceeding</p>
 
-                <div className="bg-gray-50 rounded-2xl p-8 mb-8 space-y-4 border border-gray-200">
+                <div className="bg-gray-50 rounded-md p-8 mb-8 space-y-4 border border-gray-200">
                   <div>
                     <h3 className="font-bold text-gray-900 mb-2">• Session Policy:</h3>
                     <p className="text-gray-600">
@@ -393,16 +410,16 @@ export default function BookSession() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={() => setStep('service')}
-                    className="border-2 border-gray-300 hover:border-gray-400 text-gray-900 py-3 rounded-full font-bold transition"
+                    className="border-2 border-gray-300 hover:border-primary-darker text-primary-darker py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
                   >
                     ← Back
                   </button>
                   <button
                     disabled={!termsAgreed}
                     onClick={handleProceedToPayment}
-                    className={`py-3 rounded-full font-bold transition shadow-md ${
+                    className={`py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition shadow-md ${
                       termsAgreed
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow'
+                        ? 'bg-primary-darker hover:bg-primary-dark text-white hover:shadow'
                         : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                     }`}
                   >
@@ -415,8 +432,8 @@ export default function BookSession() {
 
           {step === 'payment_loading' && (
             <div className="max-w-2xl mx-auto px-6 py-20 text-center">
-              <div className="animate-spin inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mb-6"></div>
-              <h2 className="text-2xl font-bold mb-2">Connecting to Secure Payment...</h2>
+              <div className="animate-spin inline-block w-12 h-12 border-4 border-primary-darker border-t-transparent rounded-full mb-6"></div>
+              <h2 className="font-display text-3xl uppercase tracking-condensed text-primary-darker mb-3">Connecting to Secure Payment...</h2>
               <p className="text-gray-600">Please complete the payment in the secure Paystack popup overlay.</p>
             </div>
           )}
@@ -429,11 +446,11 @@ export default function BookSession() {
                 </div>
               </div>
 
-              <h2 className="text-4xl font-bold mb-4 text-primary-dark">Booking Confirmed!</h2>
+              <h2 className="font-display text-5xl uppercase tracking-condensed leading-none mb-5 text-primary-darker">Booking Confirmed!</h2>
               <p className="text-gray-600 mb-2">Your payment of <strong>₦{totalPrice.toLocaleString()}</strong> has been initiated securely.</p>
               <p className="text-gray-600 mb-12">{sessionsCount} {selectedService?.name} sessions have been booked.</p>
 
-              <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-12 text-left rounded shadow-sm">
+              <div className="bg-accent/10 border-l-4 border-accent p-4 mb-12 text-left rounded shadow-sm">
                 <p className="flex items-start gap-3">
                   <span className="text-2xl">🔔</span>
                   <span className="text-gray-700">
@@ -444,7 +461,7 @@ export default function BookSession() {
 
               <Link
                 href="/dashboard"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-bold transition inline-block shadow-md hover:shadow-lg"
+                className="bg-primary-darker hover:bg-primary-dark text-white px-10 py-4 rounded-md font-bold uppercase tracking-wider text-sm transition inline-block shadow-md"
               >
                 Go to Dashboard →
               </Link>

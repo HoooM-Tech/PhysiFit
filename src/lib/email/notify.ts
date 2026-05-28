@@ -364,3 +364,17 @@ export function notifyTrainerDailyDigest(data: {
     });
   });
 }
+
+/**
+ * Event registration confirmed → email to participant
+ */
+export function notifyEventRegistrationConfirmed(email: string): void {
+  fireAndForget(async () => {
+    await sendEmail({
+      to: email,
+      subject: "Move Safer, Live Stronger Event Confirmation & Access Details",
+      html: tpl.eventConfirmationEmail(),
+    });
+  });
+}
+

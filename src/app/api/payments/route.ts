@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, asc, gte } from "drizzle-orm";
 import { db } from "@/db/client";
-import { payments, bookings, users, authSessions, eventParqSubmissions } from "@/db/schema";
+import { payments, bookings, users, authSessions, eventParqSubmissions, eventRegistrations, events } from "@/db/schema";
 import { withAuth, withRoute, readSessionToken, hashToken } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
-import { notifyPaymentConfirmed } from "@/lib/email/notify";
+import { notifyPaymentConfirmed, notifyEventRegistrationConfirmed } from "@/lib/email/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +42,7 @@ const createPaymentSchema = z.object({
   provider: z.enum(["paystack", "flutterwave", "manual"]),
   providerRef: z.string().min(1).max(200),
   email: z.string().email().optional(),
+  amountNaira: z.number().int().positive().optional(),
 });
 
 export const POST = withRoute(async ({ req }) => {
@@ -199,7 +200,7 @@ export const POST = withRoute(async ({ req }) => {
     const isDev = process.env.NODE_ENV === "development";
     const paymentStatus = isDev ? "confirmed" : "pending";
 
-    amountNaira = 50000; // Default event spot price
+    amountNaira = body.amountNaira || 50000; // Use passed amount or fallback
     const [payment] = await tx
       .insert(payments)
       .values({
@@ -212,9 +213,77 @@ export const POST = withRoute(async ({ req }) => {
       })
       .returning();
 
-    // Email notification for event payment — fire-and-forget
+    // If payment is instantly confirmed (dev mode), register the user for the event and send the event confirmation email
     const payEmail = sessionUser?.email || body.email || "";
-    if (payEmail) {
+    if (paymentStatus === "confirmed" && payEmail) {
+      // Find the event ID. First check eventParqSubmissions for this user's email.
+      const [parq] = await tx
+        .select({ eventId: eventParqSubmissions.eventId })
+        .from(eventParqSubmissions)
+        .where(eq(eventParqSubmissions.email, payEmail))
+        .orderBy(desc(eventParqSubmissions.createdAt))
+        .limit(1);
+
+      let eventId = parq?.eventId;
+
+      if (!eventId) {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const [upcomingEvent] = await tx
+          .select({ id: events.id })
+          .from(events)
+          .where(gte(events.eventDate, todayStr))
+          .orderBy(asc(events.eventDate))
+          .limit(1);
+        
+        eventId = upcomingEvent?.id;
+      }
+
+      if (!eventId) {
+        const [anyEvent] = await tx
+          .select({ id: events.id })
+          .from(events)
+          .limit(1);
+        eventId = anyEvent?.id;
+      }
+
+      if (eventId) {
+        // Check if already registered
+        const [existingReg] = await tx
+          .select()
+          .from(eventRegistrations)
+          .where(and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.userId, targetUserId)))
+          .limit(1);
+
+        let regId = existingReg?.id;
+        if (!existingReg) {
+          const [newReg] = await tx
+            .insert(eventRegistrations)
+            .values({
+              eventId,
+              userId: targetUserId,
+              paymentId: payment.id,
+              accessPassSentAt: new Date(),
+            })
+            .returning({ id: eventRegistrations.id });
+          regId = newReg.id;
+        } else if (!existingReg.paymentId) {
+          await tx
+            .update(eventRegistrations)
+            .set({ paymentId: payment.id, accessPassSentAt: new Date() })
+            .where(eq(eventRegistrations.id, existingReg.id));
+        }
+
+        // Link payment to the event registration
+        await tx
+          .update(payments)
+          .set({ eventRegistrationId: regId })
+          .where(eq(payments.id, payment.id));
+      }
+
+      // Email notification for event confirmation — fire-and-forget
+      notifyEventRegistrationConfirmed(payEmail);
+    } else if (payEmail) {
+      // Normal payment confirmation notification (payment pending)
       notifyPaymentConfirmed({
         userEmail: payEmail,
         userName: payName,

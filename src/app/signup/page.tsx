@@ -5,6 +5,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Footer from '@/components/Footer'
+import DotPattern from '@/components/DotPattern'
+import CornerTriangle from '@/components/CornerTriangle'
 
 type Role = 'client' | 'trainer'
 type Specialization = 'senior_fitness' | 'postpartum' | 'corporate_wellness'
@@ -137,39 +140,48 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 min-h-[calc(100vh-80px)]">
+      <div className="grid grid-cols-1 md:grid-cols-2 flex-1">
         {/* Left Side - Branding */}
-        <div className="hidden md:flex bg-gradient-to-br from-blue-600 to-blue-800 text-white p-12 flex-col justify-center">
-          <h2 className="text-4xl font-bold mb-8">
-            "The journey of a thousand miles begins with a single step — and the right support."
-          </h2>
-          <p className="text-blue-200">— PhysiFit NG Philosophy</p>
+        <div className="relative hidden md:flex bg-gradient-to-br from-primary-dark to-primary-darker text-white p-12 flex-col justify-center overflow-hidden">
+          <CornerTriangle corner="tr" size={56} color="bg-accent" />
+          <CornerTriangle corner="bl" size={40} color="bg-accent" />
+          <DotPattern className="absolute bottom-10 right-10 w-44 h-44 text-accent/30" />
+          <div className="relative max-w-md">
+            <div className="inline-flex items-center gap-3 mb-6">
+              <span aria-hidden="true" className="h-[2px] w-10 bg-accent" />
+              <span className="text-accent text-xs font-bold tracking-[0.25em] uppercase">Join PhysiFit</span>
+            </div>
+            <h2 className="font-display text-4xl sm:text-5xl uppercase tracking-condensed leading-[0.95] mb-8">
+              "The journey of a thousand miles begins with a single step — and the <span className="text-accent">right support.</span>"
+            </h2>
+            <p className="text-gray-300 text-sm uppercase tracking-wider">— PhysiFit NG Philosophy</p>
+          </div>
         </div>
 
         {/* Right Side - Form */}
         <div className="p-6 sm:p-10 md:p-12 flex flex-col justify-center max-w-md mx-auto w-full">
           {step === 'role' && (
             <>
-              <div className="mb-2 inline-block">
-                <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
-                <span className="text-gray-600 text-sm">Step 1 of 4 — Choose your account type</span>
+              <div className="mb-3 inline-flex items-center">
+                <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
+                <span className="text-gray-600 text-xs uppercase tracking-[0.2em] font-semibold">Step 1 of 4 — Choose your account type</span>
               </div>
 
-              <h1 className="text-4xl font-bold mb-2">Join PhysiFit NG</h1>
+              <h1 className="font-display text-5xl uppercase tracking-condensed leading-none text-primary-darker mb-3">Join PhysiFit NG</h1>
               <p className="text-gray-600 mb-8">Tell us how you'll be using the platform.</p>
 
               <div className="space-y-4">
                 <button
                   type="button"
                   onClick={() => pickRole('client')}
-                  className="w-full text-left border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 rounded-lg p-6 transition group"
+                  className="w-full text-left border-2 border-gray-300 hover:border-primary-darker hover:bg-accent/5 rounded-md p-6 transition group"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-bold text-lg">I'm a Client</h3>
-                    <span className="text-blue-600 opacity-0 group-hover:opacity-100 transition">→</span>
+                    <h3 className="font-display text-xl uppercase tracking-wide text-primary-darker">I'm a Client</h3>
+                    <span className="text-accent opacity-0 group-hover:opacity-100 transition">→</span>
                   </div>
                   <p className="text-sm text-gray-600">
                     Book sessions, message trainers, and track your health progress.
@@ -179,11 +191,11 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={() => pickRole('trainer')}
-                  className="w-full text-left border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 rounded-lg p-6 transition group"
+                  className="w-full text-left border-2 border-gray-300 hover:border-primary-darker hover:bg-accent/5 rounded-md p-6 transition group"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-bold text-lg">I'm a Trainer</h3>
-                    <span className="text-blue-600 opacity-0 group-hover:opacity-100 transition">→</span>
+                    <h3 className="font-display text-xl uppercase tracking-wide text-primary-darker">I'm a Trainer</h3>
+                    <span className="text-accent opacity-0 group-hover:opacity-100 transition">→</span>
                   </div>
                   <p className="text-sm text-gray-600">
                     Manage assigned clients, run sessions, and message clients from the trainer portal.
@@ -193,7 +205,7 @@ export default function Signup() {
 
               <p className="text-sm text-gray-500 mt-8">
                 Already have an account?{' '}
-                <Link href="/login" className="text-blue-600 hover:underline font-semibold">
+                <Link href="/login" className="text-accent hover:text-accent-dark font-bold uppercase tracking-wider text-xs">
                   Sign in
                 </Link>
               </p>
@@ -202,24 +214,24 @@ export default function Signup() {
 
           {step === 'personal' && (
             <>
-              <div className="mb-2 inline-block">
-                <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
+              <div className="mb-3 inline-flex items-center">
+                <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
                 <span className="text-gray-600 text-sm">
                   Step {stepNumber.personal} of 4 — Personal Information
                 </span>
               </div>
 
-              <h1 className="text-4xl font-bold mb-2">Create your account</h1>
+              <h1 className="font-display text-5xl uppercase tracking-condensed leading-none text-primary-darker mb-3">Create your account</h1>
               <p className="text-gray-600 mb-8">
                 Signing up as{' '}
-                <span className="font-semibold text-blue-700">
+                <span className="font-semibold text-primary-darker">
                   {isTrainer ? 'a Trainer' : 'a Client'}
                 </span>
                 .{' '}
                 <button
                   type="button"
                   onClick={() => setStep('role')}
-                  className="text-blue-600 hover:underline"
+                  className="text-accent hover:text-accent-dark font-semibold"
                 >
                   Change
                 </button>
@@ -234,7 +246,7 @@ export default function Signup() {
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       placeholder="Amaka"
-                      className="w-full border border-gray-300 rounded-lg p-3"
+                      className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                     />
                   </div>
                   <div>
@@ -244,7 +256,7 @@ export default function Signup() {
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       placeholder="Okonkwo"
-                      className="w-full border border-gray-300 rounded-lg p-3"
+                      className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                     />
                   </div>
                 </div>
@@ -256,7 +268,7 @@ export default function Signup() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="amaka@email.com"
-                    className="w-full border border-gray-300 rounded-lg p-3"
+                    className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                   />
                 </div>
 
@@ -267,7 +279,7 @@ export default function Signup() {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+234 800 000 0000"
-                    className="w-full border border-gray-300 rounded-lg p-3"
+                    className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                   />
                 </div>
 
@@ -280,7 +292,7 @@ export default function Signup() {
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         placeholder="Create a strong password (min 8 characters)"
-                        className="w-full border border-gray-300 rounded-lg p-3 pr-12"
+                        className="w-full border border-gray-300 rounded-md p-3 pr-12 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                       />
                       <button
                         type="button"
@@ -313,7 +325,7 @@ export default function Signup() {
                         value={formData.confirmPassword}
                         onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                         placeholder="Re-enter your password"
-                        className="w-full border border-gray-300 rounded-lg p-3 pr-12"
+                        className="w-full border border-gray-300 rounded-md p-3 pr-12 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                       />
                       <button
                         type="button"
@@ -356,9 +368,9 @@ export default function Signup() {
                 <button
                   disabled={!canContinue}
                   onClick={() => setStep(isTrainer ? 'specialization' : 'health')}
-                  className={`w-full py-3 rounded-lg font-bold transition ${
+                  className={`w-full py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition ${
                     canContinue
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      ? 'bg-primary-darker hover:bg-primary-dark text-white'
                       : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                   }`}
                 >
@@ -370,18 +382,18 @@ export default function Signup() {
 
           {step === 'health' && (
             <>
-              <div className="mb-2 inline-block">
-                <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
+              <div className="mb-3 inline-flex items-center">
+                <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
                 <span className="text-gray-600 text-sm">
                   Step {stepNumber.health} of 4 — Required for safe training
                 </span>
               </div>
 
-              <h1 className="text-4xl font-bold mb-8">Health Information</h1>
+              <h1 className="font-display text-5xl uppercase tracking-condensed leading-none text-primary-darker mb-10">Health Information</h1>
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="font-bold text-blue-600 mb-4">PHYSICAL MEASUREMENTS</h3>
+                  <h3 className="font-bold text-accent mb-4 uppercase tracking-[0.2em] text-xs">PHYSICAL MEASUREMENTS</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block font-bold mb-2">Weight (kg)</label>
@@ -389,7 +401,7 @@ export default function Signup() {
                         type="number"
                         value={formData.weight}
                         onChange={(e) => setFormData({ ...formData, weight: parseInt(e.target.value) })}
-                        className="w-full border border-gray-300 rounded-lg p-3"
+                        className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                       />
                     </div>
                     <div>
@@ -398,7 +410,7 @@ export default function Signup() {
                         type="number"
                         value={formData.bmi}
                         onChange={(e) => setFormData({ ...formData, bmi: parseFloat(e.target.value) })}
-                        className="w-full border border-gray-300 rounded-lg p-3"
+                        className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                       />
                     </div>
                   </div>
@@ -408,19 +420,19 @@ export default function Signup() {
                       type="number"
                       value={formData.height}
                       onChange={(e) => setFormData({ ...formData, height: parseInt(e.target.value) })}
-                      className="w-full border border-gray-300 rounded-lg p-3"
+                      className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-blue-600 mb-4">HEALTH CONDITIONS</h3>
+                  <h3 className="font-bold text-accent mb-4 uppercase tracking-[0.2em] text-xs">HEALTH CONDITIONS</h3>
                   <div>
                     <label className="block font-bold mb-2">Do you experience dizziness or light-headedness?</label>
                     <select
                       value={formData.dizziness}
                       onChange={(e) => setFormData({ ...formData, dizziness: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg p-3"
+                      className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                     >
                       <option>No</option>
                       <option>Yes</option>
@@ -433,7 +445,7 @@ export default function Signup() {
                       value={formData.medicalConditions}
                       onChange={(e) => setFormData({ ...formData, medicalConditions: e.target.value })}
                       placeholder="e.g. hypertension, diabetes, joint issues — or 'None'"
-                      className="w-full border border-gray-300 rounded-lg p-3 h-24"
+                      className="w-full border border-gray-300 rounded-md p-3 h-24 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                     />
                   </div>
                 </div>
@@ -441,13 +453,13 @@ export default function Signup() {
                 <div className="flex gap-4">
                   <button
                     onClick={() => setStep('personal')}
-                    className="flex-1 border-2 border-gray-300 hover:border-gray-400 text-gray-900 py-3 rounded-lg font-bold transition"
+                    className="flex-1 border-2 border-gray-300 hover:border-primary-darker text-primary-darker py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
                   >
                     ← Back
                   </button>
                   <button
                     onClick={() => setStep('confirm')}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition"
+                    className="flex-1 bg-primary-darker hover:bg-primary-dark text-white py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
                   >
                     Continue →
                   </button>
@@ -458,14 +470,14 @@ export default function Signup() {
 
           {step === 'specialization' && (
             <>
-              <div className="mb-2 inline-block">
-                <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
+              <div className="mb-3 inline-flex items-center">
+                <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
                 <span className="text-gray-600 text-sm">
                   Step {stepNumber.specialization} of 4 — Your training focus
                 </span>
               </div>
 
-              <h1 className="text-4xl font-bold mb-2">Specialization</h1>
+              <h1 className="font-display text-5xl uppercase tracking-condensed leading-none text-primary-darker mb-3">Specialization</h1>
               <p className="text-gray-600 mb-8">
                 Pick the area you train in. Clients are matched to trainers by specialization.
               </p>
@@ -478,15 +490,15 @@ export default function Signup() {
                       key={opt.value}
                       type="button"
                       onClick={() => setFormData({ ...formData, specialization: opt.value })}
-                      className={`w-full text-left border-2 rounded-lg p-4 transition ${
+                      className={`w-full text-left border-2 rounded-md p-4 transition ${
                         selected
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-300 hover:border-blue-400'
+                          ? 'border-primary-darker bg-accent/10'
+                          : 'border-gray-300 hover:border-primary-darker'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-bold">{opt.label}</h3>
-                        {selected && <span className="text-blue-600 font-bold">✓</span>}
+                        <h3 className="font-display text-lg uppercase tracking-wide text-primary-darker">{opt.label}</h3>
+                        {selected && <span className="text-accent font-bold">✓</span>}
                       </div>
                       <p className="text-sm text-gray-600">{opt.description}</p>
                     </button>
@@ -504,9 +516,9 @@ export default function Signup() {
                 <button
                   disabled={!canPickSpecialization}
                   onClick={() => setStep('confirm')}
-                  className={`flex-1 py-3 rounded-lg font-bold transition ${
+                  className={`flex-1 py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition ${
                     canPickSpecialization
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      ? 'bg-primary-darker hover:bg-primary-dark text-white'
                       : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                   }`}
                 >
@@ -518,17 +530,17 @@ export default function Signup() {
 
           {step === 'confirm' && (
             <>
-              <div className="mb-2 inline-block">
-                <div className="w-2 h-1 bg-blue-600 inline-block mr-2"></div>
+              <div className="mb-3 inline-flex items-center">
+                <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
                 <span className="text-gray-600 text-sm">
                   Step {stepNumber.confirm} of 4 — Review & Confirm
                 </span>
               </div>
 
-              <h1 className="text-4xl font-bold mb-8">You're all set!</h1>
+              <h1 className="font-display text-5xl uppercase tracking-condensed leading-none text-primary-darker mb-10">You're all set!</h1>
 
-              <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8">
-                <h3 className="font-bold mb-6">Account Summary</h3>
+              <div className="bg-white border border-gray-200 rounded-md p-8 mb-8">
+                <h3 className="font-display text-lg uppercase tracking-wide text-primary-darker mb-6">Account Summary</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Account Type</span>
@@ -566,8 +578,8 @@ export default function Signup() {
               </div>
 
               {isTrainer && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-yellow-900">
+                <div className="bg-accent/10 border-l-4 border-accent rounded-md p-4 mb-6">
+                  <p className="text-sm text-primary-darker">
                     <strong>Heads up:</strong> Trainer accounts are reviewed by an admin before being
                     matched with clients. You'll be signed in immediately and can explore the trainer
                     portal while you wait for approval.
@@ -576,8 +588,8 @@ export default function Signup() {
               )}
 
               <div className="space-y-4 mb-8">
-                <div className="border border-gray-200 rounded-lg p-4 bg-blue-50">
-                  <h3 className="font-bold text-blue-900 mb-3">Terms & Conditions</h3>
+                <div className="border border-gray-200 rounded-md p-5 bg-gray-50">
+                  <h3 className="font-display text-lg uppercase tracking-wide text-primary-darker mb-3">Terms & Conditions</h3>
                   <div className="max-h-64 overflow-y-auto text-sm text-gray-700 mb-4 space-y-3">
                     <p><strong>Session Cancellation & Rescheduling:</strong> Sessions must be cancelled or rescheduled at least 24 hours in advance. Cancellations made within 24 hours will be charged as a full session fee.</p>
                     <p><strong>Health & Safety:</strong> You agree to provide accurate health information. PhysiFit NG is not responsible for injuries resulting from undisclosed medical conditions or failure to follow trainer guidance.</p>
@@ -610,9 +622,9 @@ export default function Signup() {
               <button
                 disabled={!canCreateAccount || loading}
                 onClick={handleRegister}
-                className={`w-full py-3 rounded-lg font-bold transition mb-4 ${
+                className={`w-full py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition mb-4 ${
                   canCreateAccount && !loading
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    ? 'bg-primary-darker hover:bg-primary-dark text-white'
                     : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                 }`}
               >
@@ -621,7 +633,7 @@ export default function Signup() {
 
               <button
                 onClick={() => setStep(isTrainer ? 'specialization' : 'health')}
-                className="w-full border-2 border-gray-300 hover:border-gray-400 text-gray-900 py-3 rounded-lg font-bold transition"
+                className="w-full border-2 border-gray-300 hover:border-primary-darker text-primary-darker py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
               >
                 ← Back
               </button>
@@ -629,6 +641,8 @@ export default function Signup() {
           )}
         </div>
       </div>
+
+      <Footer />
     </div>
   )
 }

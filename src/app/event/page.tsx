@@ -3,395 +3,332 @@
 import Header from '@/components/Header'
 import Link from 'next/link'
 import Image from 'next/image'
+import SectionHeader from '@/components/SectionHeader'
+import Footer from '@/components/Footer'
+import CornerTriangle from '@/components/CornerTriangle'
+import DotPattern from '@/components/DotPattern'
+import CircleOrnament from '@/components/CircleOrnament'
+import Icon, { type IconName } from '@/components/Icon'
+import StationCard from '@/components/StationCard'
+import ScrollReveal from '@/components/ScrollReveal'
+
+const stations = [
+  {
+    image:
+      'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80',
+    alt: 'Senior practicing balance on a yoga mat',
+    title: 'Balance Training',
+    body: 'Gentle, guided exercises to improve postural stability and reduce fall risk through proven techniques.',
+    category: 'PHYSICAL' as const,
+  },
+  {
+    image:
+      'https://images.unsplash.com/photo-1606166325683-e6deb697d301?auto=format&fit=crop&w=1200&q=80',
+    alt: 'Senior engaged in a cognitive focus puzzle activity',
+    title: 'Cognitive Focus',
+    body: 'Mental agility games and exercises designed to sharpen focus, memory, and reaction time.',
+    category: 'MENTAL' as const,
+  },
+  {
+    image:
+      'https://images.unsplash.com/photo-1599447421416-3414500d18a5?auto=format&fit=crop&w=1200&q=80',
+    alt: 'Group practicing tai chi coordination outdoors',
+    title: 'Coordination Flow',
+    body: 'Rhythmic movement sequences that enhance hand-eye coordination and body awareness.',
+    category: 'PHYSICAL' as const,
+  },
+  {
+    image:
+      'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1200&q=80',
+    alt: 'Senior performing a mobility stretch on a yoga mat',
+    title: 'Mobility & Flexibility',
+    body: 'Gentle stretching and joint mobility work to maintain and improve range of motion.',
+    category: 'PHYSICAL' as const,
+  },
+  {
+    image:
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=80',
+    alt: 'Senior briskly walking for endurance training',
+    title: 'Endurance Building',
+    body: 'Low-impact cardiovascular activities that safely build stamina and energy levels.',
+    category: 'PHYSICAL' as const,
+  },
+  {
+    image:
+      'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=1200&q=80',
+    alt: 'Group of seniors laughing together after a fitness session',
+    title: 'Social Wellness',
+    body: 'Guided social activities that build community connections and emotional wellbeing.',
+    category: 'SOCIAL' as const,
+  },
+]
+
+const metaItems: { icon: IconName; label: string; value: string }[] = [
+  { icon: 'calendar', label: 'DATE', value: 'Saturday, June 27, 2026' },
+  { icon: 'clock', label: 'TIME', value: '8:00 AM – 10:00 AM' },
+  { icon: 'mapPin', label: 'VENUE', value: 'Details sent via email after registration' },
+  { icon: 'users', label: 'FOR', value: 'Older adults & senior wellness enthusiasts' },
+]
+
+const pillars = [
+  'Balance & Stability',
+  'Cognitive Focus',
+  'Coordination',
+  'Mobility',
+  'Endurance',
+  'Confidence',
+]
+
+const journey = [
+  {
+    title: 'Register Online',
+    body: 'Complete the simple registration form with your name, age, email, and phone. Takes under 2 minutes.',
+  },
+  {
+    title: 'Secure Your Spot',
+    body: 'Complete your payment through our secure gateway. Your registration is confirmed instantly.',
+  },
+  {
+    title: 'Receive Access Pass',
+    body: 'Your digital access card with venue details, event time, and unique ID is sent directly to your email.',
+  },
+  {
+    title: 'Experience the Day',
+    body: 'Arrive with confidence, explore all wellness stations, and connect with a vibrant community of active seniors.',
+  },
+]
 
 export default function EventPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-primary-dark to-primary-darker py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="inline-block bg-accent bg-opacity-20 text-accent px-4 py-2 rounded-full text-sm font-semibold mb-6">
-            • PHYSIFIT WELLNESS DAY 2026
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Move Safer,
-            <br />
-            <span className="text-accent">Live Stronger</span>
-          </h1>
-          <p className="text-gray-200 text-lg mb-8 max-w-2xl">
-            A transformative day wellness experience designed to help older adults improve balance, focus, coordination, mobility, endurance, and confidence in movement.
-          </p>
-          <div className="flex gap-4 flex-wrap">
-            <Link href="/register" className="bg-accent hover:bg-accent-dark text-primary-dark px-8 py-3 rounded-lg font-semibold transition flex items-center gap-2">
-              ✦ Register for the Event
-            </Link>
-            <Link
-              href="#event-details"
-              className="border-2 border-white hover:border-gray-200 text-white px-8 py-3 rounded-lg font-semibold transition"
-            >
-              Learn More
-            </Link>
-          </div>
+      <main id="main">
+        {/* Hero Section */}
+        <section className="relative bg-primary-darker py-24 overflow-hidden">
+          <Image
+            src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1600&q=80"
+            alt=""
+            fill
+            priority
+            className="object-cover opacity-30"
+            sizes="100vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-darker via-primary-darker/95 to-primary-darker/60" />
+          <DotPattern className="absolute top-12 right-12 w-44 h-44 text-accent/30" />
+          <CornerTriangle corner="tl" size={56} color="bg-accent" />
+          <CornerTriangle corner="br" size={56} color="bg-accent" />
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mt-16">
-            <div>
-              <p className="text-4xl font-bold text-accent">6+</p>
-              <p className="text-gray-300">Wellness Stations</p>
+          <div className="relative max-w-7xl mx-auto px-6">
+            <div className="inline-flex items-center gap-3 mb-7">
+              <span aria-hidden="true" className="h-[2px] w-10 bg-accent" />
+              <span className="text-accent text-xs font-bold tracking-[0.25em] uppercase">
+                PHYSIFIT WELLNESS DAY 2026
+              </span>
             </div>
-            <div>
-              <p className="text-4xl font-bold text-accent">1</p>
-              <p className="text-gray-300">Full Experience</p>
-            </div>
-            <div>
-              <p className="text-4xl font-bold text-accent">100%</p>
-              <p className="text-gray-300">Evidence-Based</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Event Details */}
-      <section id="event-details" className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-4xl font-bold text-primary-dark mb-8">Event Details</h2>
-
-            <div className="space-y-6">
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 text-3xl">📅</div>
-                <div>
-                  <h3 className="font-semibold text-primary-dark">DATE</h3>
-                  <p className="text-gray-600">Saturday, June 27, 2026</p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 text-3xl">🕐</div>
-                <div>
-                  <h3 className="font-semibold text-primary-dark">TIME</h3>
-                  <p className="text-gray-600">8:00 AM – 10:00 AM</p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 text-3xl">📍</div>
-                <div>
-                  <h3 className="font-semibold text-primary-dark">VENUE</h3>
-                  <p className="text-gray-600">Details sent via email after registration</p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 text-3xl">👥</div>
-                <div>
-                  <h3 className="font-semibold text-primary-dark">FOR</h3>
-                  <p className="text-gray-600">Older adults & senior wellness enthusiasts</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-primary-dark to-primary-darker rounded-lg p-8 text-white">
-            <h3 className="text-2xl font-bold mb-6">Reserve Your Spot</h3>
-            <Link
-              href="/reserve"
-              className="block w-full bg-accent hover:bg-accent-dark text-primary-dark py-4 px-6 rounded-md font-semibold transition mb-4 text-center shadow-md"
-            >
-              Reserve Your Spot →
-            </Link>
-            <p className="text-gray-300 text-sm">
-              Complete registration in just a few steps. Venue details and your access card will be sent to your email after payment.
+            <h1 className="font-display uppercase tracking-condensed leading-[0.92] text-white text-5xl sm:text-7xl md:text-[6rem] mb-7">
+              Move Safer,
+              <br />
+              <span className="text-accent">Live Stronger</span>
+            </h1>
+            <p className="text-gray-200 text-base sm:text-lg mb-9 max-w-2xl leading-relaxed">
+              A transformative day wellness experience designed to help older adults improve balance, focus, coordination, mobility, endurance, and confidence in movement.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Mission Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div>
-              <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-4">OUR MISSION</h3>
-              <h2 className="text-4xl font-bold text-primary-dark mb-6">
-                Healthy Aging Through Evidence-Based Movement
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Move Safer, Live Stronger brings together carefully curated, evidence-based activities that support healthy aging. Each station is designed to meet seniors where they are — building physical capability, mental sharpness, and social connection in a safe, welcoming environment.
-              </p>
+            <div className="flex gap-4 flex-wrap">
+              <Link
+                href="/register"
+                className="bg-accent hover:bg-accent-dark text-primary-darker px-8 py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition flex items-center gap-2"
+              >
+                <Icon name="sparkle" size={18} />
+                Register for the Event
+              </Link>
+              <Link
+                href="#event-details"
+                className="border-2 border-white hover:bg-white hover:text-primary-darker text-white px-8 py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
+              >
+                Learn More
+              </Link>
             </div>
 
-            <div className="bg-gradient-to-br from-primary-dark to-primary-darker rounded-lg p-8">
-              <div className="inline-block bg-accent text-primary-dark px-4 py-2 rounded-full text-sm font-semibold mb-6">
-                WELLNESS PILLARS
+            <div className="grid grid-cols-3 gap-6 sm:gap-12 mt-16 max-w-2xl">
+              <div>
+                <p className="font-display text-5xl text-accent leading-none">6+</p>
+                <p className="text-gray-300 text-xs sm:text-sm uppercase tracking-[0.2em] mt-2">Wellness Stations</p>
               </div>
-              <h3 className="text-3xl font-bold text-white mb-8">
-                Six Dimensions of Senior Wellness
+              <div>
+                <p className="font-display text-5xl text-accent leading-none">1</p>
+                <p className="text-gray-300 text-xs sm:text-sm uppercase tracking-[0.2em] mt-2">Full Experience</p>
+              </div>
+              <div>
+                <p className="font-display text-5xl text-accent leading-none">100%</p>
+                <p className="text-gray-300 text-xs sm:text-sm uppercase tracking-[0.2em] mt-2">Evidence-Based</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Event Details */}
+        <section id="event-details" className="py-20 bg-white">
+          <ScrollReveal className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+              <SectionHeader eyebrow="THE BASICS" headline="Event Details" />
+              <div className="space-y-5 mt-10">
+                {metaItems.map((item) => (
+                  <div key={item.label} className="flex gap-5 items-start">
+                    <div className="flex-shrink-0 w-14 h-14 border-2 border-accent text-accent flex items-center justify-center">
+                      <Icon name={item.icon} size={24} />
+                    </div>
+                    <div className="pt-1">
+                      <p className="text-xs font-bold tracking-[0.2em] uppercase text-accent mb-1">{item.label}</p>
+                      <p className="text-gray-700 text-lg">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative bg-primary-darker text-white p-10 overflow-hidden">
+              <CornerTriangle corner="br" size={48} color="bg-accent" />
+              <DotPattern className="absolute top-6 right-6 w-24 h-24 text-accent/30" />
+              <p className="text-accent text-xs font-bold tracking-[0.25em] uppercase mb-4">RESERVE YOUR SPOT</p>
+              <h3 className="font-display text-3xl sm:text-4xl uppercase tracking-condensed leading-tight mb-6">
+                Limited spaces.
+                <br />
+                <span className="text-accent">Reserve today.</span>
               </h3>
-              <p className="text-gray-200 mb-8">
-                Every activity station addresses one or more critical dimensions of healthy aging, proven effective through clinical research.
+              <Link
+                href="/reserve"
+                className="block w-full bg-accent hover:bg-accent-dark text-primary-darker py-4 px-6 rounded-md font-bold uppercase tracking-wider text-sm transition mb-5 text-center"
+              >
+                Reserve Your Spot →
+              </Link>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Complete registration in just a few steps. Venue details and your access card will be sent to your email after payment.
               </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-primary-darker bg-opacity-50 border border-accent border-opacity-30 rounded-lg p-4">
-                  <span className="text-accent">●</span>
-                  <p className="text-white font-semibold">Balance & Stability</p>
-                </div>
-                <div className="bg-primary-darker bg-opacity-50 border border-accent border-opacity-30 rounded-lg p-4">
-                  <span className="text-accent">●</span>
-                  <p className="text-white font-semibold">Cognitive Focus</p>
-                </div>
-                <div className="bg-primary-darker bg-opacity-50 border border-accent border-opacity-30 rounded-lg p-4">
-                  <span className="text-accent">●</span>
-                  <p className="text-white font-semibold">Coordination</p>
-                </div>
-                <div className="bg-primary-darker bg-opacity-50 border border-accent border-opacity-30 rounded-lg p-4">
-                  <span className="text-accent">●</span>
-                  <p className="text-white font-semibold">Mobility</p>
-                </div>
-                <div className="bg-primary-darker bg-opacity-50 border border-accent border-opacity-30 rounded-lg p-4">
-                  <span className="text-accent">●</span>
-                  <p className="text-white font-semibold">Endurance</p>
-                </div>
-                <div className="bg-primary-darker bg-opacity-50 border border-accent border-opacity-30 rounded-lg p-4">
-                  <span className="text-accent">●</span>
-                  <p className="text-white font-semibold">Confidence</p>
-                </div>
-              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </ScrollReveal>
+        </section>
 
-      {/* Wellness Stations */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-4">WHAT'S INCLUDED</h3>
-            <h2 className="text-4xl font-bold text-primary-dark mb-4">
-              Wellness Activity Stations
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Each station is expertly facilitated by certified wellness professionals and tailored to varying ability levels.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Balance Training */}
-            <div className="bg-white rounded-lg p-8 border border-gray-200 hover:shadow-lg transition">
-              <div className="text-5xl mb-4">⚖️</div>
-              <h3 className="text-2xl font-bold text-primary-dark mb-4">Balance Training</h3>
-              <p className="text-gray-600 mb-4">
-                Gentle, guided exercises to improve postural stability and reduce fall risk through proven techniques.
-              </p>
-              <span className="inline-block bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-xs font-semibold">
-                PHYSICAL
-              </span>
-            </div>
-
-            {/* Cognitive Focus */}
-            <div className="bg-white rounded-lg p-8 border border-gray-200 hover:shadow-lg transition">
-              <div className="text-5xl mb-4">🧠</div>
-              <h3 className="text-2xl font-bold text-primary-dark mb-4">Cognitive Focus</h3>
-              <p className="text-gray-600 mb-4">
-                Mental agility games and exercises designed to sharpen focus, memory, and reaction time.
-              </p>
-              <span className="inline-block bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-xs font-semibold">
-                MENTAL
-              </span>
-            </div>
-
-            {/* Coordination Flow */}
-            <div className="bg-white rounded-lg p-8 border border-gray-200 hover:shadow-lg transition">
-              <div className="text-5xl mb-4">🤸</div>
-              <h3 className="text-2xl font-bold text-primary-dark mb-4">Coordination Flow</h3>
-              <p className="text-gray-600 mb-4">
-                Rhythmic movement sequences that enhance hand-eye coordination and body awareness.
-              </p>
-              <span className="inline-block bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-xs font-semibold">
-                PHYSICAL
-              </span>
-            </div>
-
-            {/* Mobility & Flexibility */}
-            <div className="bg-white rounded-lg p-8 border border-gray-200 hover:shadow-lg transition">
-              <div className="text-5xl mb-4">🧘</div>
-              <h3 className="text-2xl font-bold text-primary-dark mb-4">Mobility & Flexibility</h3>
-              <p className="text-gray-600 mb-4">
-                Gentle stretching and joint mobility work to maintain and improve range of motion.
-              </p>
-              <span className="inline-block bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-xs font-semibold">
-                PHYSICAL
-              </span>
-            </div>
-
-            {/* Endurance Building */}
-            <div className="bg-white rounded-lg p-8 border border-gray-200 hover:shadow-lg transition">
-              <div className="text-5xl mb-4">💪</div>
-              <h3 className="text-2xl font-bold text-primary-dark mb-4">Endurance Building</h3>
-              <p className="text-gray-600 mb-4">
-                Low-impact cardiovascular activities that safely build stamina and energy levels.
-              </p>
-              <span className="inline-block bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-xs font-semibold">
-                PHYSICAL
-              </span>
-            </div>
-
-            {/* Social Wellness */}
-            <div className="bg-white rounded-lg p-8 border border-gray-200 hover:shadow-lg transition">
-              <div className="text-5xl mb-4">👫</div>
-              <h3 className="text-2xl font-bold text-primary-dark mb-4">Social Wellness</h3>
-              <p className="text-gray-600 mb-4">
-                Guided social activities that build community connections and emotional wellbeing.
-              </p>
-              <span className="inline-block bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-xs font-semibold">
-                SOCIAL
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Journey Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-4">YOUR JOURNEY</h3>
-            <h2 className="text-4xl font-bold text-primary-dark mb-4">
-              How the Day Unfolds
-            </h2>
-          </div>
-
-          <div className="max-w-3xl mx-auto space-y-8">
-            <div className="flex gap-6">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary-dark text-white font-bold">
-                  1
-                </div>
-              </div>
+        {/* Mission Section */}
+        <section className="py-20 bg-gray-50">
+          <ScrollReveal className="max-w-7xl mx-auto px-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
               <div>
-                <h3 className="text-xl font-bold text-primary-dark mb-2">Register Online</h3>
-                <p className="text-gray-600">
-                  Complete the simple registration form with your name, age, email, and phone. Takes under 2 minutes.
+                <SectionHeader
+                  eyebrow="OUR MISSION"
+                  headline="Healthy Aging Through Evidence-Based Movement"
+                />
+                <p className="text-gray-600 mt-8 leading-relaxed text-lg">
+                  Move Safer, Live Stronger brings together carefully curated, evidence-based activities that support healthy aging. Each station is designed to meet seniors where they are — building physical capability, mental sharpness, and social connection in a safe, welcoming environment.
                 </p>
               </div>
-            </div>
 
-            <div className="flex gap-6">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary-dark text-white font-bold">
-                  2
+              <div className="relative bg-primary-darker p-10 overflow-hidden">
+                <CornerTriangle corner="tr" size={40} color="bg-accent" />
+                <DotPattern className="absolute bottom-6 right-6 w-28 h-28 text-accent/30" />
+                <div className="inline-flex items-center gap-3 mb-5">
+                  <span aria-hidden="true" className="h-[2px] w-8 bg-accent" />
+                  <span className="text-accent text-xs font-bold tracking-[0.25em] uppercase">WELLNESS PILLARS</span>
+                </div>
+                <h3 className="font-display text-3xl sm:text-4xl uppercase tracking-condensed text-white mb-5 leading-tight">
+                  Six Dimensions of <span className="text-accent">Senior Wellness</span>
+                </h3>
+                <p className="text-gray-300 mb-8 leading-relaxed">
+                  Every activity station addresses one or more critical dimensions of healthy aging, proven effective through clinical research.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {pillars.map((p) => (
+                    <div
+                      key={p}
+                      className="flex items-center gap-3 bg-white/5 border border-accent/30 p-4"
+                    >
+                      <CircleOrnament size={20} tone="dark" />
+                      <p className="text-white font-semibold text-sm uppercase tracking-wide">{p}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-primary-dark mb-2">Secure Your Spot</h3>
-                <p className="text-gray-600">
-                  Complete your payment through our secure gateway. Your registration is confirmed instantly.
-                </p>
-              </div>
             </div>
+          </ScrollReveal>
+        </section>
 
-            <div className="flex gap-6">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary-dark text-white font-bold">
-                  3
-                </div>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-primary-dark mb-2">Receive Access Pass</h3>
-                <p className="text-gray-600">
-                  Your digital access card with venue details, event time, and unique ID is sent directly to your email.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-6">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary-dark text-white font-bold">
-                  4
-                </div>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-primary-dark mb-2">Experience the Day</h3>
-                <p className="text-gray-600">
-                  Arrive with confidence, explore all wellness stations, and connect with a vibrant community of active seniors.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-primary-dark to-primary-darker py-16">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold text-white mb-4">
-            Secure Your Spot Today
-          </h2>
-          <p className="text-gray-200 mb-8">
-            Complete your registration in just a few steps. Venue details and your access card will be sent to your email after payment.
-          </p>
-          <Link
-            href="/register"
-            className="inline-block bg-accent hover:bg-accent-dark text-primary-dark px-10 py-4 rounded-md font-semibold transition text-lg shadow-md"
-          >
-            Register Now →
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-primary-dark text-white py-12">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <div className="mb-4">
-              <Image
-                src="/images/logo.png"
-                alt="PhysiFit NG Logo"
-                width={150}
-                height={40}
-                className="object-contain h-10 w-auto brightness-0 invert"
+        {/* Wellness Stations */}
+        <section className="py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-6">
+            <ScrollReveal className="text-center flex flex-col items-center mb-14">
+              <SectionHeader
+                eyebrow="WHAT'S INCLUDED"
+                headline="Wellness Activity Stations"
+                subhead="Each station is expertly facilitated by certified wellness professionals and tailored to varying ability levels."
+                align="center"
               />
-            </div>
-            <p className="text-gray-300 mb-2">Active lifestyle, healthy lifetime.</p>
-            <p className="text-gray-400 text-sm">
-              Empowering older adults through evidence-based wellness.
+            </ScrollReveal>
+
+            <ScrollReveal variant="stagger" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {stations.map((s) => (
+                <StationCard key={s.title} {...s} />
+              ))}
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* Journey Section */}
+        <section className="py-24 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-6">
+            <ScrollReveal className="text-center flex flex-col items-center mb-14">
+              <SectionHeader
+                eyebrow="YOUR JOURNEY"
+                headline="How the Day Unfolds"
+                align="center"
+              />
+            </ScrollReveal>
+
+            <ScrollReveal variant="stagger" className="max-w-3xl mx-auto">
+              {journey.map((step, i) => (
+                <div key={step.title} className="relative flex gap-6 pb-10 last:pb-0">
+                  {i !== journey.length - 1 && (
+                    <span aria-hidden="true" className="absolute left-[27px] top-14 bottom-0 w-[2px] bg-accent/40" />
+                  )}
+                  <div className="flex-shrink-0 relative">
+                    <div className="w-14 h-14 bg-primary-darker text-accent font-display text-3xl flex items-center justify-center">
+                      {i + 1}
+                    </div>
+                  </div>
+                  <div className="pt-2">
+                    <h3 className="font-display text-2xl uppercase tracking-wide text-primary-darker mb-2">{step.title}</h3>
+                    <p className="text-gray-600 leading-relaxed">{step.body}</p>
+                  </div>
+                </div>
+              ))}
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="relative bg-gradient-to-r from-primary-dark to-primary-darker py-20 overflow-hidden">
+          <CornerTriangle corner="tl" size={48} color="bg-accent" />
+          <CornerTriangle corner="br" size={48} color="bg-accent" />
+          <DotPattern className="absolute bottom-10 left-10 w-32 h-32 text-accent/30" />
+          <ScrollReveal variant="zoom-in" className="relative max-w-4xl mx-auto px-6 text-center">
+            <h2 className="font-display text-4xl sm:text-5xl md:text-6xl uppercase tracking-condensed leading-[0.95] text-white mb-6">
+              Secure Your Spot <span className="text-accent">Today</span>
+            </h2>
+            <p className="text-gray-200 mb-10 text-lg max-w-2xl mx-auto leading-relaxed">
+              Complete your registration in just a few steps. Venue details and your access card will be sent to your email after payment.
             </p>
-          </div>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 bg-accent hover:bg-accent-dark text-primary-darker px-10 py-4 rounded-md font-bold uppercase tracking-wider transition"
+            >
+              Register Now
+              <Icon name="arrowRight" size={20} />
+            </Link>
+          </ScrollReveal>
+        </section>
+      </main>
 
-          <div>
-            <h3 className="text-accent font-semibold mb-4 uppercase">EVENT</h3>
-            <ul className="space-y-2 text-gray-300">
-              <li>
-                <Link href="#" className="hover:text-white transition">
-                  About the Event
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-white transition">
-                  Activities
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-white transition">
-                  Register
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-accent font-semibold mb-4 uppercase">CONTACT</h3>
-            <ul className="space-y-2 text-gray-300">
-              <li>info.physifitservices@gmail.com</li>
-              <li>+234 703 892 0250</li>
-              <li>Lagos, Nigeria</li>
-            </ul>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

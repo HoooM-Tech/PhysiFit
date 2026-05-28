@@ -386,7 +386,7 @@ export default function EventPage() {
             <h3 className="text-accent font-semibold mb-4 uppercase">CONTACT</h3>
             <ul className="space-y-2 text-gray-300">
               <li>info@physifit.co</li>
-              <li>+234 805 755 7588</li>
+              <li>+234 703 892 0250</li>
               <li>Lagos, Nigeria</li>
             </ul>
           </div>

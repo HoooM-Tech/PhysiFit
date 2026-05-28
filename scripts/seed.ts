@@ -100,9 +100,9 @@ async function seedEvent() {
   await db.insert(events).values({
     name,
     description: "A full day of guided wellness stations: balance, cognition, coordination, mobility, endurance, and social activities.",
-    eventDate: "2026-07-12",
+    eventDate: "2026-06-27",
     startTime: "08:00:00",
-    endTime: "16:00:00",
+    endTime: "10:00:00",
     venueRevealedOnRegister: true,
     venueAddress: "Venue revealed via email after registration",
     capacity: 200,

@@ -305,7 +305,7 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <div
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white min-h-screen p-6 transition-all duration-300 ease-in-out shadow-2xl md:shadow-none flex flex-col justify-between ${
+        className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white p-6 transition-all duration-300 ease-in-out shadow-2xl md:shadow-none flex flex-col justify-between overflow-y-auto ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'
         }`}
       >

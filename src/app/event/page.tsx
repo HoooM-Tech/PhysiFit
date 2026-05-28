@@ -13,7 +13,7 @@ export default function EventPage() {
       <section className="bg-gradient-to-b from-primary-dark to-primary-darker py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="inline-block bg-accent bg-opacity-20 text-accent px-4 py-2 rounded-full text-sm font-semibold mb-6">
-            • PHYSIFIT WELLNESS DAY 2025
+            • PHYSIFIT WELLNESS DAY 2026
           </div>
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             Move Safer,
@@ -64,7 +64,7 @@ export default function EventPage() {
                 <div className="flex-shrink-0 text-3xl">📅</div>
                 <div>
                   <h3 className="font-semibold text-primary-dark">DATE</h3>
-                  <p className="text-gray-600">Saturday, July 12, 2026</p>
+                  <p className="text-gray-600">Saturday, June 27, 2026</p>
                 </div>
               </div>
 
@@ -72,7 +72,7 @@ export default function EventPage() {
                 <div className="flex-shrink-0 text-3xl">🕐</div>
                 <div>
                   <h3 className="font-semibold text-primary-dark">TIME</h3>
-                  <p className="text-gray-600">8:00 AM – 4:00 PM</p>
+                  <p className="text-gray-600">8:00 AM – 10:00 AM</p>
                 </div>
               </div>
 
@@ -385,7 +385,7 @@ export default function EventPage() {
           <div>
             <h3 className="text-accent font-semibold mb-4 uppercase">CONTACT</h3>
             <ul className="space-y-2 text-gray-300">
-              <li>info@physifit.co</li>
+              <li>info.physifitservices@gmail.com</li>
               <li>+234 703 892 0250</li>
               <li>Lagos, Nigeria</li>
             </ul>

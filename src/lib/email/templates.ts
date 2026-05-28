@@ -8,7 +8,13 @@ import { env } from "@/lib/env";
 const BRAND_BLUE = "#2563EB";
 const BRAND_DARK = "#1e293b";
 const BRAND_LIGHT_BG = "#f8fafc";
-const APP_URL = () => env.PUBLIC_APP_URL;
+const APP_URL = () => {
+  const url = env.PUBLIC_APP_URL;
+  if (!url || url.includes("localhost") || url.includes("127.0.0.1")) {
+    return "https://physifit.co";
+  }
+  return url;
+};
 
 /**
  * Wraps email body content in a branded PhysiFit layout.

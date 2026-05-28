@@ -19,6 +19,8 @@ export type IconName =
   | 'minus'
   | 'sparkle'
   | 'quote'
+  | 'sun'
+  | 'moon'
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
   name: IconName
@@ -163,6 +165,19 @@ export default function Icon({ name, size = 24, className, ...props }: IconProps
       return (
         <svg {...commonProps} fill="currentColor" stroke="none">
           <path d="M9.4 6C5.9 7.6 4 10.4 4 14v4h6v-6H6.6c.4-2 1.7-3.4 4.2-4.4L9.4 6Zm10 0c-3.5 1.6-5.4 4.4-5.4 8v4h6v-6h-3.4c.4-2 1.7-3.4 4.2-4.4L19.4 6Z" />
+        </svg>
+      )
+    case 'sun':
+      return (
+        <svg {...commonProps}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+        </svg>
+      )
+    case 'moon':
+      return (
+        <svg {...commonProps}>
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
         </svg>
       )
     default:

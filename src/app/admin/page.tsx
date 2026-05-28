@@ -3,6 +3,9 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import ProgressChart from '@/components/ProgressChart'
+import ScrollReveal from '@/components/ScrollReveal'
+import { useTheme } from '@/context/ThemeContext'
 
 interface AdminMetrics {
   active_users: number;
@@ -71,12 +74,32 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
 
+  // Theme state
+  const { theme, toggleTheme } = useTheme()
+
   // Data States
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null)
   const [activities, setActivities] = useState<PlatformActivity[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [trainers, setTrainers] = useState<Trainer[]>([])
   const [services, setServices] = useState<Service[]>([])
+
+  // Interactive Admin Analytics mock points for dynamic tracking
+  const [revenueData, setRevenueData] = useState([
+    { label: 'Wk 1', value: 150000 },
+    { label: 'Wk 2', value: 350000 },
+    { label: 'Wk 3', value: 500000 },
+    { label: 'Wk 4', value: 650000 },
+    { label: 'Wk 5', value: 950000 },
+  ])
+  
+  const [userTrendData, setUserTrendData] = useState([
+    { label: 'Wk 1', value: 12 },
+    { label: 'Wk 2', value: 18 },
+    { label: 'Wk 3', value: 29 },
+    { label: 'Wk 4', value: 35 },
+    { label: 'Wk 5', value: 52 },
+  ])
 
   // Action / UX States
   const [clientSearch, setClientSearch] = useState('')
@@ -135,7 +158,26 @@ export default function AdminDashboard() {
     ])
     if (metricsRes.ok) {
       const mJson = await metricsRes.json()
-      setMetrics(mJson.data?.metrics || null)
+      const serverMetrics = mJson.data?.metrics || null
+      setMetrics(serverMetrics)
+      
+      // Sync the final week point of charts with active DB metrics responsive calculations!
+      if (serverMetrics) {
+        setRevenueData(prev => {
+          const updated = [...prev]
+          if (updated.length > 0) {
+            updated[updated.length - 1].value = serverMetrics.monthly_revenue_naira || 950000
+          }
+          return updated
+        })
+        setUserTrendData(prev => {
+          const updated = [...prev]
+          if (updated.length > 0) {
+            updated[updated.length - 1].value = serverMetrics.active_users || 52
+          }
+          return updated
+        })
+      }
     }
     if (actRes.ok) {
       const aJson = await actRes.json()
@@ -242,12 +284,16 @@ export default function AdminDashboard() {
       setEditingServiceId(null)
       setTempPrice('')
       await fetchServices()
+      await fetchMetricsAndActivity()
     } catch (err: any) {
       setErrorMessage(err.message || 'An error occurred updating price')
     } finally {
       setActionLoading(false)
     }
   }
+
+  // Theme Toggle
+  const handleToggleTheme = toggleTheme
 
   // Helpers
   const getSpecializationLabel = (spec: string) => {
@@ -258,16 +304,9 @@ export default function AdminDashboard() {
   }
 
   const getSpecializationColor = (spec: string) => {
-    if (spec === 'senior_fitness') return 'bg-sky-50 text-sky-700 border-sky-200'
-    if (spec === 'postpartum') return 'bg-pink-50 text-pink-700 border-pink-200'
-    return 'bg-purple-50 text-purple-700 border-purple-200'
-  }
-
-  const calculateBMIClass = (bmi: number) => {
-    if (bmi < 18.5) return 'text-amber-600 bg-amber-50'
-    if (bmi < 25) return 'text-green-600 bg-green-50'
-    if (bmi < 30) return 'text-amber-600 bg-amber-50'
-    return 'text-red-600 bg-red-50'
+    if (spec === 'senior_fitness') return 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+    if (spec === 'postpartum') return 'bg-pink-500/20 text-pink-300 border-pink-500/30'
+    return 'bg-purple-500/20 text-purple-300 border-purple-500/30'
   }
 
   // Filter lists
@@ -284,280 +323,332 @@ export default function AdminDashboard() {
     return true
   })
 
+  const isDark = theme === 'dark'
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-        <div className="animate-spin inline-block w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
-        <p className="text-gray-600 font-semibold">Verifying administrative access...</p>
+      <div className={`min-h-screen flex flex-col justify-between ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+        <div className={`h-20 border-b flex items-center px-8 ${isDark ? 'bg-[#0b0f19] border-white/5' : 'bg-white border-slate-200'}`}>
+          <span className={`text-xl font-display uppercase tracking-widest font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>PhysiFit Admin</span>
+        </div>
+        <div className={`flex-1 flex flex-col items-center justify-center ${isDark ? 'text-white' : 'text-slate-800'}`}>
+          <div className="animate-spin inline-block w-12 h-12 border-4 border-accent border-t-transparent rounded-full mb-6"></div>
+          <p className="font-display uppercase tracking-widest text-accent text-sm animate-pulse">Verifying Administrative Access...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile Sidebar backdrop */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity"
-        />
-      )}
+    <div className={`min-h-screen transition-colors duration-300 flex flex-col ${
+      isDark
+        ? 'bg-gradient-to-br from-slate-950 via-[#0e1322] to-[#1a2336] text-white'
+        : 'bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-900'
+    }`} style={{ backgroundColor: isDark ? 'rgba(2, 6, 23, 1)' : 'rgba(248, 250, 252, 1)' }}>
+      {/* Admin header */}
+      <header className={`border-b h-20 px-8 flex items-center justify-between z-30 ${isDark ? 'bg-slate-950 border-white/5' : 'bg-white border-slate-200'}`}>
+        <div className="flex items-center gap-3">
+          <span className={`text-xl font-display uppercase tracking-widest font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+            PhysiFit <span className="text-accent font-extrabold">Admin</span>
+          </span>
+          <span className="text-[10px] bg-accent/20 border border-accent/30 text-accent font-mono uppercase px-2.5 py-1 rounded-full font-bold">
+            System Console
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+        </div>
+      </header>
 
-      {/* Sidebar */}
-      <div
-        className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white p-6 transition-all duration-300 ease-in-out shadow-2xl md:shadow-none flex flex-col justify-between overflow-y-auto ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'
-        }`}
-      >
-        <div>
-          <div className="mb-12 flex items-center justify-between">
-            <span className="text-2xl font-bold tracking-wide text-white">PhysiFit <span className="text-blue-500">Admin</span></span>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="md:hidden p-1 rounded-lg hover:bg-slate-800 border border-slate-700 text-gray-400"
-              aria-label="Close sidebar"
-            >
-              ✕
-            </button>
+      <div className="flex-1 flex relative">
+        {/* Mobile Sidebar backdrop */}
+        {sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside
+          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-y-auto ${
+            isDark
+              ? 'bg-slate-950/95 border-white/5 text-white'
+              : 'bg-white/95 border-slate-200 text-slate-800'
+          } ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          }`}
+          style={{ backgroundColor: isDark ? 'rgba(2, 6, 23, 0.95)' : 'rgba(255, 255, 255, 0.95)' }}
+        >
+          <div className="space-y-10">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-display uppercase tracking-widest text-gray-400 font-bold">Navigation</span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className={`md:hidden w-8 h-8 rounded-full border flex items-center justify-center transition ${isDark ? 'border-white/10 hover:bg-white/10' : 'border-slate-200 hover:bg-slate-100'}`}
+                aria-label="Close sidebar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <nav className="space-y-2">
+              {[
+                { id: 'metrics', label: '📊 Platform Metrics' },
+                { id: 'clients', label: '👥 Matched Clients' },
+                { id: 'trainers', label: '🏋️ Trainer Registry' },
+                { id: 'services', label: '🏷️ Pricing Offers' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id as any)
+                    setSuccessMessage('')
+                    setErrorMessage('')
+                    if (window.innerWidth < 768) setSidebarOpen(false)
+                  }}
+                  className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border ${
+                    activeTab === tab.id
+                      ? 'bg-accent text-slate-950 border-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                      : isDark
+                        ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
+                        : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+
+            {/* Appearance Toggle */}
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase text-gray-400 font-bold tracking-widest font-mono">Appearance</p>
+              <button
+                onClick={handleToggleTheme}
+                className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border flex items-center justify-between ${
+                  isDark
+                    ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
+                    : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
+                }`}
+              >
+                <span>{isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
+                <span className="text-[9px] opacity-60 font-mono">Theme</span>
+              </button>
+            </div>
           </div>
 
-          <p className="text-xs uppercase text-slate-400 font-bold mb-4">CONTROL PANEL</p>
-          <nav className="space-y-2">
-            <button
-              onClick={() => { setActiveTab('metrics'); setSuccessMessage(''); setErrorMessage(''); }}
-              className={`w-full text-left px-4 py-3 rounded-lg font-medium transition flex items-center gap-3 ${
-                activeTab === 'metrics' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              📊 Live Metrics
-            </button>
-            <button
-              onClick={() => { setActiveTab('clients'); setSuccessMessage(''); setErrorMessage(''); }}
-              className={`w-full text-left px-4 py-3 rounded-lg font-medium transition flex items-center gap-3 ${
-                activeTab === 'clients' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              👥 Manage Clients
-            </button>
-            <button
-              onClick={() => { setActiveTab('trainers'); setSuccessMessage(''); setErrorMessage(''); }}
-              className={`w-full text-left px-4 py-3 rounded-lg font-medium transition flex items-center gap-3 ${
-                activeTab === 'trainers' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              🏋️ Approve Trainers
-            </button>
-            <button
-              onClick={() => { setActiveTab('services'); setSuccessMessage(''); setErrorMessage(''); }}
-              className={`w-full text-left px-4 py-3 rounded-lg font-medium transition flex items-center gap-3 ${
-                activeTab === 'services' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              🏷️ Services & Pricing
-            </button>
-          </nav>
-        </div>
-
-        <div className="space-y-4">
           <button
             onClick={async () => {
               await fetch('/api/auth/logout', { method: 'POST' })
               router.push('/')
             }}
-            className="w-full text-left px-4 py-3 text-red-400 hover:bg-slate-800 rounded-lg font-medium transition"
+            className="w-full text-left px-5 py-3 rounded-xl text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-xs font-bold font-display uppercase tracking-widest transition"
           >
-            🚪 Sign Out
+            🚪 Exit Console
           </button>
-        </div>
-      </div>
+        </aside>
 
-      {/* Main Panel */}
-      <div className="flex-1 min-h-screen flex flex-col overflow-x-hidden">
-        {/* Top bar for mobile menu */}
-        <header className="bg-white border-b border-gray-200 h-16 px-6 flex items-center justify-between md:justify-start gap-4">
-          <button
-            onClick={() => setSidebarOpen(value => !value)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition"
-          >
-            {sidebarOpen ? '←' : '☰'}
-          </button>
-          <span className="font-bold text-gray-800 md:hidden">PhysiFit Admin</span>
-        </header>
-
-        {/* Action Feedbacks */}
-        {successMessage && (
-          <div className="mx-6 md:mx-8 mt-6 bg-green-50 border-l-4 border-green-500 p-4 rounded text-left shadow-sm">
-            <p className="text-green-700 font-semibold flex items-center gap-2"><span>✓</span> {successMessage}</p>
+        {/* Content Area */}
+        <main className="flex-1 min-h-screen flex flex-col p-6 sm:p-12 overflow-x-hidden">
+          {/* Mobile Sidebar Trigger */}
+          <div className="flex md:hidden items-center justify-between mb-8">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className={`w-12 h-12 border rounded-2xl flex items-center justify-center font-bold text-xl transition ${isDark ? 'bg-white/5 hover:bg-white/10 border-white/10' : 'bg-white hover:bg-slate-50 border-slate-200'}`}
+            >
+              ☰
+            </button>
+            <span className="font-display uppercase tracking-widest text-accent text-xs font-bold font-mono">System Supervisor</span>
           </div>
-        )}
-        {errorMessage && (
-          <div className="mx-6 md:mx-8 mt-6 bg-red-50 border-l-4 border-red-500 p-4 rounded text-left shadow-sm">
-            <p className="text-red-700 font-semibold flex items-center gap-2"><span>⚠️</span> {errorMessage}</p>
-          </div>
-        )}
 
-        {/* Content area */}
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
-          
-          {/* TAB 1: METRICS */}
+          {/* User notifications feed */}
+          {successMessage && (
+            <div className="mb-8 bg-green-500/15 border-l-4 border-green-500 rounded-2xl p-4 text-left border border-green-500/20">
+              <p className="text-green-300 font-semibold flex items-center gap-2 text-sm">
+                <span>✓</span> {successMessage}
+              </p>
+            </div>
+          )}
+          {errorMessage && (
+            <div className="mb-8 bg-red-500/15 border-l-4 border-red-500 rounded-2xl p-4 text-left border border-red-500/20">
+              <p className="text-red-300 font-semibold flex items-center gap-2 text-sm">
+                <span>⚠️</span> {errorMessage}
+              </p>
+            </div>
+          )}
+
           {activeTab === 'metrics' && (
-            <div>
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10 pb-4 border-b">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.2em] text-blue-600 font-bold">Admin Console</p>
-                  <h1 className="text-3xl md:text-4xl font-extrabold mt-2 text-primary-dark">Platform Management</h1>
-                  <p className="text-gray-600 mt-2 text-sm max-w-xl">
-                    Real-time site metrics, database session counts, active platform revenue and activity audits.
-                  </p>
-                </div>
+            <ScrollReveal className="space-y-12">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Live Platform Metrics</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Platform Performance Cockpit</h1>
+                <p className={`mt-2 text-sm max-w-xl ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                  Real-time database indices, payment configurations, certified trainer approvals, and monthly registration records.
+                </p>
               </div>
 
-              {/* Quick Metrics Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-                  <p className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-4">ACTIVE USERS</p>
-                  <p className="text-4xl font-bold text-slate-800">{metrics?.active_users ?? 0}</p>
-                  <p className="text-xs text-gray-500 mt-2">Active customer & trainer profiles.</p>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-                  <p className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-4">NEW SIGNUPS</p>
-                  <p className="text-4xl font-bold text-slate-800">{metrics?.new_signups_week ?? 0}</p>
-                  <p className="text-xs text-gray-500 mt-2">Signups over the last 7 days.</p>
-                </div>
-                <div className="bg-white rounded-2xl border border-gray-200 p-8 bg-gradient-to-br from-blue-600 to-blue-700 text-white border-none shadow-md animate-fade-in">
-                  <p className="text-xs uppercase tracking-wider text-blue-200 font-bold mb-4">MONTHLY REVENUE</p>
-                  <p className="text-4xl font-bold">₦{(metrics?.monthly_revenue_naira ?? 0).toLocaleString()}</p>
-                  <p className="text-xs text-blue-100 mt-2">Naira payments confirmed in 30d.</p>
-                </div>
+              {/* Metrics cards grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {[
+                  { label: 'ACTIVE REGISTERED MEMBERS', val: metrics?.active_users ?? 0, sub: 'Active wellness accounts' },
+                  { label: 'NEW SIGNUPS THIS WEEK', val: metrics?.new_signups_week ?? 0, sub: 'Over the last 7 calendar days' },
+                  { label: 'CONFIRMED MONTHLY REVENUE', val: `₦${(metrics?.monthly_revenue_naira ?? 0).toLocaleString()}`, sub: 'Live checkout payments (30d)', highlighted: true }
+                ].map((card, i) => (
+                  <div key={i} className={`rounded-3xl p-6 shadow-xl relative overflow-hidden transition hover:scale-[1.02] duration-300 ${
+                    card.highlighted
+                      ? isDark ? 'bg-accent/15 border border-accent/30 text-white' : 'bg-accent/20 border border-accent/30 text-slate-800 shadow-sm'
+                      : isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm shadow-slate-100'
+                  }`}>
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">{card.label}</span>
+                    <p className={`text-4xl font-extrabold font-display tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>{card.val}</p>
+                    <p className="text-xs text-accent font-semibold">{card.sub}</p>
+                  </div>
+                ))}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-                {/* Session Overview Card */}
-                <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-                  <div className="flex items-start justify-between gap-4 mb-8 pb-4 border-b">
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-400 font-bold">SESSION ARCHIVE</p>
-                      <p className="text-3xl font-extrabold mt-2 text-primary-dark">{metrics?.sessions_total ?? 0}</p>
-                    </div>
-                    <span className="rounded-full bg-blue-50 px-3.5 py-1.5 text-blue-600 text-xs font-semibold uppercase">Real time</span>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center py-2.5 border-b border-gray-100">
-                      <span className="text-sm text-gray-600 font-medium">Upcoming Sessions</span>
-                      <span className="font-bold text-gray-900">{metrics?.sessions_upcoming ?? 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2.5 border-b border-gray-100">
-                      <span className="text-sm text-gray-600 font-medium">Weekly Reschedules</span>
-                      <span className="font-bold text-gray-900">{metrics?.reschedules_week ?? 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2.5">
-                      <span className="text-sm text-gray-600 font-medium">Sessions Completed (30d)</span>
-                      <span className="font-bold text-gray-900">{metrics?.sessions_completed_30d ?? 0}</span>
-                    </div>
+              {/* Analytics curves SVG progress charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <ProgressChart
+                  data={revenueData}
+                  title="Monthly Revenue Timeline"
+                  unit=" ₦"
+                  color="#d4a500"
+                  dark={isDark}
+                />
+                <ProgressChart
+                  data={userTrendData}
+                  title="Weekly Platform Growth"
+                  unit=" members"
+                  color="#38bdf8"
+                  dark={isDark}
+                />
+              </div>
+
+              {/* Secondary operations metrics */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Session details */}
+                <div className={`border rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800 shadow-sm shadow-slate-100'}`}>
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+                  <h3 className="text-lg font-bold font-display uppercase tracking-wider mb-6 pb-2 border-b border-white/5">Session Overview Metrics</h3>
+                  <div className="space-y-4 text-sm">
+                    {[
+                      { label: 'Total Database Sessions Logged', val: metrics?.sessions_total ?? 0 },
+                      { label: 'Upcoming Client Training Slots', val: metrics?.sessions_upcoming ?? 0 },
+                      { label: 'Verified Weekly Adjustments', val: metrics?.reschedules_week ?? 0 },
+                      { label: 'Completed verified spots (30d)', val: metrics?.sessions_completed_30d ?? 0 }
+                    ].map((row, i) => (
+                      <div key={i} className={`flex justify-between py-2.5 border-b border-white/5 last:border-b-0 ${isDark ? 'border-white/5 text-gray-300' : 'border-slate-100 text-slate-600'}`}>
+                        <span>{row.label}</span>
+                        <span className="font-bold font-mono">{row.val}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* System Shortcut Links */}
-                <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-                  <p className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-6 pb-2 border-b">MANAGEMENT QUICKLINKS</p>
+                {/* Platform actions shortcut index */}
+                <div className={`border rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800 shadow-sm shadow-slate-100'}`}>
+                  <h3 className="text-lg font-bold font-display uppercase tracking-wider mb-6 pb-2 border-b border-white/5">Platform Shortcuts</h3>
                   <div className="grid gap-3">
-                    <button onClick={() => setActiveTab('trainers')} className="w-full rounded-xl border border-gray-200 bg-gray-50 hover:bg-slate-100/50 p-4 text-left text-sm font-semibold text-slate-700 transition flex items-center justify-between">
-                      <span>✓ Review & approve pending trainers</span>
-                      <span className="text-blue-600">→</span>
-                    </button>
-                    <button onClick={() => setActiveTab('clients')} className="w-full rounded-xl border border-gray-200 bg-gray-50 hover:bg-slate-100/50 p-4 text-left text-sm font-semibold text-slate-700 transition flex items-center justify-between">
-                      <span>✓ Assign fitness trainers to clients</span>
-                      <span className="text-blue-600">→</span>
-                    </button>
-                    <button onClick={() => setActiveTab('services')} className="w-full rounded-xl border border-gray-200 bg-gray-50 hover:bg-slate-100/50 p-4 text-left text-sm font-semibold text-slate-700 transition flex items-center justify-between">
-                      <span>✓ Manage dynamic program pricing</span>
-                      <span className="text-blue-600">→</span>
-                    </button>
+                    {[
+                      { tab: 'trainers', label: '🏋️ Review Pending Instructor Files', sub: `${trainers.filter(t => t.profile?.approvedAt === null).length} reviews awaiting` },
+                      { tab: 'clients', label: '👥 Matched Client Placements', sub: `${clients.filter(c => !c.assignedTrainerName).length} unassigned patients` },
+                      { tab: 'services', label: '🏷️ Price Session Packages', sub: 'Syncing naira checkout parameters' }
+                    ].map((btn, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setActiveTab(btn.tab as any)}
+                        className={`w-full text-left border rounded-2xl p-4 transition-all duration-300 flex items-center justify-between ${isDark ? 'bg-[#0c101c]/60 hover:bg-white/5 border-white/5 hover:border-white/10' : 'bg-slate-50 hover:bg-slate-100 border-slate-200'}`}
+                      >
+                        <div>
+                          <p className="font-bold text-xs uppercase tracking-wider font-display">{btn.label}</p>
+                          <span className="text-[10px] text-accent mt-0.5 block font-semibold">{btn.sub}</span>
+                        </div>
+                        <span className="text-accent text-lg">→</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Activity Feed */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-                <div className="flex items-center justify-between mb-6 pb-4 border-b">
+              {/* Activity audit registry feed */}
+              <div className={`border rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800 shadow-sm shadow-slate-100'}`}>
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-400 font-bold">SYSTEM AUDIT FEED</p>
-                    <h2 className="text-xl font-bold mt-2 text-primary-dark">Latest Platform Activity</h2>
+                    <h3 className="text-lg font-bold font-display uppercase tracking-wider">System Activity Audit Log</h3>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Audit log of system events across registration, booking and payments.</p>
                   </div>
-                  <span className="rounded-full bg-emerald-50 px-3.5 py-1.5 text-emerald-600 text-xs font-bold uppercase animate-pulse">Live feed</span>
+                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-3.5 py-1.5 rounded-full font-bold uppercase tracking-wider animate-pulse flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full"></span> Live
+                  </span>
                 </div>
-                <div className="space-y-4 max-h-[300px] overflow-y-auto">
+
+                <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                   {activities.length > 0 ? (
-                    activities.map((act, idx) => (
-                      <div key={`${act.ref_id}-${idx}`} className="rounded-xl border border-gray-100 bg-gray-50 px-5 py-4 text-sm text-gray-700 flex justify-between gap-4">
-                        <span className="font-semibold">{act.summary}</span>
-                        <span className="text-[10px] text-gray-400 self-center font-mono">
-                          {new Date(act.occurred_at).toLocaleTimeString()}
+                    activities.map((act, i) => (
+                      <div key={i} className={`border px-5 py-4 rounded-2xl flex justify-between gap-4 text-xs ${isDark ? 'bg-[#0b0e18]/60 border-white/5 text-gray-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                        <span className="font-bold">{act.summary}</span>
+                        <span className="text-[10px] text-gray-500 self-center font-mono font-bold tracking-widest uppercase">
+                          {new Date(act.occurred_at).toLocaleTimeString('en-NG')}
                         </span>
                       </div>
                     ))
                   ) : (
-                    <div className="p-6 text-center text-gray-500">No platform activity recorded yet.</div>
+                    <div className="p-8 text-center text-gray-400 text-sm">No recent platform activities stored.</div>
                   )}
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
           )}
 
-          {/* TAB 2: MANAGE CLIENTS */}
           {activeTab === 'clients' && (
-            <div>
-              <div className="mb-10 pb-4 border-b">
-                <p className="text-sm uppercase tracking-[0.2em] text-blue-600 font-bold">Clients Overseer</p>
-                <h1 className="text-3xl md:text-4xl font-extrabold mt-2 text-primary-dark">Manage Platform Clients</h1>
-                <p className="text-gray-600 mt-2 text-sm">
-                  View patient/client records, review PAR-Q medical statements, and assign matching certified trainers.
-                </p>
+            <ScrollReveal className="space-y-8">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Clients Placement</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Manage Platform Clients</h1>
               </div>
 
-              {/* Client search */}
-              <div className="mb-6 max-w-md">
+              {/* Search bar */}
+              <div className="max-w-md">
                 <input
                   type="text"
                   placeholder="🔍 Search clients by name or email..."
                   value={clientSearch}
                   onChange={(e) => setClientSearch(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className={`w-full border rounded-2xl p-3.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0b0e18]/50 text-white' : 'border-slate-200 bg-white text-slate-800'}`}
                 />
               </div>
 
-              {/* Clients Table */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-10">
+              {/* Clients Table Card */}
+              <div className={`border rounded-3xl overflow-hidden shadow-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800 shadow-slate-100'}`}>
                 {filteredClients.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-slate-50 border-b border-gray-200 text-xs text-slate-500 uppercase tracking-wider font-bold">
+                    <table className="w-full text-left">
+                      <thead className={`font-display text-[10px] uppercase tracking-widest ${isDark ? 'bg-white/5 border-b border-white/5 text-gray-400' : 'bg-slate-50 border-b border-slate-100 text-slate-500'}`}>
                         <tr>
-                          <th className="px-6 py-4 text-left">Client</th>
-                          <th className="px-6 py-4 text-left">Reg Date</th>
-                          <th className="px-6 py-4 text-left">Assigned Trainer</th>
-                          <th className="px-6 py-4 text-left">Medical Records</th>
-                          <th className="px-6 py-4 text-left">Actions</th>
+                          <th className="px-6 py-4 min-w-[200px]">Client Member</th>
+                          <th className="px-6 py-4 min-w-[150px]">Placement Date</th>
+                          <th className="px-6 py-4 min-w-[220px]">Assigned Recovery Specialist</th>
+                          <th className="px-6 py-4 min-w-[150px]">Clinical Card</th>
+                          <th className="px-6 py-4 text-right min-w-[180px]">Placements Controls</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 text-sm">
+                      <tbody className={`divide-y text-sm ${isDark ? 'divide-white/5' : 'divide-slate-100'}`}>
                         {filteredClients.map((client) => (
-                          <tr key={client.id} className="hover:bg-slate-50/50">
+                          <tr key={client.id} className={`transition ${isDark ? 'hover:bg-white/5 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                             <td className="px-6 py-4">
-                              <div className="font-bold text-slate-800">{client.fullName}</div>
-                              <div className="text-xs text-gray-500 font-mono">{client.email}</div>
-                              {client.phone && <div className="text-xs text-gray-400">{client.phone}</div>}
+                              <div className="font-bold">{client.fullName}</div>
+                              <span className="text-[10px] text-gray-400 font-mono block">{client.email}</span>
                             </td>
-                            <td className="px-6 py-4 text-gray-600">
+                            <td className="px-6 py-4">
                               {new Date(client.createdAt).toLocaleDateString()}
                             </td>
-                            <td className="px-6 py-4 font-semibold text-slate-700">
+                            <td className="px-6 py-4">
                               {client.assignedTrainerName ? (
-                                <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs border border-green-100">
+                                <span className="inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs font-semibold">
                                   🏋️ {client.assignedTrainerName}
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs border border-amber-100">
+                                <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-accent/20 text-accent px-3 py-1 rounded-full text-xs font-semibold animate-pulse">
                                   ⚠️ Unassigned
                                 </span>
                               )}
@@ -565,21 +656,21 @@ export default function AdminDashboard() {
                             <td className="px-6 py-4">
                               <button
                                 onClick={() => setInspectingClient(client)}
-                                className="text-blue-600 hover:text-blue-700 font-bold text-xs bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg transition"
+                                className={`font-bold text-xs uppercase tracking-widest border px-4 py-2 rounded-xl transition ${isDark ? 'border-white/10 hover:border-accent/40 bg-white/5 text-white' : 'border-slate-300 hover:border-accent/40 bg-white text-slate-750'}`}
                               >
-                                🔍 Inspect Health Card
+                                🔍 Inspect Health
                               </button>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4 text-right">
                               {assigningClientId === client.id ? (
-                                <div className="flex gap-2 items-center">
+                                <div className="flex gap-2 items-center justify-end">
                                   <select
                                     value={selectedTrainerId}
                                     onChange={(e) => setSelectedTrainerId(e.target.value)}
-                                    className="border border-gray-300 rounded p-1.5 text-xs bg-white focus:outline-none"
+                                    className={`border rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0b0e18] text-white' : 'border-slate-200 bg-white text-slate-800'}`}
                                   >
-                                    <option value="">Select Trainer...</option>
-                                    <option value="unassign">-- Clear / Unassign --</option>
+                                    <option value="">Select Specialist...</option>
+                                    <option value="unassign">-- Clear placement --</option>
                                     {approvedTrainers.map(t => (
                                       <option key={t.id} value={t.id}>{t.fullName} ({getSpecializationLabel(t.profile?.specialization || '')})</option>
                                     ))}
@@ -587,15 +678,15 @@ export default function AdminDashboard() {
                                   <button
                                     onClick={() => handleAssignTrainer(client.id)}
                                     disabled={actionLoading}
-                                    className="bg-blue-600 text-white px-2.5 py-1.5 rounded text-xs hover:bg-blue-700 disabled:bg-blue-400 font-bold"
+                                    className="bg-accent text-slate-950 px-4 py-2 rounded-xl text-xs hover:bg-accent-dark font-bold uppercase tracking-wider"
                                   >
                                     Save
                                   </button>
                                   <button
                                     onClick={() => { setAssigningClientId(null); setSelectedTrainerId(''); }}
-                                    className="border border-gray-300 px-2.5 py-1.5 rounded text-xs text-gray-500 hover:bg-gray-50"
+                                    className={`border px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition ${isDark ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10' : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'}`}
                                   >
-                                    Cancel
+                                    ✕
                                   </button>
                                 </div>
                               ) : (
@@ -604,9 +695,9 @@ export default function AdminDashboard() {
                                     setAssigningClientId(client.id);
                                     setSelectedTrainerId(client.profile?.assignedTrainerId || '');
                                   }}
-                                  className="text-slate-700 hover:text-blue-600 font-bold text-xs"
+                                  className="text-accent hover:text-accent-light font-bold text-xs uppercase tracking-widest"
                                 >
-                                  🔄 Assign Trainer
+                                  🔄 Assign Specialist
                                 </button>
                               )}
                             </td>
@@ -616,42 +707,42 @@ export default function AdminDashboard() {
                     </table>
                   </div>
                 ) : (
-                  <div className="p-12 text-center text-gray-500">No matching clients found in system registries.</div>
+                  <div className="p-8 text-center text-gray-400 text-sm">No matched client profiles found.</div>
                 )}
               </div>
 
-              {/* Health Card Inspect Side Drawer/Overlay */}
+              {/* Side Drawer Inspection Panel */}
               {inspectingClient && (
-                <div className="fixed inset-0 bg-black/40 z-50 flex justify-end">
-                  <div className="bg-white w-full max-w-md h-full p-8 shadow-2xl overflow-y-auto flex flex-col justify-between">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+                  <div className={`w-full max-w-md h-full p-8 shadow-2xl border-l overflow-y-auto flex flex-col justify-between ${isDark ? 'bg-slate-950 border-white/5 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
                     <div>
-                      <div className="flex justify-between items-center pb-4 border-b mb-6">
-                        <h3 className="text-xl font-bold text-primary-dark">Health Card Inspection</h3>
-                        <button onClick={() => setInspectingClient(null)} className="text-2xl text-gray-400 hover:text-gray-600">✕</button>
+                      <div className="flex justify-between items-center pb-4 border-b border-white/5 mb-8">
+                        <h3 className="text-xl font-bold font-display uppercase tracking-wider">Screener Inspection</h3>
+                        <button onClick={() => setInspectingClient(null)} className="text-2xl text-gray-400 hover:text-red-500">✕</button>
                       </div>
 
-                      <div className="mb-6">
-                        <p className="text-xs uppercase text-gray-400 font-bold mb-1">CLIENT</p>
-                        <p className="text-lg font-bold text-slate-800">{inspectingClient.fullName}</p>
-                        <p className="text-sm text-gray-500">{inspectingClient.email}</p>
+                      <div className="mb-8">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">CLIENT PROFILE</span>
+                        <p className="text-xl font-bold font-display uppercase tracking-wider">{inspectingClient.fullName}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{inspectingClient.email}</p>
                       </div>
 
                       {inspectingClient.profile ? (
-                        <div className="space-y-6">
+                        <div className="space-y-8 text-left">
                           <div>
-                            <p className="text-xs uppercase text-gray-400 font-bold mb-3">PHYSICAL STATS</p>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-3">PHYSICAL STATS</span>
                             <div className="grid grid-cols-3 gap-3">
-                              <div className="bg-slate-50 p-3 rounded-lg border text-center">
-                                <span className="text-xs text-gray-400 block">Weight</span>
-                                <span className="font-extrabold text-slate-700">{inspectingClient.profile.weightKg ?? 'N/A'} kg</span>
+                              <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                <span className="text-[10px] text-gray-400 block mb-0.5">Weight</span>
+                                <span className="font-extrabold">{inspectingClient.profile.weightKg ?? 'N/A'} kg</span>
                               </div>
-                              <div className="bg-slate-50 p-3 rounded-lg border text-center">
-                                <span className="text-xs text-gray-400 block">Height</span>
-                                <span className="font-extrabold text-slate-700">{inspectingClient.profile.heightCm ?? 'N/A'} cm</span>
+                              <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                <span className="text-[10px] text-gray-400 block mb-0.5">Height</span>
+                                <span className="font-extrabold">{inspectingClient.profile.heightCm ?? 'N/A'} cm</span>
                               </div>
-                              <div className="bg-slate-50 p-3 rounded-lg border text-center">
-                                <span className="text-xs text-gray-400 block">Dizziness</span>
-                                <span className={`font-extrabold px-1.5 py-0.5 rounded text-xs ${inspectingClient.profile.dizzinessHistory ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                              <div className={`border p-3 rounded-2xl text-center flex flex-col items-center justify-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                <span className="text-[10px] text-gray-400 block mb-0.5">Dizziness</span>
+                                <span className={`font-extrabold px-2 py-0.5 rounded text-[10px] uppercase font-display ${inspectingClient.profile.dizzinessHistory ? 'bg-red-500/25 text-red-300' : 'bg-green-500/20 text-green-300'}`}>
                                   {inspectingClient.profile.dizzinessHistory ? 'Yes' : 'No'}
                                 </span>
                               </div>
@@ -659,14 +750,14 @@ export default function AdminDashboard() {
                           </div>
 
                           <div>
-                            <p className="text-xs uppercase text-gray-400 font-bold mb-2">MEDICAL NOTES / PAR-Q STATEMENT</p>
-                            <div className="bg-slate-50 p-4 rounded-xl border text-sm text-slate-700 min-h-24 whitespace-pre-wrap">
-                              {inspectingClient.profile.medicalNotes || 'No specific medical notes or history declared.'}
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 font-display">PAR-Q Screener Declarations:</span>
+                            <div className={`border p-5 rounded-2xl text-xs min-h-24 whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                              {inspectingClient.profile.medicalNotes || 'No specific restrictions declared.'}
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <div className="p-8 text-center text-gray-500 bg-slate-50 rounded-xl border border-dashed">
+                        <div className="p-8 text-center text-gray-400 bg-white/5 rounded-2xl border border-dashed border-white/10 text-sm">
                           No profile information recorded.
                         </div>
                       )}
@@ -674,112 +765,98 @@ export default function AdminDashboard() {
 
                     <button
                       onClick={() => setInspectingClient(null)}
-                      className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold transition mt-8"
+                      className="w-full bg-accent text-slate-950 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display shadow-lg shadow-accent/10 mt-8"
                     >
-                      Close Card
+                      Close Health Card
                     </button>
                   </div>
                 </div>
               )}
-            </div>
+            </ScrollReveal>
           )}
 
-          {/* TAB 3: APPROVE TRAINERS */}
           {activeTab === 'trainers' && (
-            <div>
-              <div className="mb-10 pb-4 border-b">
-                <p className="text-sm uppercase tracking-[0.2em] text-blue-600 font-bold">Trainer Operations</p>
-                <h1 className="text-3xl md:text-4xl font-extrabold mt-2 text-primary-dark">Certified Trainers Registry</h1>
-                <p className="text-gray-600 mt-2 text-sm">
-                  Review professional trainer profiles and approve new platform applications to expand active availability.
-                </p>
+            <ScrollReveal className="space-y-8">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Registry validation</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Instructor Approvals Desk</h1>
               </div>
 
-              {/* Status Filters */}
-              <div className="flex gap-2 mb-6">
-                <button
-                  onClick={() => setTrainerFilter('all')}
-                  className={`px-4 py-2 text-xs font-semibold rounded-full border transition ${
-                    trainerFilter === 'all' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  All Trainers ({trainers.length})
-                </button>
-                <button
-                  onClick={() => setTrainerFilter('approved')}
-                  className={`px-4 py-2 text-xs font-semibold rounded-full border transition ${
-                    trainerFilter === 'approved' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  Approved ({trainers.filter(t => t.profile?.approvedAt !== null).length})
-                </button>
-                <button
-                  onClick={() => setTrainerFilter('pending')}
-                  className={`px-4 py-2 text-xs font-semibold rounded-full border transition ${
-                    trainerFilter === 'pending' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  Pending Review ({trainers.filter(t => t.profile?.approvedAt === null).length})
-                </button>
+              {/* Filter tags */}
+              <div className="flex gap-2">
+                {[
+                  { id: 'all', label: `All Instructors (${trainers.length})` },
+                  { id: 'approved', label: `Approved Matched (${trainers.filter(t => t.profile?.approvedAt !== null).length})` },
+                  { id: 'pending', label: `Pending Validation (${trainers.filter(t => t.profile?.approvedAt === null).length})` }
+                ].map((tag) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => setTrainerFilter(tag.id as any)}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-full border transition duration-300 ${
+                      trainerFilter === tag.id
+                        ? 'bg-accent text-slate-950 border-accent shadow-md shadow-accent/5'
+                        : isDark ? 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    {tag.label}
+                  </button>
+                ))}
               </div>
 
-              {/* Trainers Table */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-10">
+              {/* Trainers Table Card */}
+              <div className={`border rounded-3xl overflow-hidden shadow-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800 shadow-slate-100'}`}>
                 {filteredTrainers.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-slate-50 border-b border-gray-200 text-xs text-slate-500 uppercase tracking-wider font-bold">
+                    <table className="w-full text-left">
+                      <thead className={`font-display text-[10px] uppercase tracking-widest ${isDark ? 'bg-white/5 border-b border-white/5 text-gray-400' : 'bg-slate-50 border-b border-slate-100 text-slate-500'}`}>
                         <tr>
-                          <th className="px-6 py-4 text-left">Trainer</th>
-                          <th className="px-6 py-4 text-left">Specialization</th>
-                          <th className="px-6 py-4 text-left">Bio / Credentials</th>
-                          <th className="px-6 py-4 text-left">Registration Status</th>
-                          <th className="px-6 py-4 text-left">Actions</th>
+                          <th className="px-6 py-4 min-w-[200px]">Specialist Member</th>
+                          <th className="px-6 py-4 min-w-[150px]">Specialization</th>
+                          <th className="px-6 py-4 min-w-[250px]">Credentials & Bio</th>
+                          <th className="px-6 py-4 min-w-[150px]">Validation Status</th>
+                          <th className="px-6 py-4 text-right min-w-[180px]">Administrative Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 text-sm">
+                      <tbody className={`divide-y text-sm ${isDark ? 'divide-white/5' : 'divide-slate-100'}`}>
                         {filteredTrainers.map((trainer) => (
-                          <tr key={trainer.id} className="hover:bg-slate-50/50">
+                          <tr key={trainer.id} className={`transition ${isDark ? 'hover:bg-white/5 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                             <td className="px-6 py-4">
-                              <div className="font-bold text-slate-800">{trainer.fullName}</div>
-                              <div className="text-xs text-gray-500 font-mono">{trainer.email}</div>
-                              {trainer.phone && <div className="text-xs text-gray-400">{trainer.phone}</div>}
+                              <div className="font-bold">{trainer.fullName}</div>
+                              <span className="text-[10px] text-gray-400 font-mono block">{trainer.email}</span>
                             </td>
                             <td className="px-6 py-4">
                               {trainer.profile ? (
-                                <span className={`inline-block border px-2.5 py-0.5 rounded-full text-xs font-bold ${getSpecializationColor(trainer.profile.specialization)}`}>
+                                <span className={`inline-block whitespace-nowrap border px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${getSpecializationColor(trainer.profile.specialization)}`}>
                                   {getSpecializationLabel(trainer.profile.specialization)}
                                 </span>
                               ) : (
-                                <span className="text-gray-400 text-xs">No profile</span>
+                                <span className="text-gray-400 text-xs">No profile registered</span>
                               )}
                             </td>
-                            <td className="px-6 py-4 max-w-xs">
-                              <p className="text-xs text-gray-600 line-clamp-2 italic">
-                                "{trainer.profile?.bio || 'No credentials uploaded.'}"
-                              </p>
+                            <td className={`px-6 py-4 max-w-xs text-xs italic ${isDark ? 'text-gray-300' : 'text-slate-500'}`}>
+                              "{trainer.profile?.bio || 'No credentials uploaded.'}"
                             </td>
                             <td className="px-6 py-4">
                               {trainer.profile?.approvedAt ? (
-                                <span className="inline-flex items-center gap-1.5 text-green-600 text-xs font-bold">
+                                <span className="inline-flex items-center gap-1.5 text-green-400 text-xs font-bold">
                                   <span className="w-2 h-2 rounded-full bg-green-500"></span> Approved
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 text-amber-500 text-xs font-bold animate-pulse">
-                                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span> Pending Review
+                                <span className="inline-flex items-center gap-1.5 text-accent text-xs font-bold animate-pulse">
+                                  <span className="w-2 h-2 rounded-full bg-accent animate-ping"></span> Pending review
                                 </span>
                               )}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4 text-right">
                               {trainer.profile?.approvedAt ? (
                                 <span className="text-gray-400 text-xs">Approved on {new Date(trainer.profile.approvedAt).toLocaleDateString()}</span>
                               ) : (
                                 <button
                                   onClick={() => handleApproveTrainer(trainer.id)}
                                   disabled={actionLoading}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition disabled:bg-blue-400"
+                                  className="bg-accent hover:bg-accent-dark text-slate-950 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl transition disabled:opacity-40"
                                 >
-                                  Approve application
+                                  Approve Instructor
                                 </button>
                               )}
                             </td>
@@ -789,52 +866,52 @@ export default function AdminDashboard() {
                     </table>
                   </div>
                 ) : (
-                  <div className="p-12 text-center text-gray-500">No trainers fit this filter selection.</div>
+                  <div className="p-8 text-center text-gray-400 text-sm">No matched instructors files found.</div>
                 )}
               </div>
-            </div>
+            </ScrollReveal>
           )}
 
-          {/* TAB 4: SERVICES & PRICING */}
           {activeTab === 'services' && (
-            <div>
-              <div className="mb-10 pb-4 border-b">
-                <p className="text-sm uppercase tracking-[0.2em] text-blue-600 font-bold">Services & Operations</p>
-                <h1 className="text-3xl md:text-4xl font-extrabold mt-2 text-primary-dark">Service Offerings & Pricing</h1>
-                <p className="text-gray-600 mt-2 text-sm">
-                  View and update price per session indices for the main PhysiFit offerings. The changes sync directly with user checkout calculations.
+            <ScrollReveal className="space-y-8">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Services offers</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Offerings & Pricing Index</h1>
+                <p className={`mt-2 text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                  View and update Naira session cost indicators. Pricing adjustments update checkout calculations dynamically.
                 </p>
               </div>
 
-              {/* Pricing Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              {/* Services cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {services.map((svc) => (
-                  <div key={svc.id} className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm flex flex-col justify-between h-80">
+                  <div key={svc.id} className={`border rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col justify-between min-h-[300px] relative overflow-hidden transition hover:scale-[1.01] duration-300 ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800 shadow-sm shadow-slate-100'}`}>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
                     <div>
                       <div className="flex justify-between items-start mb-4">
-                        <span className={`inline-block border px-2.5 py-0.5 rounded-full text-xs font-bold ${getSpecializationColor(svc.slug === 'senior-fitness' ? 'senior_fitness' : svc.slug === 'postpartum-fitness' ? 'postpartum' : 'corporate_wellness')}`}>
+                        <span className={`inline-block border px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getSpecializationColor(svc.slug === 'senior-fitness' ? 'senior_fitness' : svc.slug === 'postpartum-fitness' ? 'postpartum' : 'corporate_wellness')}`}>
                           {svc.name}
                         </span>
                       </div>
-                      <p className="text-gray-600 text-sm line-clamp-3 mb-6">{svc.description}</p>
+                      <p className={`text-xs leading-relaxed mb-6 ${isDark ? 'text-gray-300' : 'text-slate-500'}`}>{svc.description}</p>
                     </div>
 
-                    <div className="pt-4 border-t">
+                    <div className="pt-4 border-t border-white/5">
                       <div className="flex justify-between items-center mb-4">
-                        <span className="text-xs text-gray-400 uppercase font-bold">Session Cost</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-display font-bold">Price Index Per Spot</span>
                         {editingServiceId === svc.id ? (
-                          <div className="flex items-center gap-1.5 max-w-[120px]">
-                            <span className="text-sm font-bold text-gray-700">₦</span>
+                          <div className="flex items-center gap-1.5 max-w-[140px]">
+                            <span className="text-xs font-bold text-accent">₦</span>
                             <input
                               type="number"
                               value={tempPrice}
                               onChange={(e) => setTempPrice(e.target.value)}
-                              className="border border-gray-300 rounded px-1.5 py-1 text-xs w-full focus:outline-none"
+                              className={`border rounded-xl px-2.5 py-1.5 text-xs w-full focus:outline-none ${isDark ? 'border-white/10 focus:border-accent bg-[#0c101c] text-white' : 'border-slate-200 focus:border-accent bg-white text-slate-800'}`}
                               autoFocus
                             />
                           </div>
                         ) : (
-                          <span className="font-extrabold text-blue-600 text-lg">₦{svc.priceNairaPerSession.toLocaleString()}</span>
+                          <span className="font-extrabold text-accent text-lg font-display tracking-tight">₦{svc.priceNairaPerSession.toLocaleString()}</span>
                         )}
                       </div>
 
@@ -843,13 +920,13 @@ export default function AdminDashboard() {
                           <button
                             onClick={() => handleUpdatePrice(svc.id)}
                             disabled={actionLoading}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-xs transition disabled:bg-blue-400"
+                            className="flex-1 bg-accent hover:bg-accent-dark text-slate-950 font-bold py-2.5 rounded-xl text-xs transition disabled:opacity-40 uppercase tracking-widest font-display shadow-md shadow-accent/10"
                           >
-                            Save
+                            Save Price
                           </button>
                           <button
                             onClick={() => { setEditingServiceId(null); setTempPrice(''); }}
-                            className="border border-gray-300 text-slate-700 font-bold py-2 px-3 rounded-lg text-xs hover:bg-gray-50 transition"
+                            className={`border font-bold py-2.5 px-4 rounded-xl text-xs transition uppercase tracking-widest font-display ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/10' : 'border-slate-350 text-slate-700 hover:bg-slate-50'}`}
                           >
                             ✕
                           </button>
@@ -860,16 +937,16 @@ export default function AdminDashboard() {
                             setEditingServiceId(svc.id);
                             setTempPrice(svc.priceNairaPerSession.toString());
                           }}
-                          className="w-full border-2 border-gray-200 hover:border-gray-300 text-slate-700 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                          className={`w-full border hover:border-accent/40 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 uppercase tracking-widest font-display bg-white/5 ${isDark ? 'border-white/10 text-gray-300 hover:text-white' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}
                         >
-                          ✏️ Edit Session Price
+                          ✏️ Edit Offer Price
                         </button>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </ScrollReveal>
           )}
         </main>
       </div>

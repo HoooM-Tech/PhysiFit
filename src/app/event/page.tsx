@@ -11,6 +11,7 @@ import CircleOrnament from '@/components/CircleOrnament'
 import Icon, { type IconName } from '@/components/Icon'
 import StationCard from '@/components/StationCard'
 import ScrollReveal from '@/components/ScrollReveal'
+import { useTheme } from '@/context/ThemeContext'
 
 const stations = [
   {
@@ -99,8 +100,11 @@ const journey = [
 ]
 
 export default function EventPage() {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-primary-darker text-white' : 'bg-white text-gray-800'}`}>
       <Header />
 
       <main id="main">
@@ -168,10 +172,10 @@ export default function EventPage() {
         </section>
 
         {/* Event Details */}
-        <section id="event-details" className="py-20 bg-white">
+        <section id="event-details" className={`py-20 transition-colors duration-300 ${isDark ? 'bg-primary-darker' : 'bg-white'}`}>
           <ScrollReveal className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
-              <SectionHeader eyebrow="THE BASICS" headline="Event Details" />
+              <SectionHeader eyebrow="THE BASICS" headline="Event Details" tone={isDark ? 'dark' : 'light'} />
               <div className="space-y-5 mt-10">
                 {metaItems.map((item) => (
                   <div key={item.label} className="flex gap-5 items-start">
@@ -180,7 +184,7 @@ export default function EventPage() {
                     </div>
                     <div className="pt-1">
                       <p className="text-xs font-bold tracking-[0.2em] uppercase text-accent mb-1">{item.label}</p>
-                      <p className="text-gray-700 text-lg">{item.value}</p>
+                      <p className={`text-lg ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{item.value}</p>
                     </div>
                   </div>
                 ))}
@@ -210,15 +214,16 @@ export default function EventPage() {
         </section>
 
         {/* Mission Section */}
-        <section className="py-20 bg-gray-50">
+        <section className={`py-20 transition-colors duration-300 ${isDark ? 'bg-primary-dark/20' : 'bg-gray-50'}`}>
           <ScrollReveal className="max-w-7xl mx-auto px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
               <div>
                 <SectionHeader
                   eyebrow="OUR MISSION"
                   headline="Healthy Aging Through Evidence-Based Movement"
+                  tone={isDark ? 'dark' : 'light'}
                 />
-                <p className="text-gray-600 mt-8 leading-relaxed text-lg">
+                <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} mt-8 leading-relaxed text-lg`}>
                   Move Safer, Live Stronger brings together carefully curated, evidence-based activities that support healthy aging. Each station is designed to meet seniors where they are — building physical capability, mental sharpness, and social connection in a safe, welcoming environment.
                 </p>
               </div>
@@ -254,7 +259,7 @@ export default function EventPage() {
         </section>
 
         {/* Wellness Stations */}
-        <section className="py-24 bg-white">
+        <section className={`py-24 transition-colors duration-300 ${isDark ? 'bg-primary-darker' : 'bg-white'}`}>
           <div className="max-w-7xl mx-auto px-6">
             <ScrollReveal className="text-center flex flex-col items-center mb-14">
               <SectionHeader
@@ -262,6 +267,7 @@ export default function EventPage() {
                 headline="Wellness Activity Stations"
                 subhead="Each station is expertly facilitated by certified wellness professionals and tailored to varying ability levels."
                 align="center"
+                tone={isDark ? 'dark' : 'light'}
               />
             </ScrollReveal>
 
@@ -274,13 +280,14 @@ export default function EventPage() {
         </section>
 
         {/* Journey Section */}
-        <section className="py-24 bg-gray-50">
+        <section className={`py-24 transition-colors duration-300 ${isDark ? 'bg-primary-dark/20' : 'bg-gray-50'}`}>
           <div className="max-w-7xl mx-auto px-6">
             <ScrollReveal className="text-center flex flex-col items-center mb-14">
               <SectionHeader
                 eyebrow="YOUR JOURNEY"
                 headline="How the Day Unfolds"
                 align="center"
+                tone={isDark ? 'dark' : 'light'}
               />
             </ScrollReveal>
 
@@ -296,8 +303,8 @@ export default function EventPage() {
                     </div>
                   </div>
                   <div className="pt-2">
-                    <h3 className="font-display text-2xl uppercase tracking-wide text-primary-darker mb-2">{step.title}</h3>
-                    <p className="text-gray-600 leading-relaxed">{step.body}</p>
+                    <h3 className={`font-display text-2xl uppercase tracking-wide mb-2 ${isDark ? 'text-white' : 'text-primary-darker'}`}>{step.title}</h3>
+                    <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed`}>{step.body}</p>
                   </div>
                 </div>
               ))}

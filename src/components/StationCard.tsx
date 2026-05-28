@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import CornerTriangle from './CornerTriangle'
+import { useTheme } from '@/context/ThemeContext'
 
 type Category = 'PHYSICAL' | 'MENTAL' | 'SOCIAL'
 
@@ -18,8 +19,13 @@ const categoryStyles: Record<Category, string> = {
 }
 
 export default function StationCard({ image, alt, title, body, category }: StationCardProps) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+
   return (
-    <article className="group bg-white border border-gray-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+    <article className={`group hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border ${
+      isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-gray-200 text-slate-800'
+    }`}>
       <div className="relative h-56 w-full overflow-hidden">
         <Image
           src={image}
@@ -34,8 +40,8 @@ export default function StationCard({ image, alt, title, body, category }: Stati
         </span>
       </div>
       <div className="p-7">
-        <h3 className="font-display text-2xl uppercase tracking-wide text-primary-darker mb-3">{title}</h3>
-        <p className="text-gray-600 leading-relaxed text-[15px]">{body}</p>
+        <h3 className={`font-display text-2xl uppercase tracking-wide mb-3 ${isDark ? 'text-white' : 'text-primary-darker'}`}>{title}</h3>
+        <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed text-[15px]`}>{body}</p>
       </div>
     </article>
   )

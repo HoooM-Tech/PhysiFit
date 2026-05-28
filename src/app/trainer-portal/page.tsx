@@ -4,6 +4,8 @@ import Header from '@/components/Header'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import ScrollReveal from '@/components/ScrollReveal'
+import { useTheme } from '@/context/ThemeContext'
 
 interface Client {
   id: string;
@@ -54,6 +56,9 @@ export default function TrainerPortal() {
   const [activeTab, setActiveTab] = useState<'clients' | 'today' | 'messages' | 'plans'>('clients')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileChatActive, setMobileChatActive] = useState(false)
+
+  // Theme state
+  const { theme, toggleTheme } = useTheme()
   
   // Data States
   const [trainerUser, setTrainerUser] = useState<any>(null)
@@ -80,7 +85,6 @@ export default function TrainerPortal() {
   const [checkingInId, setCheckingInId] = useState<string | null>(null)
 
   // Cancel Session State
-  const [cancellingSessionId, setCancellingSessionId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelSubmitting, setCancelSubmitting] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
@@ -94,6 +98,18 @@ export default function TrainerPortal() {
   const [rescheduleReason, setRescheduleReason] = useState('')
   const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false)
   const [rescheduleError, setRescheduleError] = useState('')
+
+  // Simulated WebRTC Telehealth States
+  const [showVideoCall, setShowVideoCall] = useState(false)
+  const [micMuted, setMicMuted] = useState(false)
+  const [camOff, setCamOff] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [stream, setStream] = useState<MediaStream | null>(null)
+
+  // PAR-Q Screening AI Workout Builder States
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiStep, setAiStep] = useState(0)
+  const [aiResult, setAiResult] = useState<any>(null)
 
   const activeMessagesEndRef = useRef<HTMLDivElement>(null)
   const activeThreadIdRef = useRef<string | null>(null)
@@ -236,6 +252,32 @@ export default function TrainerPortal() {
 
     return () => clearInterval(interval)
   }, [activeMessages.length])
+
+  // Camera stream activation for WebRTC simulated telehealth video consultation
+  useEffect(() => {
+    if (showVideoCall && !camOff) {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(s => {
+          setStream(s)
+          if (videoRef.current) {
+            videoRef.current.srcObject = s
+          }
+        })
+        .catch(err => {
+          console.warn("Camera access denied or unavailable:", err)
+        })
+    } else {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+        setStream(null)
+      }
+    }
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [showVideoCall, camOff])
 
   // Send message
   const handleSendMessage = async () => {
@@ -429,7 +471,6 @@ export default function TrainerPortal() {
 
   // Find or create conversation with a client
   const handleMessageClientClick = async (clientName: string, clientId: string) => {
-    // Check if thread exists
     let existingThread = threads.find(t => t.other_user_id === clientId)
     
     if (existingThread) {
@@ -437,9 +478,6 @@ export default function TrainerPortal() {
       setActiveTab('messages')
       setMobileChatActive(true)
     } else {
-      // If conversation is not started in mock, let's open it by establishing a first message placeholder or thread lookup
-      // Since Paystack keys/database use stable thread_id on backend, sending a message automatically creates the thread!
-      // Let's create a thread placeholder in threads list locally to switch tabs
       const mockThreadId = crypto.randomUUID()
       const newThread: ChatThread = {
         thread_id: mockThreadId,
@@ -505,6 +543,7 @@ export default function TrainerPortal() {
     setPlanExercises([{ name: '', sets: 3, reps: 10, focus: 'strength' }])
     setPlanSuccessMsg('')
     setPlanErrorMsg('')
+    setAiResult(null)
   }
 
   // Exercise builder handlers
@@ -588,6 +627,9 @@ export default function TrainerPortal() {
     }
   }
 
+  // Theme Toggle
+  const handleToggleTheme = toggleTheme
+
   // Date Formatting helper
   const formatDateTime = (dtStr: string) => {
     try {
@@ -598,7 +640,86 @@ export default function TrainerPortal() {
     }
   }
 
+  // Simulated AI Core Screener Analyzer
+  const handleTriggerAIWorkoutAssistant = () => {
+    const selectedClient = clients.find(c => c.id === planClientId)
+    if (!selectedClient) return
+
+    setAiLoading(true)
+    setAiStep(0)
+    setAiResult(null)
+
+    // Simulate multi-stage AI diagnostic screening
+    const interval = setInterval(() => {
+      setAiStep(prev => {
+        if (prev < 3) return prev + 1
+        clearInterval(interval)
+        return prev
+      })
+    }, 1200)
+
+    setTimeout(() => {
+      // Analyze medical notes keywords to yield customized senior-rehabilitation programs
+      const notes = (selectedClient.medicalNotes || '').toLowerCase()
+      let generatedPlan: any = null
+
+      if (notes.includes('fall') || notes.includes('dizziness') || notes.includes('balance') || notes.includes('vertigo')) {
+        generatedPlan = {
+          notes: "AI Recommended: Stability and balance-focused program to combat vertigo/fall records. Rest 45s between sets. Focus on safe footing.",
+          exercises: [
+            { name: "Single-Leg Stance (Near Wall Support)", sets: 3, reps: 10, focus: 'balance' },
+            { name: "Tandem Heel-to-Toe Walking Sequence", sets: 3, reps: 12, focus: 'balance' },
+            { name: "Seated Chair Leg Extensions", sets: 3, reps: 10, focus: 'mobility' },
+            { name: "Gentle Core Glute Bridge Lift", sets: 3, reps: 8, focus: 'core' }
+          ]
+        }
+      } else if (notes.includes('joint') || notes.includes('arthritis') || notes.includes('knee') || notes.includes('back')) {
+        generatedPlan = {
+          notes: "AI Recommended: Low-impact joint-sparing strength and mobility routine. Avoid heavy loading. Emphasize full ROM smoothly.",
+          exercises: [
+            { name: "Seated Chair Wall Sit (Hovering)", sets: 3, reps: 8, focus: 'strength' },
+            { name: "Supported Standing Clamshell Exercises", sets: 3, reps: 12, focus: 'mobility' },
+            { name: "Gentle Standing Calf Raises", sets: 3, reps: 15, focus: 'balance' },
+            { name: "Pelvic Tilts for Spine Mobilization", sets: 3, reps: 10, focus: 'core' }
+          ]
+        }
+      } else if (notes.includes('heart') || notes.includes('hypertension') || notes.includes('cardio') || notes.includes('pressure')) {
+        generatedPlan = {
+          notes: "AI Recommended: Gentle low-intensity cardiovascular vitals routine. Monitor heart rate closely. Allow longer active rest phases.",
+          exercises: [
+            { name: "Seated Chair Marching (Paced rhythm)", sets: 3, reps: 20, focus: 'cardio' },
+            { name: "Wall Assisted Angled Pushups", sets: 3, reps: 10, focus: 'strength' },
+            { name: "Chair Stepping Side Jacks", sets: 3, reps: 15, focus: 'cardio' },
+            { name: "Gentle Torso Twists for Balance Check", sets: 3, reps: 10, focus: 'balance' }
+          ]
+        }
+      } else {
+        generatedPlan = {
+          notes: "AI Recommended: Standard Senior Wellness & Balance baseline routine. Maintain a smooth and steady breathing pace.",
+          exercises: [
+            { name: "Chair Squats with Hand Guidance", sets: 3, reps: 10, focus: 'strength' },
+            { name: "Wall Slide Arm Raises (Shoulder Mobility)", sets: 3, reps: 12, focus: 'mobility' },
+            { name: "Single-Leg Stance Balance Hold", sets: 3, reps: 10, focus: 'balance' },
+            { name: "Seated Core Core Draw-Ins", sets: 3, reps: 12, focus: 'core' }
+          ]
+        }
+      }
+
+      setAiResult(generatedPlan)
+      setAiLoading(false)
+    }, 4800)
+  }
+
+  const handleLoadAIPlan = () => {
+    if (!aiResult) return
+    setPlanNotes(aiResult.notes)
+    setPlanExercises(aiResult.exercises)
+    setAiResult(null)
+  }
+
   const activeThread = threads.find(t => t.thread_id === activeThreadId)
+  const isDark = theme === 'dark'
+  const optionClass = isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-800'
 
   // Calculate trainer summary statistics
   const activeClientsCount = clients.length
@@ -611,341 +732,294 @@ export default function TrainerPortal() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className={`min-h-screen flex flex-col justify-between ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
         <Header />
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="animate-spin inline-block w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
-          <p className="text-gray-600 font-semibold">Loading Trainer Portal...</p>
+        <div className={`flex-1 flex flex-col items-center justify-center ${isDark ? 'text-white' : 'text-slate-800'}`}>
+          <div className="animate-spin inline-block w-12 h-12 border-4 border-accent border-t-transparent rounded-full mb-6"></div>
+          <p className="font-display uppercase tracking-widest text-accent text-sm animate-pulse">Syncing Trainer Credentials...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile Sidebar backdrop */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity"
-        />
-      )}
+    <div className={`min-h-screen transition-colors duration-300 flex flex-col ${
+      isDark
+        ? 'bg-gradient-to-br from-slate-950 via-[#101625] to-[#1c283f] text-white'
+        : 'bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-900'
+    }`}>
+      <Header />
 
-      {/* Sidebar */}
-      <div
-        className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white p-6 transition-all duration-300 ease-in-out shadow-2xl md:shadow-none flex flex-col justify-between overflow-y-auto ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'
-        }`}
-      >
-          <div>
-            <div className="mb-12 flex items-center justify-between">
-              <span className="text-2xl font-bold tracking-wide">PhysiFit <span className="text-blue-500">Trainer</span></span>
+      <div className="flex-1 flex relative">
+        {/* Mobile Sidebar backdrop */}
+        {sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside
+          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-y-auto ${
+            isDark
+              ? 'bg-slate-950/95 border-white/5 text-white'
+              : 'bg-white/95 border-slate-200 text-slate-800'
+          } ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          }`}
+          style={{ backgroundColor: isDark ? 'rgba(2, 6, 23, 0.95)' : 'rgba(255, 255, 255, 0.95)' }}
+        >
+          <div className="space-y-10">
+            <div className="flex items-center justify-between">
+              <span className={`text-xl font-display uppercase tracking-widest font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                PhysiFit <span className="text-accent font-extrabold">Trainer</span>
+              </span>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="md:hidden p-1 rounded-lg hover:bg-gray-800 border border-gray-700 text-gray-400"
+                className={`md:hidden w-8 h-8 rounded-full border flex items-center justify-center transition ${isDark ? 'border-white/10 hover:bg-white/10' : 'border-slate-200 hover:bg-slate-100'}`}
                 aria-label="Close sidebar"
               >
                 ✕
               </button>
             </div>
 
-            <div className="mb-8">
-              <p className="text-xs uppercase text-gray-400 font-bold mb-4">TRAINER PORTAL</p>
+            {/* Trainer Profile Card */}
+            <div className={`border rounded-2xl p-4 flex items-center gap-3 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100/80 border-slate-200'}`}>
+              <div className="w-12 h-12 rounded-full bg-accent text-slate-950 flex items-center justify-center font-bold text-lg font-display">
+                {trainerUser?.fullName ? trainerUser.fullName.charAt(0) : 'T'}
+              </div>
+              <div className="overflow-hidden">
+                <p className="font-bold text-sm truncate">{trainerUser?.fullName || 'Specialist'}</p>
+                <span className={`text-[10px] font-mono tracking-wider block uppercase ${isDark ? 'text-accent' : 'text-slate-500'}`}>Certified Instructor</span>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <p className="text-[10px] uppercase text-gray-400 font-bold tracking-widest font-mono">Specialist Desk</p>
               <nav className="space-y-2">
-                <button
-                  onClick={() => {
-                    setActiveTab('clients')
-                    if (window.innerWidth < 768) setSidebarOpen(false)
-                  }}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition ${
-                    activeTab === 'clients' ? 'bg-blue-600' : 'text-gray-300 hover:bg-gray-800'
-                  }`}
-                >
-                  👥 My Clients
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('today')
-                    if (window.innerWidth < 768) setSidebarOpen(false)
-                  }}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition ${
-                    activeTab === 'today' ? 'bg-blue-600' : 'text-gray-300 hover:bg-gray-800'
-                  }`}
-                >
-                  📅 Sessions Timeline
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('messages')
-                    if (window.innerWidth < 768) setSidebarOpen(false)
-                  }}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition relative ${
-                    activeTab === 'messages' ? 'bg-blue-600' : 'text-gray-300 hover:bg-gray-800'
-                  }`}
-                >
-                  💬 Messages
-                  {threads.some(t => t.unread_count > 0) && (
-                    <span className="absolute top-2 right-3 w-2 h-2 bg-red-500 rounded-full"></span>
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('plans')
-                    if (window.innerWidth < 768) setSidebarOpen(false)
-                  }}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition ${
-                    activeTab === 'plans' ? 'bg-blue-600' : 'text-gray-300 hover:bg-gray-800'
-                  }`}
-                >
-                  📋 Fitness Plans
-                </button>
+                {[
+                  { id: 'clients', label: '👥 My Assigned Clients' },
+                  { id: 'today', label: '📅 Sessions Timeline' },
+                  { id: 'plans', label: '📋 Plan Builder Panel' },
+                  { id: 'messages', label: '💬 Messages Desk', indicator: threads.some(t => t.unread_count > 0) }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id as any)
+                      if (window.innerWidth < 768) setSidebarOpen(false)
+                    }}
+                    className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 relative border flex items-center justify-between ${
+                      activeTab === tab.id
+                        ? 'bg-accent text-slate-950 border-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                        : isDark
+                          ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
+                          : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.indicator && (
+                      <span className="w-2.5 h-2.5 bg-red-500 border-2 border-slate-950 rounded-full animate-pulse"></span>
+                    )}
+                  </button>
+                ))}
               </nav>
             </div>
 
-            <div className="mb-8">
-              <p className="text-xs uppercase text-gray-400 font-bold mb-4">ACCOUNT</p>
-              <nav className="space-y-2">
-                <div className="px-4 py-2 text-xs text-gray-400 font-mono">
-                  Role: Trainer
-                </div>
-                <button
-                  onClick={async () => {
-                    await fetch('/api/auth/logout', { method: 'POST' })
-                    router.push('/')
-                  }}
-                  className="w-full text-left px-4 py-3 text-red-400 hover:bg-gray-800 rounded-lg transition"
-                >
-                  🚪 Sign Out
-                </button>
-              </nav>
+            {/* Appearance Toggle */}
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase text-gray-400 font-bold tracking-widest font-mono">Appearance</p>
+              <button
+                onClick={handleToggleTheme}
+                className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border flex items-center justify-between ${
+                  isDark
+                    ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
+                    : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
+                }`}
+              >
+                <span>{isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
+                <span className="text-[9px] opacity-60 font-mono">Theme</span>
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Collapsed Sidebar Icon */}
-        {!sidebarOpen && (
-          <div className="hidden md:flex w-16 bg-gray-900 md:sticky md:top-0 md:h-screen flex-col items-center py-8 gap-6 transition-all duration-300 overflow-y-auto">
+          <button
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' })
+              router.push('/')
+            }}
+            className="w-full text-left px-5 py-3 rounded-xl text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-xs font-bold font-display uppercase tracking-widest transition"
+          >
+            🚪 Exit Portal
+          </button>
+        </aside>
+
+        {/* Content Area */}
+        <main className="flex-1 min-h-screen flex flex-col p-6 sm:p-12 overflow-x-hidden">
+          {/* Mobile Sidebar Trigger */}
+          <div className="flex md:hidden items-center justify-between mb-8">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded-full bg-blue-600 p-3 text-white shadow-lg hover:bg-blue-700 transition"
-              aria-label="Expand sidebar"
+              className={`w-12 h-12 border rounded-2xl flex items-center justify-center font-bold text-xl transition ${isDark ? 'bg-white/5 hover:bg-white/10 border-white/10' : 'bg-white hover:bg-slate-50 border-slate-200'}`}
             >
               ☰
             </button>
+            <span className="font-display uppercase tracking-widest text-accent text-xs font-bold">Trainer Portal</span>
           </div>
-        )}
-
-      {/* Main Content Area */}
-      <div className="flex-1 min-h-screen flex flex-col overflow-x-hidden">
-        {/* Top bar for mobile menu */}
-        <header className="bg-white border-b border-gray-200 h-16 px-6 flex items-center justify-between md:justify-start gap-4">
-          <button
-            onClick={() => setSidebarOpen(value => !value)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition"
-          >
-            {sidebarOpen ? '←' : '☰'}
-          </button>
-          <span className="font-bold text-gray-800 md:hidden">PhysiFit Trainer</span>
-        </header>
-
-        {/* Content area */}
-        <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
 
           {trainerProfile && !trainerProfile.approvedAt && (
-            <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 rounded p-4 flex items-start gap-3">
-              <span className="text-yellow-600 text-xl leading-none" aria-hidden>⏳</span>
+            <div className={`mb-8 border rounded-2xl p-6 text-left flex gap-4 ${isDark ? 'bg-amber-500/10 border-accent/20' : 'bg-amber-50 border-amber-200'}`}>
+              <span className="text-2xl">⏳</span>
               <div>
-                <p className="font-bold text-yellow-900">Account pending approval</p>
-                <p className="text-sm text-yellow-900 mt-1">
-                  Your trainer account is being reviewed by an admin. You can explore the portal,
-                  but you won't appear in client matching or receive client assignments until your
-                  account is approved.
+                <p className="font-bold text-accent uppercase tracking-wider text-xs font-display">Account Under Administrative Review</p>
+                <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
+                  Your certified instructor profile is pending manual validation by platform administrators. You can build routines, but active clients cannot be matched to you until approval indices sync.
                 </p>
               </div>
             </div>
           )}
 
           {activeTab === 'clients' && (
-            <div>
-              <h1 className="text-4xl font-bold mb-2 text-primary-dark">My Assigned Clients</h1>
-              <p className="text-gray-600 mb-8">Manage and review all your assigned fitness program clients.</p>
-
-              {/* Summary Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                <div className="bg-blue-600 text-white rounded-xl p-8 shadow-sm">
-                  <p className="text-gray-200 text-sm uppercase mb-2">ACTIVE CLIENTS</p>
-                  <p className="text-4xl font-bold mb-2">{activeClientsCount}</p>
-                  <p className="text-sm">Assigned program profiles</p>
-                </div>
-
-                <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
-                  <p className="text-gray-600 text-sm uppercase mb-2">COMPLETED TOTAL</p>
-                  <p className="text-4xl font-bold mb-2">{completedThisMonth}</p>
-                  <p className="text-sm text-gray-600">Sessions verified this month</p>
-                </div>
-
-                <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
-                  <p className="text-gray-600 text-sm uppercase mb-2">TODAY'S SCHEDULE</p>
-                  <p className="text-4xl font-bold mb-2">{todayUpcomingSessions.length}</p>
-                  <p className="text-sm text-gray-600">Sessions remaining today</p>
-                </div>
+            <ScrollReveal className="space-y-10">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Specialist Dashboard</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>My Active Clients</h1>
+                <p className={`mt-2 text-sm max-w-xl ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                  Review matched wellness profiles, check medical screener PAR-Q notes, and publish dynamic physical strategies.
+                </p>
               </div>
 
-              {/* Clients Table */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              {/* Stats Summary Panel */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {[
+                  { label: 'Assigned Active Clients', val: activeClientsCount, sub: 'Matched program profiles' },
+                  { label: 'Completed verified spots', val: completedThisMonth, sub: 'This calendar month', highlighted: true },
+                  { label: "Today's timeline spots", val: todayUpcomingSessions.length, sub: 'Verification remaining today' }
+                ].map((card, i) => (
+                  <div key={i} className={`rounded-3xl p-6 shadow-xl relative overflow-hidden transition hover:scale-[1.02] duration-300 ${
+                    card.highlighted
+                      ? isDark ? 'bg-accent/15 border border-accent/30 text-white' : 'bg-accent/20 border border-accent/30 text-slate-800 shadow-sm'
+                      : isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm shadow-slate-100'
+                  }`}>
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-2">{card.label}</span>
+                    <p className={`text-4xl font-extrabold font-display tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>{card.val}</p>
+                    <p className="text-xs text-accent font-semibold">{card.sub}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Clients Registry Card */}
+              <div className={`border rounded-3xl overflow-hidden shadow-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800 shadow-slate-100'}`}>
                 {clients.length > 0 ? (
-                  <>
-                    {/* Desktop Table View */}
-                    <div className="hidden md:block overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                          <tr>
-                            <th className="px-6 py-4 text-left text-sm font-bold">CLIENT</th>
-                            <th className="px-6 py-4 text-left text-sm font-bold">PROGRAM</th>
-                            <th className="px-6 py-4 text-left text-sm font-bold">PROGRESS</th>
-                            <th className="px-6 py-4 text-left text-sm font-bold">NEXT SESSION</th>
-                            <th className="px-6 py-4 text-left text-sm font-bold">ACTION</th>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead className={`font-display text-[10px] uppercase tracking-widest ${isDark ? 'bg-white/5 border-b border-white/5 text-gray-400' : 'bg-slate-50 border-b border-slate-100 text-slate-500'}`}>
+                        <tr>
+                          <th className="px-6 py-4 min-w-[200px]">Client Member</th>
+                          <th className="px-6 py-4 min-w-[150px]">Clinical Program</th>
+                          <th className="px-6 py-4 min-w-[150px]">Completed Spots</th>
+                          <th className="px-6 py-4 min-w-[160px]">Next Scheduled Spot</th>
+                          <th className="px-6 py-4 text-right min-w-[220px]">Controller Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className={`divide-y text-sm ${isDark ? 'divide-white/5' : 'divide-slate-100'}`}>
+                        {clients.map((client) => (
+                          <tr key={client.id} className={`transition ${isDark ? 'hover:bg-white/5 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-accent/20 border border-accent/30 text-accent rounded-xl flex items-center justify-center font-bold font-display uppercase">
+                                  {client.fullName.charAt(0)}
+                                </div>
+                                <div>
+                                  <span className="font-bold block">{client.fullName}</span>
+                                  <span className={`text-[10px] block font-mono ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{client.email}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-block whitespace-nowrap border px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${isDark ? 'bg-white/5 border-white/10 text-accent' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
+                                {client.serviceName}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 font-bold">
+                              {client.completedSessions} of {client.totalSessions} completed
+                            </td>
+                            <td className={`px-6 py-4 text-xs ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                              {client.nextSessionDate ? formatDateTime(client.nextSessionDate) : 'Not scheduled'}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex gap-3 justify-end">
+                                <button
+                                  onClick={() => handleMessageClientClick(client.fullName, client.id)}
+                                  className={`font-bold text-xs uppercase tracking-widest border px-4 py-2 rounded-xl transition ${isDark ? 'border-white/10 hover:border-accent/40 bg-white/5 text-white' : 'border-slate-300 hover:border-slate-400 bg-white text-slate-700'}`}
+                                >
+                                  💬 Chat
+                                </button>
+                                <button
+                                  onClick={() => handleAssignPlanClick(client.id)}
+                                  className="text-slate-950 bg-accent hover:bg-accent-dark font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-xl transition"
+                                >
+                                  📋 Build Plan
+                                </button>
+                              </div>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {clients.map((client) => (
-                            <tr key={client.id} className="border-b border-gray-200 hover:bg-gray-50">
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-sm">
-                                    {client.fullName.charAt(0)}
-                                  </div>
-                                  <div>
-                                    <span className="font-bold text-primary-dark block">{client.fullName}</span>
-                                    <span className="text-xs text-gray-500 block">{client.email}</span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold uppercase">
-                                  {client.serviceName}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 font-semibold text-gray-700">
-                                {client.completedSessions}/{client.totalSessions} sessions
-                              </td>
-                              <td className="px-6 py-4 text-gray-600 text-sm">
-                                {client.nextSessionDate ? formatDateTime(client.nextSessionDate) : 'Not scheduled'}
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex flex-col gap-1.5 items-start">
-                                  <button
-                                    onClick={() => handleMessageClientClick(client.fullName, client.id)}
-                                    className="text-blue-600 font-semibold hover:text-blue-700 text-sm flex items-center gap-1"
-                                  >
-                                    💬 Chat
-                                  </button>
-                                  <button
-                                    onClick={() => handleAssignPlanClick(client.id)}
-                                    className="text-emerald-600 font-semibold hover:text-emerald-700 text-sm flex items-center gap-1"
-                                  >
-                                    📋 Assign Plan
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Mobile Card View */}
-                    <div className="md:hidden divide-y divide-gray-100">
-                      {clients.map((client) => (
-                        <div key={client.id} className="p-5 space-y-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-sm">
-                              {client.fullName.charAt(0)}
-                            </div>
-                            <div>
-                              <span className="font-bold text-primary-dark block text-base">{client.fullName}</span>
-                              <span className="text-xs text-gray-500 block">{client.email}</span>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg text-sm">
-                            <div>
-                              <span className="text-xs text-gray-400 block uppercase font-semibold">Program</span>
-                              <span className="font-semibold text-gray-700">{client.serviceName}</span>
-                            </div>
-                            <div>
-                              <span className="text-xs text-gray-400 block uppercase font-semibold">Progress</span>
-                              <span className="font-semibold text-gray-700">{client.completedSessions}/{client.totalSessions}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between items-center text-sm pt-2">
-                            <span className="text-gray-500">📅 {client.nextSessionDate ? formatDateTime(client.nextSessionDate) : 'Not scheduled'}</span>
-                            <div className="flex gap-3">
-                              <button
-                                onClick={() => handleMessageClientClick(client.fullName, client.id)}
-                                className="text-blue-600 font-bold hover:text-blue-700"
-                              >
-                                💬 Chat
-                              </button>
-                              <button
-                                onClick={() => handleAssignPlanClick(client.id)}
-                                className="text-emerald-600 font-bold hover:text-emerald-700"
-                              >
-                                📋 Plan
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
-                  <div className="p-12 text-center text-gray-500">No assigned clients registered yet.</div>
+                  <div className="p-12 text-center text-gray-400 text-sm">No matched client profiles assigned to your credential index.</div>
                 )}
               </div>
-            </div>
+            </ScrollReveal>
           )}
 
           {activeTab === 'today' && (
-            <div>
-              <h1 className="text-4xl font-bold mb-2 text-primary-dark">Sessions Timeline</h1>
-              <p className="text-gray-600 mb-8">Verification and check-ins for assigned client schedules.</p>
+            <ScrollReveal className="space-y-8">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Session Verification</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Timeline Verification</h1>
+              </div>
 
               <div className="space-y-6">
                 {sessions.filter(s => s.status === 'upcoming' || s.status === 'assessment').length > 0 ? (
                   sessions
                     .filter(s => s.status === 'upcoming' || s.status === 'assessment')
                     .map((session) => (
-                      <div key={session.id} className="border-l-4 border-l-blue-600 bg-white rounded-lg p-6 border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow transition">
+                      <div key={session.id} className={`border-l-4 border-accent rounded-3xl p-6 border shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-all duration-300 ${isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-slate-100 text-slate-800'}`}>
                         <div>
-                          <p className="text-lg font-bold text-blue-600 mb-1">{formatDateTime(session.scheduledAt)}</p>
-                          <p className="text-2xl font-bold text-primary-dark mb-2">{session.clientName}</p>
-                          <p className="text-gray-600 text-sm">{session.serviceName} · {session.status === 'assessment' ? 'Physical Assessment' : 'One-on-One Session'}</p>
+                          <p className="text-sm font-bold text-accent mb-1 font-display tracking-widest uppercase">{formatDateTime(session.scheduledAt)}</p>
+                          <p className={`text-2xl font-bold font-display uppercase tracking-wider mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>{session.clientName}</p>
+                          <p className={`text-xs uppercase tracking-widest font-mono ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                            {session.serviceName} · {session.status === 'assessment' ? 'Physical Assessment' : 'One-on-One Session'}
+                          </p>
                         </div>
-                        <div className="flex gap-3 w-full md:w-auto flex-wrap">
+                        <div className="flex gap-3 w-full lg:w-auto flex-wrap">
                           <button
                             onClick={() => handleMessageClientClick(session.clientName, session.clientId)}
-                            className="flex-1 md:flex-initial text-center px-5 py-2.5 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition text-sm font-semibold"
+                            className={`flex-1 lg:flex-initial text-center px-5 py-2.5 border rounded-xl text-xs font-bold uppercase tracking-wider transition ${isDark ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white' : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'}`}
                           >
                             💬 Chat
                           </button>
                           <button
                             onClick={() => handleCheckIn(session.id)}
                             disabled={checkingInId === session.id}
-                            className="flex-1 md:flex-initial text-center px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-sm disabled:bg-blue-400"
+                            className="flex-1 lg:flex-initial text-center px-5 py-2.5 bg-accent text-slate-950 font-bold rounded-xl hover:bg-accent-dark transition text-xs uppercase tracking-wider disabled:opacity-40"
                           >
-                            {checkingInId === session.id ? 'Verifying...' : '✓ I\'m Here'}
+                            {checkingInId === session.id ? 'Verifying...' : '✓ Check In'}
                           </button>
                           <button
                             onClick={() => openRescheduleModal(session)}
-                            className="flex-1 md:flex-initial text-center px-5 py-2.5 border border-amber-200 text-amber-600 rounded-lg hover:bg-amber-50 transition text-sm font-semibold"
+                            className={`flex-1 lg:flex-initial text-center px-5 py-2.5 border rounded-xl text-xs font-bold uppercase tracking-wider transition ${isDark ? 'border-white/10 hover:border-accent/30 text-accent bg-white/5 hover:bg-accent/5' : 'border-slate-300 hover:border-accent/40 text-accent bg-white hover:bg-slate-50'}`}
                           >
                             🔄 Reschedule
                           </button>
                           <button
                             onClick={() => openCancelModal(session)}
-                            className="flex-1 md:flex-initial text-center px-5 py-2.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition text-sm font-semibold"
+                            className="flex-1 lg:flex-initial text-center px-5 py-2.5 border border-red-500/20 text-red-400 bg-red-500/5 hover:bg-red-500/10 rounded-xl text-xs font-bold uppercase tracking-wider transition"
                           >
                             ✕ Cancel
                           </button>
@@ -953,109 +1027,105 @@ export default function TrainerPortal() {
                       </div>
                     ))
                 ) : (
-                  <div className="bg-white rounded-xl p-12 border border-gray-200 text-center text-gray-500 shadow-sm">
-                    No remaining scheduled sessions requiring verification today.
-                  </div>
-                )}
-
-                {/* Cancelled Sessions List */}
-                {sessions.filter(s => s.status === 'cancelled').length > 0 && (
-                  <div className="mt-8">
-                    <h3 className="text-lg font-bold text-gray-500 mb-4">Cancelled Sessions</h3>
-                    <div className="space-y-3">
-                      {sessions.filter(s => s.status === 'cancelled').map(session => (
-                        <div key={session.id} className="border-l-4 border-l-red-300 bg-white rounded-lg p-5 border border-gray-200 shadow-sm opacity-70">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-semibold text-red-500 mb-0.5">{formatDateTime(session.scheduledAt)}</p>
-                              <p className="text-lg font-bold text-gray-400 line-through">{session.clientName}</p>
-                              <p className="text-gray-400 text-xs">{session.serviceName}</p>
-                            </div>
-                            <span className="bg-red-50 text-red-500 text-xs px-3 py-1 rounded-full font-bold uppercase">Cancelled</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <div className={`border rounded-3xl p-12 text-center text-gray-400 text-sm shadow-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
+                    No scheduled sessions pending verification today.
                   </div>
                 )}
               </div>
-            </div>
+            </ScrollReveal>
           )}
 
           {activeTab === 'messages' && (
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Trainer Chat</h1>
-              <p className="text-gray-600 mb-8">Secure messaging with your active Physifit clients.</p>
+            <ScrollReveal className="space-y-8">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Consultation Panel</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Trainer Messaging Desk</h1>
+              </div>
 
               {threads.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[500px]">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[550px] items-stretch">
                   {/* Threads List */}
-                  <div className={`md:col-span-1 bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col ${
-                    mobileChatActive ? 'hidden md:block' : 'flex'
+                  <div className={`md:col-span-1 border rounded-3xl p-6 shadow-2xl flex flex-col justify-between ${
+                    isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800'
+                  } ${
+                    mobileChatActive ? 'hidden md:flex' : 'flex'
                   }`}>
-                    <h3 className="font-bold text-gray-800 mb-4 pb-2 border-b">Conversations</h3>
-                    <div className="space-y-3 overflow-y-auto flex-1 max-h-[400px]">
-                      {threads.map((t) => (
-                        <div
-                          key={t.thread_id}
-                          onClick={() => {
-                            setActiveThreadId(t.thread_id)
-                            setMobileChatActive(true)
-                          }}
-                          className={`p-4 rounded-xl cursor-pointer transition border ${
-                            t.thread_id === activeThreadId
-                              ? 'bg-blue-50 border-blue-200 shadow-sm'
-                              : 'bg-white hover:bg-gray-50 border-gray-100'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start mb-1">
-                            <p className="font-bold text-sm text-primary-dark">{t.other_user_name}</p>
-                            {t.unread_count > 0 && (
-                              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                                {t.unread_count}
-                              </span>
-                            )}
+                    <div>
+                      <h3 className="font-display font-bold text-xs uppercase tracking-widest mb-6 pb-2 border-b border-white/5">Conversations</h3>
+                      <div className="space-y-3 overflow-y-auto max-h-[400px]">
+                        {threads.map((t) => (
+                          <div
+                            key={t.thread_id}
+                            onClick={() => {
+                              setActiveThreadId(t.thread_id)
+                              setMobileChatActive(true)
+                            }}
+                            className={`p-4 rounded-2xl cursor-pointer transition border-2 ${
+                              t.thread_id === activeThreadId
+                                ? 'bg-accent/15 border-accent shadow-lg shadow-accent/5'
+                                : isDark ? 'bg-white/5 hover:bg-white/10 border-white/5' : 'bg-slate-50 hover:bg-slate-100 border-slate-200/60'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start mb-1">
+                              <p className={`font-bold text-sm font-display uppercase tracking-wider ${isDark ? 'text-white' : 'text-slate-800'}`}>{t.other_user_name}</p>
+                              {t.unread_count > 0 && (
+                                <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                  {t.unread_count}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-400 truncate">{t.body}</p>
                           </div>
-                          <p className="text-xs text-gray-600 truncate">{t.body}</p>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
 
                   {/* Active Chat */}
-                  <div className={`md:col-span-2 bg-white rounded-xl border border-gray-200 flex-col shadow-sm ${
+                  <div className={`md:col-span-2 border rounded-3xl flex flex-col shadow-2xl relative overflow-hidden ${
+                    isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800'
+                  } ${
                     mobileChatActive ? 'flex' : 'hidden md:flex'
                   }`}>
                     {activeThread ? (
                       <>
-                        <div className="border-b border-gray-200 p-6 flex items-center gap-4">
-                          <button
-                            onClick={() => setMobileChatActive(false)}
-                            className="md:hidden p-1 bg-gray-50 rounded border border-gray-200 text-gray-600 font-bold"
-                          >
-                            ← Back
-                          </button>
-                          <div>
-                            <h3 className="font-bold text-gray-800">{activeThread.other_user_name}</h3>
-                            <p className="text-xs text-gray-500">Assigned Client</p>
+                        <div className="border-b border-white/10 p-6 flex justify-between items-center gap-4 bg-white/5">
+                          <div className="flex items-center gap-4">
+                            <button
+                              onClick={() => setMobileChatActive(false)}
+                              className={`p-2 rounded-xl text-xs font-bold transition ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-slate-100 border border-slate-200 text-slate-700'}`}
+                            >
+                              ← Back
+                            </button>
+                            <div>
+                              <h3 className="font-display font-bold uppercase tracking-wider">{activeThread.other_user_name}</h3>
+                              <p className="text-[10px] text-accent font-bold uppercase tracking-widest mt-0.5">Assigned Client</p>
+                            </div>
                           </div>
+                          
+                          <button
+                            onClick={() => setShowVideoCall(true)}
+                            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold uppercase tracking-wider text-[10px] transition flex items-center gap-2 border border-red-500/20"
+                          >
+                            📹 Live Session
+                          </button>
                         </div>
 
                         {/* Chat Messages */}
-                        <div className="flex-1 p-6 space-y-4 overflow-y-auto max-h-[300px] bg-gray-50/50">
+                        <div className={`flex-1 p-6 space-y-4 overflow-y-auto max-h-[350px] ${isDark ? 'bg-slate-950/40' : 'bg-slate-50/50'}`}>
                           {activeMessages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.senderId === trainerUser?.id ? 'justify-end' : 'justify-start'}`}>
                               <div className="max-w-[70%]">
                                 <div
-                                  className={`rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                                  className={`rounded-2xl px-5 py-3.5 text-sm shadow-md leading-relaxed ${
                                     msg.senderId === trainerUser?.id
-                                      ? 'bg-blue-600 text-white rounded-tr-none'
-                                      : 'bg-white text-gray-900 border border-gray-100 rounded-tl-none'
+                                      ? 'bg-accent text-slate-950 rounded-tr-none font-medium'
+                                      : isDark ? 'bg-white/5 border border-white/10 text-white rounded-tl-none' : 'bg-slate-100 border border-slate-200 text-slate-800 rounded-tl-none'
                                   }`}
                                 >
                                   {msg.body}
                                 </div>
-                                <p className={`text-[10px] text-gray-400 mt-1 ${msg.senderId === trainerUser?.id ? 'text-right' : 'text-left'}`}>
+                                <p className={`text-[9px] text-gray-400 mt-1 font-mono tracking-wider ${msg.senderId === trainerUser?.id ? 'text-right' : 'text-left'}`}>
                                   {formatDateTime(msg.createdAt)}
                                 </p>
                               </div>
@@ -1065,20 +1135,20 @@ export default function TrainerPortal() {
                         </div>
 
                         {/* Send Area */}
-                        <div className="border-t border-gray-200 p-6">
+                        <div className="border-t border-white/10 p-6 bg-white/5">
                           <div className="flex gap-3">
                             <input
                               type="text"
                               value={messageText}
                               onChange={(e) => setMessageText(e.target.value)}
                               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                              placeholder={`Reply to ${activeThread.other_user_name}...`}
-                              className="flex-1 border border-gray-300 rounded-full px-5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm bg-white"
+                              placeholder={`Secure reply to ${activeThread.other_user_name}...`}
+                              className={`flex-1 border rounded-2xl px-5 py-3.5 focus:outline-none text-sm ${isDark ? 'border-white/10 focus:border-accent bg-slate-950/50 text-white' : 'border-slate-200 focus:border-accent bg-white text-slate-800'}`}
                             />
                             <button
                               onClick={handleSendMessage}
                               disabled={sendingMessage || !messageText.trim()}
-                              className="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-blue-700 transition shadow-sm disabled:bg-blue-400 disabled:cursor-not-allowed"
+                              className="bg-accent text-slate-950 hover:bg-accent-dark w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-accent/20"
                             >
                               ↑
                             </button>
@@ -1086,91 +1156,85 @@ export default function TrainerPortal() {
                         </div>
                       </>
                     ) : (
-                      <div className="flex-1 flex flex-col items-center justify-center p-8 text-gray-500">
-                        Select a conversation thread to start secure chat.
+                      <div className="flex-1 flex flex-col items-center justify-center p-8 text-gray-400 text-sm">
+                        Select a conversation thread to view communications.
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center shadow-sm">
-                  <div className="text-5xl mb-4">💬</div>
-                  <h3 className="text-xl font-bold mb-2">No active communications</h3>
-                  <p className="text-gray-500 max-w-sm mx-auto">
-                    Communications will appear automatically when clients message you or book programs.
+                <div className={`border rounded-3xl p-12 text-center shadow-2xl max-w-2xl mx-auto ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
+                  <div className="text-5xl mb-6">💬</div>
+                  <h3 className="text-xl font-bold font-display uppercase tracking-widest text-accent mb-2">No active communications</h3>
+                  <p className={`text-sm max-w-sm mx-auto leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                    Communications will appear automatically here when active program clients establish matched threads.
                   </p>
                 </div>
               )}
-            </div>
+            </ScrollReveal>
           )}
 
           {activeTab === 'plans' && (
-            <div>
-              <h1 className="text-4xl font-bold mb-2 text-primary-dark">Client Fitness Plans</h1>
-              <p className="text-gray-600 mb-8">Design, publish, and assign custom workout programs directly to your active clients.</p>
+            <ScrollReveal className="space-y-8">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Prescriptive builder</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Client Fitness Plans</h1>
+              </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* 1. Left side: Published Plans List */}
-                <div className="lg:col-span-7 space-y-6">
-                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Published Workout Regimens</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left Columns: Published Registry */}
+                <div className="lg:col-span-6 space-y-6">
+                  <div className={`border rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800 shadow-slate-100'}`}>
+                    <h3 className="text-lg font-bold font-display uppercase tracking-wider mb-6 pb-2 border-b border-white/5">Published Client Programs</h3>
                     
                     {fitnessPlans.length > 0 ? (
-                      <div className="space-y-6 max-h-[600px] overflow-y-auto pr-1">
+                      <div className="space-y-6 max-h-[650px] overflow-y-auto pr-1">
                         {fitnessPlans.map((plan) => (
-                          <div key={plan.id} className={`border rounded-xl p-5 hover:shadow-md transition ${editingPlanId === plan.id ? 'border-blue-400 bg-blue-50/20 ring-2 ring-blue-200' : 'border-gray-150 bg-gray-50/30'}`}>
-                            <div className="flex justify-between items-start mb-3 pb-3 border-b border-gray-100">
+                          <div key={plan.id} className={`border rounded-2xl p-5 transition duration-300 ${
+                            editingPlanId === plan.id 
+                              ? 'border-accent bg-accent/5' 
+                              : isDark ? 'border-white/5 bg-[#0b0e17]/40' : 'border-slate-200 bg-slate-50'
+                          }`}>
+                            <div className="flex justify-between items-start mb-3 pb-3 border-b border-white/5">
                               <div>
-                                <h4 className="font-bold text-base text-primary-dark flex items-center gap-2">
+                                <h4 className="font-bold text-base font-display uppercase tracking-wider flex items-center gap-2">
                                   👤 {plan.clientName}
                                 </h4>
-                                <p className="text-[10px] text-gray-400 font-mono mt-0.5">
-                                  Published: {new Date(plan.createdAt).toLocaleDateString('en-NG')}
-                                  {plan.updatedAt !== plan.createdAt && (
-                                    <> · Updated: {new Date(plan.updatedAt).toLocaleDateString('en-NG')}</>
-                                  )}
+                                <p className="text-[10px] text-gray-400 font-mono mt-0.5 uppercase tracking-widest">
+                                  Assigned: {new Date(plan.createdAt).toLocaleDateString()}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => handleEditPlan(plan)}
-                                  className={`text-xs font-bold px-2.5 py-1 rounded-full transition ${
+                                  className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider transition ${
                                     editingPlanId === plan.id
-                                      ? 'bg-blue-600 text-white'
-                                      : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                      ? 'bg-accent text-slate-950'
+                                      : isDark ? 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                                   }`}
                                 >
-                                  {editingPlanId === plan.id ? '✏️ Editing...' : '✏️ Edit'}
+                                  {editingPlanId === plan.id ? '✏️ Editing' : '✏️ Edit Plan'}
                                 </button>
-                                <span className="bg-emerald-50 text-emerald-600 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-                                  {plan.status}
-                                </span>
                               </div>
                             </div>
 
                             {plan.notes && (
-                              <div className="mb-4 text-xs text-gray-600 bg-blue-50/40 p-3 rounded-lg border border-blue-50 italic">
-                                <span className="font-bold text-blue-800 not-italic block mb-0.5">Trainer Notes:</span>
+                              <div className={`mb-4 text-xs p-3 rounded-xl border italic ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-white border-slate-200 text-slate-600'}`}>
+                                <span className="font-bold text-accent not-italic block text-[10px] uppercase tracking-wider font-display mb-1">Trainer Guidelines:</span>
                                 "{plan.notes}"
                               </div>
                             )}
 
                             <div>
-                              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Exercise List ({plan.exercises.length})</p>
+                              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-display">Exercise List ({plan.exercises.length})</p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {plan.exercises.map((ex: any, idx: number) => (
-                                  <div key={idx} className="bg-white border border-gray-100 rounded-lg p-2.5 flex items-center justify-between text-xs shadow-sm">
+                                  <div key={idx} className={`border rounded-xl p-2.5 flex items-center justify-between text-xs ${isDark ? 'bg-slate-950/80 border-white/5' : 'bg-white border-slate-200'}`}>
                                     <div>
-                                      <p className="font-bold text-gray-800">{ex.name}</p>
-                                      <p className="text-[10px] text-gray-400 mt-0.5">{ex.sets} Sets x {ex.reps} Reps</p>
+                                      <p className="font-bold">{ex.name}</p>
+                                      <p className="text-[9px] text-gray-400 font-mono mt-0.5">{ex.sets} Sets x {ex.reps} Reps</p>
                                     </div>
-                                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                                      ex.focus === 'strength' ? 'bg-blue-50 text-blue-600' :
-                                      ex.focus === 'balance' ? 'bg-yellow-50 text-yellow-600' :
-                                      ex.focus === 'mobility' ? 'bg-sky-50 text-sky-600' :
-                                      ex.focus === 'core' ? 'bg-emerald-50 text-emerald-600' :
-                                      'bg-indigo-50 text-indigo-600'
-                                    }`}>
+                                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-accent">
                                       {ex.focus}
                                     </span>
                                   </div>
@@ -1181,113 +1245,175 @@ export default function TrainerPortal() {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-12 text-gray-400">
-                        <p className="text-3xl mb-2">📋</p>
-                        <p className="text-sm font-semibold">No fitness plans published yet.</p>
-                        <p className="text-xs text-gray-400 mt-1">Use the builder to assign the first plan.</p>
-                      </div>
+                      <div className="text-center py-12 text-gray-400 text-sm">No clinical fitness plans published yet. Use the right panel builder.</div>
                     )}
                   </div>
                 </div>
 
-                {/* 2. Right side: Fitness Plan Builder Form */}
-                <div className="lg:col-span-5" id="plan-builder">
-                  <div className={`bg-white rounded-2xl border p-6 shadow-sm sticky top-6 ${
-                    editingPlanId ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200'
-                  }`}>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b flex items-center justify-between">
-                      <span>{editingPlanId ? '✏️ Edit Fitness Plan' : '⚡ Fitness Plan Builder'}</span>
-                      <div className="flex items-center gap-2">
-                        {editingPlanId && (
+                {/* Right Columns: Builder Arena + AI Assistant */}
+                <div className="lg:col-span-6 space-y-6" id="plan-builder">
+                  {/* AI Assistant Core Screener Card */}
+                  {planClientId && (
+                    <div className="bg-gradient-to-r from-[#171a2e] to-[#121424] border border-accent/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="text-2xl">🧠</div>
+                        <div>
+                          <h4 className="font-bold text-white font-display uppercase tracking-wider text-sm">PAR-Q Clinical AI Builder</h4>
+                          <span className="text-[10px] text-accent uppercase tracking-widest font-mono">Rehabilitation Assessment</span>
+                        </div>
+                      </div>
+
+                      {/* Display Screener details */}
+                      <div className="bg-slate-950/60 rounded-2xl p-4 border border-white/5 text-xs space-y-2.5 mb-4 text-left">
+                        <div className="flex justify-between py-1 border-b border-white/5">
+                          <span className="text-gray-400">Target Patient:</span>
+                          <span className="text-white font-bold">{clients.find(c => c.id === planClientId)?.fullName}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400 block mb-1">PAR-Q Screener Declarations & Symptoms:</span>
+                          <p className="text-gray-200 italic leading-relaxed bg-[#0b0d17]/50 p-2.5 rounded-xl border border-white/5">
+                            "{clients.find(c => c.id === planClientId)?.medicalNotes || 'No specific screener restrictions declared. Standard safety indexes apply.'}"
+                          </p>
+                        </div>
+                      </div>
+
+                      {aiLoading ? (
+                        <div className="bg-slate-950/80 border border-accent/20 rounded-2xl p-6 text-center text-xs space-y-4">
+                          <div className="animate-spin inline-block w-8 h-8 border-3 border-accent border-t-transparent rounded-full mb-2"></div>
+                          <div className="space-y-1">
+                            <p className="font-display font-bold uppercase tracking-wider text-accent">Clinical Diagnostics Active...</p>
+                            <p className="text-gray-400 italic">
+                              {aiStep === 0 && 'Parsing PAR-Q Medical Screeners & Patient Card...'}
+                              {aiStep === 1 && 'Correlating safety margins for balance fall vectors...'}
+                              {aiStep === 2 && 'Synthesizing therapeutic exercise list...'}
+                              {aiStep >= 3 && 'Validating cardiac and orthopedic ranges...'}
+                            </p>
+                          </div>
+                        </div>
+                      ) : aiResult ? (
+                        <div className="bg-white/5 border border-accent/20 rounded-2xl p-4 space-y-4 animate-fade-in text-left">
+                          <div>
+                            <span className="text-[10px] text-accent font-bold uppercase tracking-wider font-display">AI Recommended Strategy:</span>
+                            <p className="text-xs text-gray-300 leading-relaxed italic mt-1 bg-slate-950 p-3 rounded-xl border border-white/5">"{aiResult.notes}"</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 font-display">Prescribed Sequences:</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {aiResult.exercises.map((ex: any, i: number) => (
+                                <div key={i} className="bg-slate-950 border border-white/5 rounded-xl p-2 flex justify-between items-center text-xs">
+                                  <div>
+                                    <p className="font-bold text-white truncate max-w-[120px]">{ex.name}</p>
+                                    <p className="text-[9px] text-gray-500 font-mono mt-0.5">{ex.sets}s x {ex.reps}r</p>
+                                  </div>
+                                  <span className="text-[8px] bg-accent/20 text-accent px-1.5 py-0.5 rounded font-extrabold">{ex.focus}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                           <button
-                            onClick={handleResetPlanForm}
-                            className="text-[10px] text-gray-500 font-bold hover:underline"
+                            onClick={handleLoadAIPlan}
+                            className="w-full py-2.5 bg-accent text-slate-950 font-bold uppercase tracking-widest text-[10px] rounded-xl transition hover:bg-accent-dark shadow-md shadow-accent/10"
                           >
-                            ✕ Cancel Edit
+                            ⚡ Load Exercises Into Plan Builder
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleTriggerAIWorkoutAssistant}
+                          className="w-full py-3 bg-[#1e234a] hover:bg-[#252c5c] text-accent rounded-xl font-bold uppercase tracking-widest text-[10px] transition border border-accent/30 flex items-center justify-center gap-2 shadow-lg shadow-accent/5"
+                        >
+                          🧠 Analyze Screeners & Auto-Build Routine
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Standard Plans builder Form */}
+                  <div className={`border rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden ${
+                    editingPlanId ? 'border-accent shadow-accent/5' : isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800'
+                  }`}>
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
+                      <h3 className="text-xl font-bold font-display uppercase tracking-wider">
+                        {editingPlanId ? '✏️ Edit Workout Regimen' : '⚡ Fitness Plan Builder'}
+                      </h3>
+                      <div className="flex gap-2">
+                        {editingPlanId && (
+                          <button onClick={handleResetPlanForm} className="text-[10px] text-red-400 font-bold uppercase hover:underline">
+                            ✕ Cancel
                           </button>
                         )}
-                        <button 
-                          onClick={handleResetPlanForm}
-                          className="text-[10px] text-blue-600 font-bold hover:underline"
-                        >
-                          {editingPlanId ? 'New Plan' : 'Reset Form'}
+                        <button onClick={handleResetPlanForm} className="text-[10px] text-accent font-bold uppercase hover:underline">
+                          Reset Form
                         </button>
                       </div>
-                    </h3>
-
-                    {editingPlanId && (
-                      <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-3 rounded text-xs font-semibold flex items-center gap-2">
-                        ✏️ Editing existing plan for <strong>{clients.find(c => c.id === planClientId)?.fullName || 'Client'}</strong>. Make your changes and save.
-                      </div>
-                    )}
+                    </div>
 
                     {planSuccessMsg && (
-                      <div className="mb-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-3 rounded text-sm font-semibold">
+                      <div className="mb-4 bg-green-500/25 border-l-4 border-green-500 text-green-200 p-3 rounded-2xl text-xs font-semibold leading-relaxed">
                         ✓ {planSuccessMsg}
                       </div>
                     )}
 
                     {planErrorMsg && (
-                      <div className="mb-4 bg-red-50 border-l-4 border-red-500 text-red-800 p-3 rounded text-sm font-semibold">
+                      <div className="mb-4 bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded-2xl text-xs font-semibold leading-relaxed">
                         ⚠ {planErrorMsg}
                       </div>
                     )}
 
                     <div className="space-y-4">
-                      {/* Select Client */}
+                      {/* Select client */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Select Assigned Client</label>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Target Clinical Client</label>
                         <select
                           value={planClientId}
                           onChange={(e) => setPlanClientId(e.target.value)}
                           disabled={!!editingPlanId}
-                          className={`w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm ${
-                            editingPlanId ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'
+                          className={`w-full border rounded-xl p-3 focus:outline-none focus:ring-1 focus:ring-accent text-sm ${
+                            editingPlanId ? 'bg-white/5 text-gray-500 cursor-not-allowed' : isDark ? 'border-white/10 bg-[#0c0a27]/50 text-white' : 'border-slate-200 bg-white text-slate-800'
                           }`}
                         >
-                          <option value="">-- Choose Client --</option>
+                          <option value="" className={optionClass}>-- Choose Client Member --</option>
                           {clients.map(c => (
-                            <option key={c.id} value={c.id}>{c.fullName} ({c.serviceName})</option>
+                            <option key={c.id} value={c.id} className={optionClass}>{c.fullName} ({c.serviceName})</option>
                           ))}
                         </select>
-                        {editingPlanId && (
-                          <p className="text-[10px] text-gray-400 mt-1">Client cannot be changed when editing. Create a new plan instead.</p>
-                        )}
                       </div>
 
                       {/* Notes / Objectives */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Trainer Objectives & Notes</label>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Objectives & Clinical Guidelines</label>
                         <textarea
                           rows={2}
                           value={planNotes}
                           onChange={(e) => setPlanNotes(e.target.value)}
-                          placeholder="e.g. Focus on balance exercises twice a week. Increase resistance band sets if stable."
-                          className="w-full border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm placeholder:text-gray-300 bg-white"
+                          placeholder="e.g. Focus on balance sequence. In case of dizziness, rest for 60 seconds..."
+                          className={`w-full border rounded-xl p-3 focus:outline-none focus:ring-1 focus:ring-accent text-sm bg-transparent resize-none ${isDark ? 'border-white/10 text-white placeholder:text-gray-600' : 'border-slate-200 text-slate-800'}`}
                         />
                       </div>
 
-                      {/* Exercises Dynamic Rows */}
+                      {/* Exercises Dynamic list */}
                       <div>
-                        <div className="flex justify-between items-center mb-2 pb-1 border-b border-gray-100">
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Exercise List</label>
+                        <div className="flex justify-between items-center mb-2 pb-1 border-b border-white/5">
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest font-display">Exercise List</label>
                           <button
                             type="button"
                             onClick={handleAddExerciseInput}
-                            className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-xs font-bold hover:bg-blue-100 transition"
+                            className={`border text-accent px-3 py-1 rounded-full text-xs font-bold transition ${isDark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}
                           >
                             + Add Row
                           </button>
                         </div>
 
-                        <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                           {planExercises.map((ex, idx) => (
-                            <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-200 relative space-y-2.5">
+                            <div key={idx} className={`border p-3.5 rounded-2xl relative space-y-2 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
                               {planExercises.length > 1 && (
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveExerciseInput(idx)}
-                                  className="absolute top-1 right-2 text-gray-400 hover:text-red-500 font-bold text-sm bg-white"
+                                  className="absolute top-1 right-2 text-gray-400 hover:text-red-400 font-bold text-sm bg-transparent"
                                   title="Delete exercise"
                                 >
                                   ✕
@@ -1301,46 +1427,46 @@ export default function TrainerPortal() {
                                   value={ex.name}
                                   onChange={(e) => handleExerciseChange(idx, 'name', e.target.value)}
                                   placeholder="Exercise name (e.g. Calf Raises)"
-                                  className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                                  className={`w-full border rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-accent bg-transparent ${isDark ? 'border-white/10 text-white' : 'border-slate-200 text-slate-800 bg-white'}`}
                                 />
                               </div>
 
                               <div className="grid grid-cols-3 gap-2">
                                 {/* Sets */}
                                 <div>
-                                  <label className="block text-[10px] text-gray-400 font-semibold mb-0.5">Sets</label>
+                                  <label className="block text-[9px] text-gray-400 uppercase tracking-widest mb-0.5">Sets</label>
                                   <input
                                     type="number"
                                     min={1}
                                     value={ex.sets}
                                     onChange={(e) => handleExerciseChange(idx, 'sets', e.target.value)}
-                                    className="w-full border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-gray-800"
+                                    className={`w-full border rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-accent bg-transparent ${isDark ? 'border-white/10 text-white' : 'border-slate-200 text-slate-800 bg-white'}`}
                                   />
                                 </div>
                                 {/* Reps */}
                                 <div>
-                                  <label className="block text-[10px] text-gray-400 font-semibold mb-0.5">Reps</label>
+                                  <label className="block text-[9px] text-gray-400 uppercase tracking-widest mb-0.5">Reps</label>
                                   <input
                                     type="number"
                                     min={1}
                                     value={ex.reps}
                                     onChange={(e) => handleExerciseChange(idx, 'reps', e.target.value)}
-                                    className="w-full border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-gray-800"
+                                    className={`w-full border rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-accent bg-transparent ${isDark ? 'border-white/10 text-white' : 'border-slate-200 text-slate-800 bg-white'}`}
                                   />
                                 </div>
                                 {/* Focus */}
                                 <div>
-                                  <label className="block text-[10px] text-gray-400 font-semibold mb-0.5">Focus</label>
+                                  <label className="block text-[9px] text-gray-400 uppercase tracking-widest mb-0.5">Focus</label>
                                   <select
                                     value={ex.focus}
                                     onChange={(e) => handleExerciseChange(idx, 'focus', e.target.value)}
-                                    className="w-full border border-gray-200 rounded-lg p-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-gray-800"
+                                    className={`w-full border rounded-xl p-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-accent bg-transparent ${isDark ? 'border-white/10 text-white' : 'border-slate-200 text-slate-800 bg-white'}`}
                                   >
-                                    <option value="strength">Strength</option>
-                                    <option value="balance">Balance</option>
-                                    <option value="mobility">Mobility</option>
-                                    <option value="core">Core</option>
-                                    <option value="cardio">Cardio</option>
+                                    <option value="strength" className={optionClass}>Strength</option>
+                                    <option value="balance" className={optionClass}>Balance</option>
+                                    <option value="mobility" className={optionClass}>Mobility</option>
+                                    <option value="core" className={optionClass}>Core</option>
+                                    <option value="cardio" className={optionClass}>Cardio</option>
                                   </select>
                                 </div>
                               </div>
@@ -1349,17 +1475,17 @@ export default function TrainerPortal() {
                         </div>
                       </div>
 
-                      {/* Submit */}
+                      {/* Submit builder */}
                       <button
                         type="button"
                         onClick={handlePublishPlan}
                         disabled={savingPlan || clients.length === 0}
-                        className={`w-full text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg disabled:bg-blue-300 ${
-                          editingPlanId ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
+                        className={`w-full py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-xs font-display uppercase tracking-widest disabled:opacity-40 text-slate-950 shadow-md ${
+                          editingPlanId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-accent hover:bg-accent-dark shadow-accent/15'
                         }`}
                       >
                         {savingPlan
-                          ? (editingPlanId ? 'Saving Changes...' : 'Publishing Plan...')
+                          ? (editingPlanId ? 'Saving Changes...' : 'Publishing Routine...')
                           : (editingPlanId ? '💾 Save Changes' : 'Publish & Assign Plan')
                         }
                       </button>
@@ -1367,164 +1493,264 @@ export default function TrainerPortal() {
                   </div>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
           )}
         </main>
-        </div>
-
-        {/* Cancel Session Confirmation Modal */}
-        {showCancelModal && cancelTargetSession && (
-          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowCancelModal(false)}>
-            <div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-0 overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="bg-red-50 border-b border-red-100 px-6 py-5 flex items-center gap-3">
-                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-lg">
-                  ⚠️
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg">Cancel Session</h3>
-                  <p className="text-xs text-gray-500">This action cannot be undone</p>
-                </div>
-              </div>
-
-              {/* Modal Body */}
-              <div className="px-6 py-5 space-y-4">
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                  <p className="text-sm text-gray-500 mb-1">Session Details</p>
-                  <p className="font-bold text-gray-900">{cancelTargetSession.clientName}</p>
-                  <p className="text-sm text-gray-600">{cancelTargetSession.serviceName} · {formatDateTime(cancelTargetSession.scheduledAt)}</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Reason for cancellation (optional)</label>
-                  <textarea
-                    rows={3}
-                    value={cancelReason}
-                    onChange={(e) => setCancelReason(e.target.value)}
-                    placeholder="e.g. I have a scheduling conflict, personal emergency..."
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent placeholder:text-gray-300 bg-white resize-none"
-                    maxLength={500}
-                  />
-                  <p className="text-[10px] text-gray-400 mt-1 text-right">{cancelReason.length}/500</p>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end">
-                <button
-                  onClick={() => { setShowCancelModal(false); setCancelTargetSession(null); setCancelReason('') }}
-                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition text-sm font-semibold"
-                  disabled={cancelSubmitting}
-                >
-                  Keep Session
-                </button>
-                <button
-                  onClick={handleCancelSession}
-                  disabled={cancelSubmitting}
-                  className="px-5 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition text-sm font-bold shadow-sm disabled:bg-red-400 disabled:cursor-not-allowed"
-                >
-                  {cancelSubmitting ? 'Cancelling...' : 'Yes, Cancel Session'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Reschedule Session Modal */}
-        {showRescheduleModal && rescheduleTargetSession && (
-          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowRescheduleModal(false)}>
-            <div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-0 overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="bg-amber-50 border-b border-amber-100 px-6 py-5 flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-lg">
-                  🔄
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg">Reschedule Session</h3>
-                  <p className="text-xs text-gray-500">Choose a new date and time</p>
-                </div>
-              </div>
-
-              {/* Modal Body */}
-              <div className="px-6 py-5 space-y-4">
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                  <p className="text-sm text-gray-500 mb-1">Current Session</p>
-                  <p className="font-bold text-gray-900">{rescheduleTargetSession.clientName}</p>
-                  <p className="text-sm text-gray-600">{rescheduleTargetSession.serviceName} · {formatDateTime(rescheduleTargetSession.scheduledAt)}</p>
-                </div>
-
-                <div className="bg-amber-50 border-l-4 border-amber-400 rounded p-3 text-xs text-amber-800">
-                  <strong>Note:</strong> Reschedules require at least 24 hours notice before the original session time.
-                </div>
-
-                {rescheduleError && (
-                  <div className="bg-red-50 border-l-4 border-red-500 text-red-800 p-3 rounded text-sm font-semibold">
-                    ⚠ {rescheduleError}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">New Date</label>
-                    <input
-                      type="date"
-                      value={rescheduleDate}
-                      onChange={(e) => setRescheduleDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">New Time</label>
-                    <input
-                      type="time"
-                      value={rescheduleTime}
-                      onChange={(e) => setRescheduleTime(e.target.value)}
-                      className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Reason (optional)</label>
-                  <textarea
-                    rows={3}
-                    value={rescheduleReason}
-                    onChange={(e) => setRescheduleReason(e.target.value)}
-                    placeholder="e.g. Client requested a different time, scheduling conflict..."
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder:text-gray-300 bg-white resize-none"
-                    maxLength={500}
-                  />
-                  <p className="text-[10px] text-gray-400 mt-1 text-right">{rescheduleReason.length}/500</p>
-                </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 justify-end">
-                <button
-                  onClick={() => { setShowRescheduleModal(false); setRescheduleTargetSession(null) }}
-                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition text-sm font-semibold"
-                  disabled={rescheduleSubmitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRescheduleSession}
-                  disabled={rescheduleSubmitting || !rescheduleDate || !rescheduleTime}
-                  className="px-5 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition text-sm font-bold shadow-sm disabled:bg-amber-300 disabled:cursor-not-allowed"
-                >
-                  {rescheduleSubmitting ? 'Rescheduling...' : 'Confirm Reschedule'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    )
+
+      {/* Simulated WebRTC Telehealth coaching Room overlay modal */}
+      {showVideoCall && (
+        <div className="fixed inset-0 bg-slate-950/95 z-[120] flex flex-col justify-between p-6 sm:p-12 text-white animate-fade-in">
+          {/* Header */}
+          <div className="flex justify-between items-center border-b border-white/10 pb-6">
+            <div>
+              <span className="inline-flex items-center gap-2 text-xs font-bold text-red-400 uppercase tracking-widest mb-1">
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                Specialist Consultation Node Active
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold uppercase font-display tracking-wider">
+                Clinical Live Telehealth Desk
+              </h2>
+            </div>
+            <span className="text-xs bg-white/5 border border-white/10 px-4 py-2 rounded-full font-mono text-gray-400">
+              Session ID: {activeThreadId?.slice(0, 8) || 'clinical-trainer-node'}
+            </span>
+          </div>
+
+          {/* Video Streams */}
+          <div className="flex-1 my-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center max-w-5xl mx-auto w-full">
+            {/* Trainer Local Webcam feed */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl aspect-video relative overflow-hidden flex flex-col items-center justify-center shadow-2xl h-full min-h-[260px]">
+              <div className="absolute top-4 left-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase text-accent border border-accent/20 z-10 animate-pulse">
+                Instructor Camera (Streaming Live)
+              </div>
+
+              {!camOff ? (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover transform -scale-x-100 absolute inset-0"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8">
+                  <div className="w-20 h-20 rounded-full bg-white/5 border-2 border-dashed border-white/25 flex items-center justify-center font-bold text-gray-600 text-3xl mb-4">
+                    ✕
+                  </div>
+                  <p className="text-sm font-bold text-gray-400 font-display uppercase tracking-wider">Camera Terminated</p>
+                </div>
+              )}
+            </div>
+
+            {/* Patient simulated stream connection */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl aspect-video relative overflow-hidden flex flex-col items-center justify-center p-8 shadow-2xl h-full min-h-[260px]">
+              <div className="absolute top-4 left-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase text-gray-300 border border-white/10 z-10">
+                Patient Receiver Node (Active)
+              </div>
+
+              <div className="w-24 h-24 rounded-full bg-accent/15 border-2 border-accent flex items-center justify-center font-display font-black text-4xl text-accent animate-pulse mb-4 shadow-xl">
+                {activeThread?.other_user_name ? activeThread.other_user_name.charAt(0) : 'P'}
+              </div>
+              <p className="font-display font-bold uppercase tracking-wider text-white text-lg">{activeThread?.other_user_name || 'Matched Patient'}</p>
+              <span className="text-[10px] text-green-400 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Connected
+              </span>
+            </div>
+          </div>
+
+          {/* Controllers */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-white/10 pt-6">
+            <div className="flex gap-4">
+              <button
+                onClick={() => setMicMuted(m => !m)}
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${
+                  micMuted
+                    ? 'bg-red-500/20 border-red-500 text-red-300'
+                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+                }`}
+              >
+                {micMuted ? '🔇 Muted' : '🎙️ Mic On'}
+              </button>
+              <button
+                onClick={() => setCamOff(c => !c)}
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${
+                  camOff
+                    ? 'bg-red-500/20 border-red-500 text-red-300'
+                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+                }`}
+              >
+                {camOff ? '📷 Cam Off' : '🎥 Cam On'}
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowVideoCall(false)
+                if (stream) {
+                  stream.getTracks().forEach(track => track.stop())
+                }
+              }}
+              className="px-10 py-4 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-red-600/25 border border-red-500/20"
+            >
+              🛑 Disconnect Consultation Room
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Session Modal */}
+      {showCancelModal && cancelTargetSession && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowCancelModal(false)}>
+          <div
+            className="bg-gradient-to-b from-[#1c1e2f] to-slate-950 border border-white/10 rounded-3xl shadow-2xl w-full max-w-md p-0 overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center text-lg border border-red-500/20 text-red-400">
+                ⚠️
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Cancel Timed Session</h3>
+                <p className="text-[10px] text-red-400 uppercase tracking-widest">This action cannot be undone</p>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-5 space-y-4 text-left">
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-xs">
+                <p className="text-gray-400 uppercase tracking-wider mb-1 font-display">Target Session Details</p>
+                <p className="font-bold text-white font-display uppercase tracking-wider text-base">{cancelTargetSession.clientName}</p>
+                <p className="text-accent mt-1 font-semibold">{cancelTargetSession.serviceName} · {formatDateTime(cancelTargetSession.scheduledAt)}</p>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Reason for Cancellation</label>
+                <textarea
+                  rows={3}
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="e.g. Schedule conflict, specialist emergency..."
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-red-400 placeholder:text-gray-600 bg-slate-950/50 text-white resize-none"
+                  maxLength={500}
+                />
+                <p className="text-[9px] text-gray-500 mt-1 text-right font-mono">{cancelReason.length}/500</p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex gap-3 justify-end">
+              <button
+                onClick={() => { setShowCancelModal(false); setCancelTargetSession(null); setCancelReason('') }}
+                className="px-5 py-2.5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest font-display"
+                disabled={cancelSubmitting}
+              >
+                Keep Session
+              </button>
+              <button
+                onClick={handleCancelSession}
+                disabled={cancelSubmitting}
+                className="px-5 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition text-xs font-bold uppercase tracking-widest font-display disabled:opacity-40"
+              >
+                {cancelSubmitting ? 'Cancelling...' : 'Confirm Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Modal */}
+      {showRescheduleModal && rescheduleTargetSession && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowRescheduleModal(false)}>
+          <div
+            className="bg-gradient-to-b from-[#1c1e2f] to-slate-950 border border-white/10 rounded-3xl shadow-2xl w-full max-w-md p-0 overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-lg border border-accent/20">
+                🔄
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Reschedule Scheduled Spot</h3>
+                <p className="text-[10px] text-accent uppercase tracking-widest font-display">Modify session details</p>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-5 space-y-4 text-left">
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-xs">
+                <p className="text-gray-400 uppercase tracking-wider mb-1 font-display">Target Session Details</p>
+                <p className="font-bold text-white font-display uppercase tracking-wider text-base">{rescheduleTargetSession.clientName}</p>
+                <p className="text-accent mt-1 font-semibold">{rescheduleTargetSession.serviceName} · {formatDateTime(rescheduleTargetSession.scheduledAt)}</p>
+              </div>
+
+              <div className="bg-accent/10 border-l-4 border-accent rounded p-3 text-[11px] text-accent leading-relaxed">
+                <strong>Attention:</strong> Make sure the adjusted time matches the active clinical timeline of matched slots.
+              </div>
+
+              {rescheduleError && (
+                <div className="bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded text-xs font-semibold leading-relaxed">
+                  ⚠ {rescheduleError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">New Date</label>
+                  <input
+                    type="date"
+                    value={rescheduleDate}
+                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-slate-950/50 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">New Time</label>
+                  <input
+                    type="time"
+                    value={rescheduleTime}
+                    onChange={(e) => setRescheduleTime(e.target.value)}
+                    className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-slate-950/50 text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Adjustment Reason</label>
+                <textarea
+                  rows={3}
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="Describe your schedule adjustment reason..."
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-gray-600 bg-slate-950/50 text-white resize-none"
+                  maxLength={500}
+                />
+                <p className="text-[9px] text-gray-500 mt-1 text-right font-mono">{rescheduleReason.length}/500</p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex gap-3 justify-end">
+              <button
+                onClick={() => { setShowRescheduleModal(false); setRescheduleTargetSession(null) }}
+                className="px-5 py-2.5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest font-display"
+                disabled={rescheduleSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRescheduleSession}
+                disabled={rescheduleSubmitting || !rescheduleDate || !rescheduleTime}
+                className="px-5 py-2.5 bg-accent hover:bg-accent-dark text-slate-950 rounded-xl transition text-xs font-bold uppercase tracking-widest font-display disabled:opacity-40"
+              >
+                {rescheduleSubmitting ? 'Rescheduling...' : 'Confirm Reschedule'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }

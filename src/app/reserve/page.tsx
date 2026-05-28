@@ -9,6 +9,7 @@ import CornerTriangle from '@/components/CornerTriangle'
 import Icon from '@/components/Icon'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from '@/context/ThemeContext'
 
 export default function ReservePage() {
   const router = useRouter()
@@ -33,8 +34,15 @@ export default function ReservePage() {
     router.push(`/payment?email=${encodeURIComponent(email)}&name=${encodeURIComponent(fullName)}&attendees=${attendees}`)
   }
 
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+
+  const inputClass = `p-3 rounded-md border focus:outline-none focus:ring-2 focus:ring-accent/40 transition ${
+    isDark ? 'bg-slate-950/50 border-white/10 text-white focus:border-accent' : 'bg-white border-gray-300 text-slate-800 focus:border-primary-darker'
+  }`
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-primary-darker text-white' : 'bg-white text-gray-800'} flex flex-col`}>
       <Header />
 
       <main id="main" className="flex-1">
@@ -59,9 +67,12 @@ export default function ReservePage() {
               eyebrow="EVENT RESERVATION"
               headline="Reserve Your Spot"
               subhead="Quick reservation — we will hold your spot and send payment instructions to your email."
+              tone={isDark ? 'dark' : 'light'}
             />
 
-            <form onSubmit={handleReserve} className="relative mt-12 bg-white border border-gray-200 rounded-md shadow-sm p-6 sm:p-8 overflow-hidden">
+            <form onSubmit={handleReserve} className={`relative mt-12 border rounded-md shadow-sm p-6 sm:p-8 overflow-hidden ${
+              isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'
+            }`}>
               <CornerTriangle corner="br" size={32} color="bg-accent" />
 
               {error && (
@@ -75,7 +86,7 @@ export default function ReservePage() {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="p-3 rounded-md border border-gray-300 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  className={inputClass}
                   placeholder="Full name"
                   required
                 />
@@ -84,7 +95,7 @@ export default function ReservePage() {
                   min="1"
                   value={attendees}
                   onChange={(e) => setAttendees(parseInt(e.target.value) || 1)}
-                  className="p-3 rounded-md border border-gray-300 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  className={inputClass}
                   placeholder="Number of attendees"
                   required
                 />
@@ -95,7 +106,7 @@ export default function ReservePage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="p-3 rounded-md border border-gray-300 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  className={inputClass}
                   placeholder="Email address"
                   required
                 />
@@ -103,7 +114,7 @@ export default function ReservePage() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="p-3 rounded-md border border-gray-300 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  className={inputClass}
                   placeholder="Phone number"
                   required
                 />
@@ -113,7 +124,7 @@ export default function ReservePage() {
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  className={`w-full ${inputClass}`}
                   placeholder="Notes (optional)"
                   rows={3}
                 />

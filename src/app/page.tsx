@@ -11,6 +11,7 @@ import DotPattern from '@/components/DotPattern'
 import CircleOrnament from '@/components/CircleOrnament'
 import Icon from '@/components/Icon'
 import ScrollReveal from '@/components/ScrollReveal'
+import { useTheme } from '@/context/ThemeContext'
 
 const heroSlides: HeroSlide[] = [
   {
@@ -55,8 +56,11 @@ const heroSlides: HeroSlide[] = [
 ]
 
 export default function Home() {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-primary-darker text-white' : 'bg-white text-gray-800'}`}>
       <Header />
       <main id="main">
         <HeroSlider slides={heroSlides} />
@@ -80,7 +84,7 @@ export default function Home() {
         </section>
 
         {/* Services Section */}
-        <section id="services" className="relative bg-gray-50 py-24 overflow-hidden">
+        <section id="services" className={`relative py-24 overflow-hidden transition-colors duration-300 ${isDark ? 'bg-primary-dark/20' : 'bg-gray-50'}`}>
           <DotPattern className="absolute top-10 right-10 w-40 h-40 text-accent/40" />
           <div className="max-w-7xl mx-auto px-6">
             <ScrollReveal className="text-center flex flex-col items-center mb-14">
@@ -93,6 +97,7 @@ export default function Home() {
                 }
                 subhead="Specialized programs built around your unique needs, delivered by certified trainers who understand your body and goals."
                 align="center"
+                tone={isDark ? 'dark' : 'light'}
               />
             </ScrollReveal>
 
@@ -119,7 +124,9 @@ export default function Home() {
               ].map((svc) => (
                 <article
                   key={svc.title}
-                  className="group bg-white overflow-hidden border border-gray-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                  className={`group overflow-hidden border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
+                    isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-gray-200 text-slate-800'
+                  }`}
                 >
                   <div className="relative h-56 w-full overflow-hidden">
                     <Image
@@ -132,11 +139,13 @@ export default function Home() {
                     <CornerTriangle corner="tr" size={48} className="z-10" />
                   </div>
                   <div className="p-8">
-                    <h3 className="font-display text-3xl uppercase tracking-condensed text-primary-darker mb-3">{svc.title}</h3>
-                    <p className="text-gray-600 mb-6 leading-relaxed">{svc.body}</p>
+                    <h3 className={`font-display text-3xl uppercase tracking-condensed mb-3 ${isDark ? 'text-white' : 'text-primary-darker'}`}>{svc.title}</h3>
+                    <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} mb-6 leading-relaxed`}>{svc.body}</p>
                     <Link
                       href="/book-session"
-                      className="inline-flex items-center gap-2 text-primary-darker hover:text-accent font-bold uppercase tracking-wider text-sm group/link"
+                      className={`inline-flex items-center gap-2 font-bold uppercase tracking-wider text-sm group/link ${
+                        isDark ? 'text-accent hover:text-accent-light' : 'text-primary-darker hover:text-accent'
+                      }`}
                     >
                       Explore Program
                       <Icon name="arrowRight" size={18} className="transition-transform group-hover/link:translate-x-1" />
@@ -185,13 +194,14 @@ export default function Home() {
         </section>
 
         {/* Testimonials Section */}
-        <section className="bg-white py-24">
+        <section className={`py-24 transition-colors duration-300 ${isDark ? 'bg-primary-darker text-white' : 'bg-white'}`}>
           <div className="max-w-7xl mx-auto px-6">
             <ScrollReveal className="mb-14">
               <SectionHeader
                 eyebrow="TESTIMONIALS"
                 headline="What our clients say"
                 subhead="Real stories from people who've transformed their health with PhysiFit NG."
+                tone={isDark ? 'dark' : 'light'}
               />
             </ScrollReveal>
 
@@ -218,7 +228,9 @@ export default function Home() {
               ].map((t) => (
                 <div
                   key={t.name}
-                  className="relative bg-white border border-gray-200 p-8 hover:shadow-xl transition"
+                  className={`relative p-8 hover:shadow-xl transition border ${
+                    isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-white border-gray-200 text-slate-800'
+                  }`}
                 >
                   <Icon name="quote" size={40} className="text-accent mb-4" />
                   <div className="flex gap-1 mb-4" aria-label="5 out of 5 stars">
@@ -226,14 +238,14 @@ export default function Home() {
                       <span key={i} aria-hidden="true" className="text-orange-400">★</span>
                     ))}
                   </div>
-                  <p className="text-gray-700 mb-6 italic leading-relaxed">"{t.quote}"</p>
-                  <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
+                  <p className={`${isDark ? 'text-gray-300' : 'text-gray-700'} mb-6 italic leading-relaxed`}>"{t.quote}"</p>
+                  <div className={`flex items-center gap-4 pt-4 border-t ${isDark ? 'border-white/10' : 'border-gray-100'}`}>
                     <div className="w-12 h-12 bg-accent text-primary-darker font-display text-xl flex items-center justify-center">
                       {t.initials}
                     </div>
                     <div>
-                      <p className="font-bold text-primary-darker">{t.name}</p>
-                      <p className="text-gray-500 text-sm">{t.role}</p>
+                      <p className={`font-bold ${isDark ? 'text-white' : 'text-primary-darker'}`}>{t.name}</p>
+                      <p className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-sm`}>{t.role}</p>
                     </div>
                   </div>
                 </div>
@@ -243,7 +255,7 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <section id="faq" className="bg-gray-50 py-24">
+        <section id="faq" className={`py-24 transition-colors duration-300 ${isDark ? 'bg-primary-dark/20' : 'bg-gray-50'}`}>
           <div className="max-w-4xl mx-auto px-6">
             <ScrollReveal className="text-center flex flex-col items-center mb-14">
               <SectionHeader
@@ -251,6 +263,7 @@ export default function Home() {
                 headline="Common questions"
                 subhead="Everything you need to know before getting started."
                 align="center"
+                tone={isDark ? 'dark' : 'light'}
               />
             </ScrollReveal>
 
@@ -277,20 +290,22 @@ export default function Home() {
                   a: 'All communication with your trainer must happen within the PhysiFit NG platform. No external contact is permitted.',
                 },
               ].map((item) => (
-                <details key={item.q} className="group border-b border-gray-300 py-5 cursor-pointer">
+                <details key={item.q} className={`group border-b py-5 cursor-pointer ${isDark ? 'border-white/10' : 'border-gray-300'}`}>
                   <summary className="flex justify-between items-center gap-4 list-none">
-                    <span className="font-display text-lg sm:text-xl uppercase tracking-wide text-primary-darker pr-4">
+                    <span className={`font-display text-lg sm:text-xl uppercase tracking-wide pr-4 ${isDark ? 'text-white' : 'text-primary-darker'}`}>
                       {item.q}
                     </span>
                     <span
                       aria-hidden="true"
-                      className="flex-shrink-0 w-9 h-9 border-2 border-primary-darker text-primary-darker group-open:bg-accent group-open:border-accent group-open:text-primary-darker flex items-center justify-center transition"
+                      className={`flex-shrink-0 w-9 h-9 border-2 group-open:bg-accent group-open:border-accent group-open:text-primary-darker flex items-center justify-center transition ${
+                        isDark ? 'border-white text-white' : 'border-primary-darker text-primary-darker'
+                      }`}
                     >
                       <span className="group-open:hidden text-xl leading-none">+</span>
                       <span className="hidden group-open:inline text-xl leading-none">−</span>
                     </span>
                   </summary>
-                  <p className="text-gray-600 mt-4 leading-relaxed pr-12">{item.a}</p>
+                  <p className={`mt-4 leading-relaxed pr-12 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{item.a}</p>
                 </details>
               ))}
             </div>

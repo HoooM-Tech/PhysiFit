@@ -15,49 +15,43 @@ import { useTheme } from '@/context/ThemeContext'
 
 const stations = [
   {
-    image:
-      'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Senior practicing balance on a yoga mat',
+    image: '/images/balance-senior.png',
+    alt: 'Joyful Black senior woman practicing balance training outdoors',
     title: 'Balance Training',
     body: 'Gentle, guided exercises to improve postural stability and reduce fall risk through proven techniques.',
     category: 'PHYSICAL' as const,
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1606166325683-e6deb697d301?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Senior engaged in a cognitive focus puzzle activity',
+    image: '/images/cognitive-senior.png',
+    alt: 'Smiling Black senior man playing an engaging memory and focus game outdoors',
     title: 'Cognitive Focus',
     body: 'Mental agility games and exercises designed to sharpen focus, memory, and reaction time.',
     category: 'MENTAL' as const,
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1599447421416-3414500d18a5?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Group practicing tai chi coordination outdoors',
+    image: '/images/coordination-senior.png',
+    alt: 'Group of active Black senior citizens practicing rhythmic coordination and flow movements in a sunny park',
     title: 'Coordination Flow',
     body: 'Rhythmic movement sequences that enhance hand-eye coordination and body awareness.',
     category: 'PHYSICAL' as const,
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Senior performing a mobility stretch on a yoga mat',
+    image: '/images/mobility-senior.png',
+    alt: 'Smiling Black senior man performing a gentle mobility stretch in a park',
     title: 'Mobility & Flexibility',
     body: 'Gentle stretching and joint mobility work to maintain and improve range of motion.',
     category: 'PHYSICAL' as const,
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Senior briskly walking for endurance training',
+    image: '/images/energized-blackafrican-senior.png',
+    alt: 'Energetic Black senior walking briskly to build cardiovascular endurance',
     title: 'Endurance Building',
     body: 'Low-impact cardiovascular activities that safely build stamina and energy levels.',
     category: 'PHYSICAL' as const,
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Group of seniors laughing together after a fitness session',
+    image: '/images/joyful-blackafric.png',
+    alt: 'A group of joyful Black and African senior citizens laughing and connecting after an outdoor fitness class',
     title: 'Social Wellness',
     body: 'Guided social activities that build community connections and emotional wellbeing.',
     category: 'SOCIAL' as const,
@@ -111,8 +105,8 @@ export default function EventPage() {
         {/* Hero Section */}
         <section className="relative bg-primary-darker py-24 overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1600&q=80"
-            alt=""
+            src="/images/senior-fitness-class.png"
+            alt="Joyful Black and African senior citizens participating in an outdoor group fitness class"
             fill
             priority
             className="object-cover opacity-30"

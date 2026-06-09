@@ -75,6 +75,7 @@ export const POST = withRoute(async ({ req, requestId }) => {
         heightCm: body.heightCm,
         dizzinessHistory: body.dizzinessHistory ?? false,
         medicalNotes: body.medicalNotes,
+        preferredSpecialization: body.specialization ?? null,
       });
     } else if (body.role === "trainer") {
       await tx.insert(trainerProfiles).values({

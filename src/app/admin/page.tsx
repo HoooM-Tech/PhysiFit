@@ -35,8 +35,9 @@ interface Client {
     id: string;
     weightKg: number | null;
     heightCm: number | null;
-    dizzinessHistory: boolean;
-    medicalNotes: string | null;
+      dizzinessHistory: boolean;
+      preferredSpecialization?: 'senior_fitness' | 'postpartum' | 'corporate_wellness' | null;
+      medicalNotes: string | null;
     assignedTrainerId: string | null;
   } | null;
   assignedTrainerName: string | null;
@@ -298,7 +299,7 @@ export default function AdminDashboard() {
   // Helpers
   const getSpecializationLabel = (spec: string) => {
     if (spec === 'senior_fitness') return 'Senior Fitness'
-    if (spec === 'postpartum') return 'Postpartum Recovery'
+    if (spec === 'postpartum') return 'Postpartum Fitness'
     if (spec === 'corporate_wellness') return 'Corporate Wellness'
     return spec
   }
@@ -638,6 +639,14 @@ export default function AdminDashboard() {
                             <td className="px-6 py-4">
                               <div className="font-bold">{client.fullName}</div>
                               <span className="text-[10px] text-gray-400 font-mono block">{client.email}</span>
+                              {client.phone && (
+                                <span className="text-[10px] text-gray-500 font-mono block mt-1">{client.phone}</span>
+                              )}
+                              {client.profile?.preferredSpecialization && (
+                                <span className="inline-block mt-2 text-[10px] font-semibold uppercase rounded-full px-2 py-0.5 bg-purple-50 text-purple-600">
+                                  {getSpecializationLabel(client.profile.preferredSpecialization)}
+                                </span>
+                              )}
                             </td>
                             <td className="px-6 py-4">
                               {new Date(client.createdAt).toLocaleDateString()}

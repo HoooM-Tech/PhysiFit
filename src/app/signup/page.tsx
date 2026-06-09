@@ -21,7 +21,7 @@ const SPECIALIZATION_OPTIONS: { value: Specialization; label: string; descriptio
   },
   {
     value: 'postpartum',
-    label: 'Postpartum',
+    label: 'Postpartum Fitness',
     description: 'Recovery-focused training for new mothers, including core and pelvic floor.',
   },
   {
@@ -60,7 +60,7 @@ export default function Signup() {
   const canContinue = consent && isPasswordValid && formData.confirmPassword && passwordsMatch
   const canPickSpecialization = !!formData.specialization
   const isTrainer = formData.role === 'trainer'
-  const canCreateAccount = termsAgreed && (!isTrainer || canPickSpecialization)
+  const canCreateAccount = termsAgreed && canPickSpecialization
 
   const middleStepLabel = isTrainer ? 'Specialization' : 'Health Info'
   const stepNumber: Record<Step, number> = {
@@ -103,6 +103,7 @@ export default function Signup() {
             heightCm: Number(formData.height) || undefined,
             dizzinessHistory: formData.dizziness === 'Yes',
             medicalNotes: formData.medicalConditions || undefined,
+            specialization: formData.specialization || undefined,
           }
 
       const res = await fetch('/api/auth/register', {
@@ -458,7 +459,7 @@ export default function Signup() {
                     ← Back
                   </button>
                   <button
-                    onClick={() => setStep('confirm')}
+                    onClick={() => setStep('specialization')}
                     className="flex-1 bg-primary-darker hover:bg-primary-dark text-white py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
                   >
                     Continue →
@@ -560,20 +561,16 @@ export default function Signup() {
                     <span className="text-gray-600">Phone</span>
                     <span className="font-bold">{formData.phone}</span>
                   </div>
-                  {isTrainer ? (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Specialization</span>
-                      <span className="font-bold">
-                        {SPECIALIZATION_OPTIONS.find((o) => o.value === formData.specialization)?.label ||
-                          '—'}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Health data</span>
-                      <span className="font-bold text-green-600">✓ Completed</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Health data</span>
+                    <span className="font-bold text-green-600">✓ Completed</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Preferred Specialization</span>
+                    <span className="font-bold">
+                      {SPECIALIZATION_OPTIONS.find((o) => o.value === formData.specialization)?.label || '—'}
+                    </span>
+                  </div>
                 </div>
               </div>
 

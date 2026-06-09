@@ -32,6 +32,7 @@ export const GET = withAuth(
           weightKg: clientProfiles.weightKg,
           heightCm: clientProfiles.heightCm,
           dizzinessHistory: clientProfiles.dizzinessHistory,
+          preferredSpecialization: clientProfiles.preferredSpecialization,
           medicalNotes: clientProfiles.medicalNotes,
           assignedTrainerId: clientProfiles.assignedTrainerId,
         },

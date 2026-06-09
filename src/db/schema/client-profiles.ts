@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { pgTable, uuid, integer, boolean, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { trainerSpecializationEnum } from "./enums";
 import { users } from "./users";
 
 export const clientProfiles = pgTable(
@@ -13,6 +14,7 @@ export const clientProfiles = pgTable(
     heightCm: integer("height_cm"),
     dizzinessHistory: boolean("dizziness_history").notNull().default(false),
     medicalNotes: text("medical_notes"),
+    preferredSpecialization: trainerSpecializationEnum("preferred_specialization"),
     assignedTrainerId: uuid("assigned_trainer_id").references(() => users.id, {
       onDelete: "set null",
     }),

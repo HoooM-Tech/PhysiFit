@@ -361,6 +361,9 @@ export default function BookSession() {
                     <p className="text-gray-600">
                       Sessions are primarily one-on-one unless you specifically selected a group session.
                     </p>
+                    <p className="text-gray-600">
+                      Trainers will be matched to clients within 24-48 hours after booking a session.
+                    </p>
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-2">• Physical Assessment:</h3>

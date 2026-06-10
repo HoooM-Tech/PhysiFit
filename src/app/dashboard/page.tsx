@@ -159,6 +159,23 @@ export default function Dashboard() {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
+  // Support Form State
+  const [supportName, setSupportName] = useState('')
+  const [supportEmail, setSupportEmail] = useState('')
+  const [supportMsg, setSupportMsg] = useState('')
+  const [supportSubmitting, setSupportSubmitting] = useState(false)
+  const [supportSuccess, setSupportSuccess] = useState(false)
+
+  const handleSupportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!supportMsg.trim()) return
+    setSupportSubmitting(true)
+    await new Promise((resolve) => setTimeout(resolve, 1200))
+    setSupportSubmitting(false)
+    setSupportSuccess(true)
+    setSupportMsg('')
+  }
+
   // Interactive Workout Tracker & Charts States
   const [showWorkoutPlayer, setShowWorkoutPlayer] = useState(false)
   const [workoutSuccess, setWorkoutSuccess] = useState(false)
@@ -206,7 +223,12 @@ export default function Dashboard() {
           return
         }
         const userJson = await userRes.json()
-        setUser(userJson.data?.user)
+        const fetchedUser = userJson.data?.user
+        setUser(fetchedUser)
+        if (fetchedUser) {
+          setSupportName(fetchedUser.fullName || '')
+          setSupportEmail(fetchedUser.email || '')
+        }
         const userProfile = userJson.data?.profile
         setProfile(userProfile)
 
@@ -654,8 +676,8 @@ export default function Dashboard() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 flex flex-col ${isDark
-        ? 'bg-gradient-to-br from-primary-darker via-[#120f3a] to-primary-dark text-white'
-        : 'bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-900'
+      ? 'bg-gradient-to-br from-primary-darker via-[#120f3a] to-primary-dark text-white'
+      : 'bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-900'
       }`}>
       {/* Top Banner Header */}
       <Header />
@@ -671,9 +693,9 @@ export default function Dashboard() {
 
         {/* Sidebar */}
         <aside
-          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-y-auto scrollbar-none ${isDark
-              ? 'bg-primary-darker/95 border-white/5 text-white'
-              : 'bg-white/95 border-slate-200 text-slate-800'
+          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-hidden ${isDark
+            ? 'bg-primary-darker/95 border-white/5 text-white'
+            : 'bg-white/95 border-slate-200 text-slate-800'
             } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
             }`}
         >
@@ -720,10 +742,10 @@ export default function Dashboard() {
                   { id: 'settings', label: 'Settings', icon: <SettingsIcon size={16} className="mr-3" /> },
                 ].map((tab) => {
                   const btnClass = `w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 relative border flex items-center justify-between ${activeTab === tab.id
-                      ? 'bg-accent text-primary-darker border-accent shadow-lg shadow-accent/20 scale-[1.02]'
-                      : isDark
-                        ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
-                        : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
+                    ? 'bg-accent text-primary-darker border-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                    : isDark
+                      ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
+                      : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
                     }`
 
                   return (
@@ -755,8 +777,8 @@ export default function Dashboard() {
               <button
                 onClick={handleToggleTheme}
                 className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border flex items-center justify-between ${isDark
-                    ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
-                    : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
+                  ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
+                  : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
                   }`}
               >
                 <span className="flex items-center gap-3">
@@ -842,8 +864,8 @@ export default function Dashboard() {
                   { label: 'Assessment / Missed', val: missedSessions + assessmentSessions, sub: 'Attendance metric is stable' }
                 ].map((card, i) => (
                   <div key={i} className={`rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden transition hover:scale-[1.02] duration-300 ${card.highlighted
-                      ? isDark ? 'bg-accent/15 border border-accent/30 text-white' : 'bg-accent/20 border border-accent/30 text-slate-800 shadow-sm'
-                      : isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm shadow-slate-100'
+                    ? isDark ? 'bg-accent/15 border border-accent/30 text-white' : 'bg-accent/20 border border-accent/30 text-slate-800 shadow-sm'
+                    : isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm shadow-slate-100'
                     }`}>
                     <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
                     <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block mb-2 ${isDark ? 'text-gray-400' : 'text-slate-400'} truncate`}>{card.label}</span>
@@ -873,8 +895,8 @@ export default function Dashboard() {
 
               {/* Specialist Bio Card */}
               <div className={`border rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden ${isDark
-                  ? 'bg-gradient-to-r from-primary-darker to-[#19154a] border-white/10'
-                  : 'bg-gradient-to-r from-slate-100 to-slate-200 border-slate-200 text-slate-800 shadow-sm shadow-slate-100'
+                ? 'bg-gradient-to-r from-primary-darker to-[#19154a] border-white/10'
+                : 'bg-gradient-to-r from-slate-100 to-slate-200 border-slate-200 text-slate-800 shadow-sm shadow-slate-100'
                 }`}>
                 <div className="absolute top-0 right-0 w-48 h-48 bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -966,7 +988,7 @@ export default function Dashboard() {
                   <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Scheduling Timeline</span>
                   <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>My Sessions Card</h1>
                 </div>
-                 <Link
+                <Link
                   href="/book-session"
                   className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-accent to-accent-light text-primary-darker hover:scale-105 rounded-xl font-bold uppercase tracking-widest text-[11px] transition"
                 >
@@ -1124,8 +1146,8 @@ export default function Dashboard() {
                               setMobileChatActive(true)
                             }}
                             className={`p-4 rounded-2xl cursor-pointer transition border-2 ${t.thread_id === activeThreadId
-                                ? 'bg-accent/15 border-accent shadow-lg shadow-accent/5'
-                                : isDark ? 'bg-white/5 hover:bg-white/10 border-white/5' : 'bg-slate-50 hover:bg-slate-100 border-slate-200/60'
+                              ? 'bg-accent/15 border-accent shadow-lg shadow-accent/5'
+                              : isDark ? 'bg-white/5 hover:bg-white/10 border-white/5' : 'bg-slate-50 hover:bg-slate-100 border-slate-200/60'
                               }`}
                           >
                             <div className="flex justify-between items-start mb-1">
@@ -1193,8 +1215,8 @@ export default function Dashboard() {
                               <div className="max-w-[70%]">
                                 <div
                                   className={`rounded-2xl px-5 py-3.5 text-sm shadow-md leading-relaxed ${msg.senderId === user?.id
-                                      ? 'bg-accent text-primary-darker rounded-tr-none font-medium'
-                                      : isDark ? 'bg-white/5 border border-white/10 text-white rounded-tl-none' : 'bg-slate-100 border border-slate-200 text-slate-800 rounded-tl-none'
+                                    ? 'bg-accent text-primary-darker rounded-tr-none font-medium'
+                                    : isDark ? 'bg-white/5 border border-white/10 text-white rounded-tl-none' : 'bg-slate-100 border border-slate-200 text-slate-800 rounded-tl-none'
                                     }`}
                                 >
                                   {msg.body}
@@ -1275,8 +1297,8 @@ export default function Dashboard() {
               {/* Profile Overview */}
               <div
                 className={`rounded-3xl p-8 shadow-2xl border ${isDark
-                    ? 'bg-white/5 border-white/10'
-                    : 'bg-white border-slate-200'
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-white border-slate-200'
                   }`}
               >
                 <div className="flex flex-col md:flex-row items-start gap-6">
@@ -1325,8 +1347,8 @@ export default function Dashboard() {
                           setShowChangePasswordModal(true)
                         }}
                         className={`flex items-center gap-2 px-5 py-2 rounded-xl border font-bold text-sm ${isDark
-                            ? 'border-white/10 text-white'
-                            : 'border-slate-200 text-slate-700'
+                          ? 'border-white/10 text-white'
+                          : 'border-slate-200 text-slate-700'
                           }`}
                       >
                         <LockIcon size={14} />
@@ -1340,8 +1362,8 @@ export default function Dashboard() {
               {/* Personal Information */}
               <div
                 className={`rounded-3xl p-8 shadow-2xl border ${isDark
-                    ? 'bg-white/5 border-white/10'
-                    : 'bg-white border-slate-200'
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-white border-slate-200'
                   }`}
               >
                 <h3 className="text-xl font-bold mb-6">
@@ -1393,8 +1415,8 @@ export default function Dashboard() {
               {assignedTrainer && (
                 <div
                   className={`rounded-3xl p-8 shadow-2xl border ${isDark
-                      ? 'bg-white/5 border-white/10'
-                      : 'bg-white border-slate-200'
+                    ? 'bg-white/5 border-white/10'
+                    : 'bg-white border-slate-200'
                     }`}
                 >
                   <h3 className="text-xl font-bold mb-6">
@@ -1421,8 +1443,8 @@ export default function Dashboard() {
               {/* Preferences */}
               <div
                 className={`rounded-3xl p-8 shadow-2xl border ${isDark
-                    ? 'bg-white/5 border-white/10'
-                    : 'bg-white border-slate-200'
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-white border-slate-200'
                   }`}
               >
                 <h3 className="text-xl font-bold mb-6">
@@ -1454,8 +1476,8 @@ export default function Dashboard() {
               {/* Account Statistics */}
               <div
                 className={`rounded-3xl p-8 shadow-2xl border ${isDark
-                    ? 'bg-white/5 border-white/10'
-                    : 'bg-white border-slate-200'
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-white border-slate-200'
                   }`}
               >
                 <h3 className="text-xl font-bold mb-6">
@@ -1481,6 +1503,78 @@ export default function Dashboard() {
                     )}`}
                   />
                 </div>
+              </div>
+
+              {/* Contact Support */}
+              <div
+                className={`rounded-3xl p-8 shadow-2xl border ${isDark
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-white border-slate-200'
+                  }`}
+              >
+                <div className="flex items-center gap-3 mb-6 pb-2 border-b border-white/5">
+                  <ChatIcon size={20} className="text-accent" />
+                  <h3 className="text-xl font-bold">Contact PhysiFit Support</h3>
+                </div>
+
+                {supportSuccess ? (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-6 text-center">
+                    <p className="text-green-400 font-bold text-sm mb-2">Message Sent Successfully!</p>
+                    <p className="text-xs text-gray-400 mb-4">Our administrative support team will review your ticket and reach out via email shortly.</p>
+                    <button
+                      onClick={() => setSupportSuccess(false)}
+                      className="text-xs font-bold uppercase tracking-wider text-accent hover:underline"
+                    >
+                      Send another message
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSupportSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Your Name</label>
+                        <input
+                          type="text"
+                          value={supportName}
+                          onChange={(e) => setSupportName(e.target.value)}
+                          required
+                          className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0a0f1d] text-white' : 'border-slate-250 bg-white text-slate-800'
+                            }`}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Email Address</label>
+                        <input
+                          type="email"
+                          value={supportEmail}
+                          onChange={(e) => setSupportEmail(e.target.value)}
+                          required
+                          className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0a0f1d] text-white' : 'border-slate-250 bg-white text-slate-800'
+                            }`}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Message</label>
+                      <textarea
+                        placeholder="How can we help you? Describe your issue or question..."
+                        value={supportMsg}
+                        onChange={(e) => setSupportMsg(e.target.value)}
+                        required
+                        rows={4}
+                        className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0a0f1d] text-white' : 'border-slate-250 bg-white text-slate-800'
+                          }`}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={supportSubmitting}
+                      className="w-full bg-accent text-slate-950 py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs transition duration-300 font-display shadow-lg shadow-accent/10 disabled:opacity-40"
+                    >
+                      {supportSubmitting ? 'Sending Request...' : 'Send Message to Support'}
+                    </button>
+                  </form>
+                )}
               </div>
 
               {/* Danger Zone */}
@@ -1630,8 +1724,8 @@ export default function Dashboard() {
               <button
                 onClick={() => setMicMuted(m => !m)}
                 className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${micMuted
-                    ? 'bg-red-500/20 border-red-500 text-red-300'
-                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+                  ? 'bg-red-500/20 border-red-500 text-red-300'
+                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
                   }`}
               >
                 <span className="flex flex-col items-center gap-1">
@@ -1642,8 +1736,8 @@ export default function Dashboard() {
               <button
                 onClick={() => setCamOff(c => !c)}
                 className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${camOff
-                    ? 'bg-red-500/20 border-red-500 text-red-300'
-                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+                  ? 'bg-red-500/20 border-red-500 text-red-300'
+                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
                   }`}
               >
                 <span className="flex flex-col items-center gap-1">

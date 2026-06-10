@@ -88,3 +88,40 @@ export const PATCH = withAuth(
   },
   { roles: ["admin"] }
 );
+
+// DELETE: Fully delete a trainer from the system (Super Admin Only)
+const deleteSchema = z.object({
+  trainerId: z.string().uuid("Invalid trainer user ID"),
+});
+
+export const DELETE = withAuth(
+  async ({ req, user }) => {
+    if (user.role !== "super_admin") {
+      throw new ApiError("FORBIDDEN", "Only super administrators can delete trainers");
+    }
+
+    const body = await parseJsonBody(req, deleteSchema);
+
+    const [existing] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, body.trainerId))
+      .limit(1);
+
+    if (!existing) {
+      throw new ApiError("NOT_FOUND", "Trainer not found");
+    }
+
+    await db.transaction(async (tx) => {
+      // 1. Delete fitness plans created by trainer
+      await tx.delete(fitnessPlans).where(eq(fitnessPlans.trainerId, body.trainerId));
+      // 2. Delete trainer profile
+      await tx.delete(trainerProfiles).where(eq(trainerProfiles.userId, body.trainerId));
+      // 3. Delete user account
+      await tx.delete(users).where(eq(users.id, body.trainerId));
+    });
+
+    return { data: { success: true } };
+  },
+  { roles: ["super_admin"] }
+);

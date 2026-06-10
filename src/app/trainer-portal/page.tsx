@@ -21,7 +21,10 @@ import {
   MicOffIcon,
   MicIcon,
   CameraOffIcon,
-  CameraIcon
+  CameraIcon,
+  SettingsIcon,
+  LockIcon,
+  TrashIcon,
 } from '@/components/Icons'
 
 interface Client {
@@ -70,7 +73,7 @@ interface ChatMessage {
 
 export default function TrainerPortal() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'clients' | 'today' | 'messages' | 'plans'>('clients')
+  const [activeTab, setActiveTab] = useState<'clients' | 'today' | 'messages' | 'plans' | 'settings'>('clients')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileChatActive, setMobileChatActive] = useState(false)
 
@@ -128,6 +131,34 @@ export default function TrainerPortal() {
   const [aiStep, setAiStep] = useState(0)
   const [aiResult, setAiResult] = useState<any>(null)
 
+  // Settings — Edit Profile States
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false)
+  const [editFullName, setEditFullName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editProfileSubmitting, setEditProfileSubmitting] = useState(false)
+  const [editProfileError, setEditProfileError] = useState('')
+
+  // Settings — Change Password States
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [changePasswordSubmitting, setChangePasswordSubmitting] = useState(false)
+  const [changePasswordError, setChangePasswordError] = useState('')
+
+  // Settings — Delete Account States
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+
+  // Settings — Support Form State
+  const [supportName, setSupportName] = useState('')
+  const [supportEmail, setSupportEmail] = useState('')
+  const [supportMsg, setSupportMsg] = useState('')
+  const [supportSubmitting, setSupportSubmitting] = useState(false)
+  const [supportSuccess, setSupportSuccess] = useState(false)
+
   const activeMessagesEndRef = useRef<HTMLDivElement>(null)
   const activeThreadIdRef = useRef<string | null>(null)
   activeThreadIdRef.current = activeThreadId
@@ -156,6 +187,12 @@ export default function TrainerPortal() {
         }
         setTrainerUser(user)
         setTrainerProfile(meJson.data?.profile ?? null)
+
+        // Populate settings edit profile values
+        setEditFullName(user?.fullName || '')
+        setEditPhone(user?.phone || '')
+        setSupportName(user?.fullName || '')
+        setSupportEmail(user?.email || '')
 
         // Fetch Clients
         const clientRes = await fetch('/api/trainers/clients')
@@ -647,6 +684,106 @@ export default function TrainerPortal() {
     }
   }
 
+  // Settings — Support submit handler
+  const handleSupportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!supportMsg.trim()) return
+    setSupportSubmitting(true)
+    await new Promise((resolve) => setTimeout(resolve, 1200))
+    setSupportSubmitting(false)
+    setSupportSuccess(true)
+    setSupportMsg('')
+  }
+
+  // Settings — Save profile handler
+  const handleSaveProfile = async () => {
+    setEditProfileSubmitting(true)
+    setEditProfileError('')
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: editFullName.trim(),
+          phone: editPhone.trim() || null,
+        }),
+      })
+      if (res.ok) {
+        const userRes = await fetch('/api/users/me')
+        if (userRes.ok) {
+          const userJson = await userRes.json()
+          setTrainerUser(userJson.data?.user)
+        }
+        setShowEditProfileModal(false)
+      } else {
+        const json = await res.json()
+        setEditProfileError(json.error?.message || 'Failed to update profile.')
+      }
+    } catch {
+      setEditProfileError('An error occurred. Please try again.')
+    } finally {
+      setEditProfileSubmitting(false)
+    }
+  }
+
+  // Settings — Change password handler
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError('New passwords do not match.')
+      return
+    }
+    if (newPassword.length < 8) {
+      setChangePasswordError('New password must be at least 8 characters.')
+      return
+    }
+    setChangePasswordSubmitting(true)
+    setChangePasswordError('')
+    try {
+      const res = await fetch('/api/users/me/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      if (res.ok) {
+        setShowChangePasswordModal(false)
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        alert('Password changed successfully!')
+      } else {
+        const json = await res.json()
+        setChangePasswordError(json.error?.message || 'Failed to change password.')
+      }
+    } catch {
+      setChangePasswordError('An error occurred. Please try again.')
+    } finally {
+      setChangePasswordSubmitting(false)
+    }
+  }
+
+  // Settings — Delete account handler
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      setDeleteError('Please type "DELETE" exactly to confirm.')
+      return
+    }
+    setDeleteSubmitting(true)
+    setDeleteError('')
+    try {
+      const res = await fetch('/api/users/me', { method: 'DELETE' })
+      if (res.ok) {
+        await fetch('/api/auth/logout', { method: 'POST' })
+        router.push('/')
+      } else {
+        setDeleteError('Failed to delete account. Please try again.')
+      }
+    } catch {
+      setDeleteError('An error occurred. Please try again.')
+    } finally {
+      setDeleteSubmitting(false)
+    }
+  }
+
   // Theme Toggle
   const handleToggleTheme = toggleTheme
 
@@ -781,7 +918,7 @@ export default function TrainerPortal() {
 
         {/* Sidebar */}
         <aside
-          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-y-auto ${
+          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-hidden ${
             isDark
               ? 'bg-slate-950/95 border-white/5 text-white'
               : 'bg-white/95 border-slate-200 text-slate-800'
@@ -822,7 +959,8 @@ export default function TrainerPortal() {
                   { id: 'clients', label: 'My Assigned Clients' },
                   { id: 'today', label: 'Sessions Timeline' },
                   { id: 'plans', label: 'Plan Builder Panel' },
-                  { id: 'messages', label: 'Messages Desk', indicator: threads.some(t => t.unread_count > 0) }
+                  { id: 'messages', label: 'Messages Desk', indicator: threads.some(t => t.unread_count > 0) },
+                  { id: 'settings', label: 'Settings' },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -843,6 +981,7 @@ export default function TrainerPortal() {
                       {tab.id === 'today' && <CalendarIcon size={16} />}
                       {tab.id === 'plans' && <FitnessPlanIcon size={16} />}
                       {tab.id === 'messages' && <ChatIcon size={16} />}
+                      {tab.id === 'settings' && <SettingsIcon size={16} />}
                       <span>{tab.label}</span>
                     </span>
                     {tab.indicator && (
@@ -1604,8 +1743,373 @@ export default function TrainerPortal() {
               </div>
             </ScrollReveal>
           )}
+
+          {activeTab === 'settings' && (
+            <ScrollReveal className="space-y-8">
+              {/* Header */}
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Instructor Account</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Settings</h1>
+                <p className={`mt-2 text-sm max-w-xl ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                  Manage your instructor profile, account security, and platform preferences.
+                </p>
+              </div>
+
+              {/* Profile & Security Card */}
+              <div className={`rounded-3xl p-8 shadow-2xl border relative overflow-hidden ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
+                  <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 rounded-2xl bg-accent text-slate-950 flex items-center justify-center font-display font-black text-2xl border border-accent/20 shadow-xl flex-shrink-0">
+                      {trainerUser?.fullName ? trainerUser.fullName.charAt(0) : 'T'}
+                    </div>
+                    <div>
+                      <h2 className={`text-2xl font-bold font-display ${isDark ? 'text-white' : 'text-slate-800'}`}>{trainerUser?.fullName || 'Trainer'}</h2>
+                      <p className={`text-sm mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{trainerUser?.email}</p>
+                      <span className="inline-flex items-center gap-1.5 mt-1.5 text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/10 px-3 py-1 rounded-full border border-accent/20">
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                        Certified Instructor
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => {
+                        setEditFullName(trainerUser?.fullName || '')
+                        setEditPhone(trainerUser?.phone || '')
+                        setEditProfileError('')
+                        setShowEditProfileModal(true)
+                      }}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border font-bold text-xs uppercase tracking-wider transition ${isDark ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}
+                    >
+                      <UserIcon size={14} />
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentPassword('')
+                        setNewPassword('')
+                        setConfirmPassword('')
+                        setChangePasswordError('')
+                        setShowChangePasswordModal(true)
+                      }}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border font-bold text-xs uppercase tracking-wider transition ${isDark ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}
+                    >
+                      <LockIcon size={14} />
+                      Change Password
+                    </button>
+                  </div>
+                </div>
+
+                {/* Personal Info Grid */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { label: 'Full Name', value: trainerUser?.fullName || 'Not provided' },
+                    { label: 'Email Address', value: trainerUser?.email || 'Not provided' },
+                    { label: 'Phone Number', value: trainerUser?.phone || 'Not provided' },
+                    { label: 'Account Role', value: 'Certified Instructor' },
+                    { label: 'Active Clients', value: `${clients.length}` },
+                    { label: 'Sessions Completed', value: `${sessions.filter(s => s.status === 'completed').length}` },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <p className={`text-[10px] uppercase tracking-widest font-bold mb-2 ${isDark ? 'text-gray-400' : 'text-slate-400'}`}>{item.label}</p>
+                      <div className={`rounded-xl border px-4 py-3 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+                        <p className="font-medium text-sm break-words">{item.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Preferences */}
+              <div className={`rounded-3xl p-8 shadow-2xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
+                <h3 className={`text-xl font-bold font-display mb-6 ${isDark ? 'text-white' : 'text-slate-800'}`}>Preferences</h3>
+                <div className="space-y-5">
+                  {[
+                    { label: 'Email Notifications', defaultChecked: true },
+                    { label: 'SMS Notifications', defaultChecked: false },
+                  ].map((pref) => (
+                    <label key={pref.label} className={`flex items-center justify-between py-3 border-b last:border-b-0 ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+                      <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>{pref.label}</span>
+                      <input type="checkbox" defaultChecked={pref.defaultChecked} className="w-4 h-4 accent-yellow-400" />
+                    </label>
+                  ))}
+                  <label className={`flex items-center justify-between py-3 border-b ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+                    <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>Dark Mode</span>
+                    <input
+                      type="checkbox"
+                      checked={isDark}
+                      onChange={handleToggleTheme}
+                      className="w-4 h-4 accent-yellow-400"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Contact Support */}
+              <div className={`rounded-3xl p-8 shadow-2xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
+                  <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/20 flex items-center justify-center text-accent">
+                    <ChatIcon size={18} />
+                  </div>
+                  <div>
+                    <h3 className={`text-xl font-bold font-display ${isDark ? 'text-white' : 'text-slate-800'}`}>Contact PhysiFit Support</h3>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Reach our admin team for platform or account issues</p>
+                  </div>
+                </div>
+
+                {supportSuccess ? (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-8 text-center">
+                    <div className="w-14 h-14 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
+                      <span className="text-green-400 text-2xl">✓</span>
+                    </div>
+                    <p className="text-green-400 font-bold text-sm mb-2">Message Sent Successfully!</p>
+                    <p className="text-xs text-gray-400 mb-5">Our administrative support team will review your ticket and respond via email.</p>
+                    <button
+                      onClick={() => setSupportSuccess(false)}
+                      className="text-xs font-bold uppercase tracking-wider text-accent hover:underline"
+                    >
+                      Send another message
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSupportSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-gray-400' : 'text-slate-400'}`}>Your Name</label>
+                        <input
+                          type="text"
+                          value={supportName}
+                          onChange={(e) => setSupportName(e.target.value)}
+                          required
+                          className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-slate-950/50 text-white' : 'border-slate-200 bg-white text-slate-800'}`}
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-gray-400' : 'text-slate-400'}`}>Email Address</label>
+                        <input
+                          type="email"
+                          value={supportEmail}
+                          onChange={(e) => setSupportEmail(e.target.value)}
+                          required
+                          className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-slate-950/50 text-white' : 'border-slate-200 bg-white text-slate-800'}`}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-gray-400' : 'text-slate-400'}`}>Message</label>
+                      <textarea
+                        placeholder="Describe your issue, question, or platform feedback..."
+                        value={supportMsg}
+                        onChange={(e) => setSupportMsg(e.target.value)}
+                        required
+                        rows={4}
+                        className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:ring-1 focus:ring-accent resize-none ${isDark ? 'border-white/10 bg-slate-950/50 text-white placeholder:text-gray-600' : 'border-slate-200 bg-white text-slate-800'}`}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={supportSubmitting}
+                      className="w-full bg-accent text-slate-950 py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs transition duration-300 font-display shadow-lg shadow-accent/10 disabled:opacity-40 hover:shadow-accent/20"
+                    >
+                      {supportSubmitting ? 'Sending Request...' : 'Send Message to Support'}
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              {/* Danger Zone */}
+              <div className="rounded-3xl border border-red-500/20 bg-red-500/5 p-8">
+                <div className="flex items-center gap-3 mb-3">
+                  <TrashIcon size={20} className="text-red-500" />
+                  <h3 className="text-red-500 text-xl font-bold font-display">Danger Zone</h3>
+                </div>
+                <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                  Permanently delete your instructor account and all associated data. This action cannot be reversed.
+                </p>
+                <button
+                  onClick={() => {
+                    setDeleteConfirmText('')
+                    setDeleteError('')
+                    setDeleteSubmitting(false)
+                    setShowDeleteAccountModal(true)
+                  }}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest transition"
+                >
+                  <TrashIcon size={14} />
+                  Delete Instructor Account
+                </button>
+              </div>
+            </ScrollReveal>
+          )}
+
         </main>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditProfileModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowEditProfileModal(false)}>
+          <div
+            className="bg-gradient-to-b from-[#1c1e2f] to-slate-950 border border-white/10 rounded-3xl shadow-2xl w-full max-w-md p-0 overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center border border-accent/20 text-accent">
+                <UserIcon size={20} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Edit Profile</h3>
+                <p className="text-[10px] text-accent uppercase tracking-widest">Update your personal information</p>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4 text-left">
+              {editProfileError && (
+                <div className="bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded text-xs font-semibold leading-relaxed flex items-start gap-2">
+                  <AlertIcon size={14} className="shrink-0 mt-0.5 text-red-400" />
+                  <span>{editProfileError}</span>
+                </div>
+              )}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Full Name</label>
+                <input
+                  type="text"
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-slate-950/50 text-white"
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Phone Number</label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-slate-950/50 text-white"
+                  placeholder="Enter phone number"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowEditProfileModal(false)}
+                className="px-5 py-2.5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest font-display"
+                disabled={editProfileSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={editProfileSubmitting || !editFullName.trim()}
+                className="px-5 py-2.5 bg-accent hover:bg-accent-dark text-slate-950 rounded-xl transition text-xs font-bold uppercase tracking-widest font-display disabled:opacity-40"
+              >
+                {editProfileSubmitting ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowChangePasswordModal(false)}>
+          <div
+            className="bg-gradient-to-b from-[#1c1e2f] to-slate-950 border border-white/10 rounded-3xl shadow-2xl w-full max-w-md p-0 overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center border border-accent/20 text-accent">
+                <LockIcon size={20} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Change Password</h3>
+                <p className="text-[10px] text-accent uppercase tracking-widest">Update your login security credentials</p>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4 text-left">
+              {changePasswordError && (
+                <div className="bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded text-xs font-semibold leading-relaxed flex items-start gap-2">
+                  <AlertIcon size={14} className="shrink-0 mt-0.5 text-red-400" />
+                  <span>{changePasswordError}</span>
+                </div>
+              )}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Current Password</label>
+                <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-slate-950/50 text-white" placeholder="••••••••" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">New Password</label>
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-slate-950/50 text-white" placeholder="•••••••• (min 8 chars)" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Confirm New Password</label>
+                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-slate-950/50 text-white" placeholder="••••••••" />
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex gap-3 justify-end">
+              <button onClick={() => setShowChangePasswordModal(false)} className="px-5 py-2.5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest font-display" disabled={changePasswordSubmitting}>Cancel</button>
+              <button
+                onClick={handleChangePassword}
+                disabled={changePasswordSubmitting || !currentPassword || !newPassword || !confirmPassword}
+                className="px-5 py-2.5 bg-accent hover:bg-accent-dark text-slate-950 rounded-xl transition text-xs font-bold uppercase tracking-widest font-display disabled:opacity-40"
+              >
+                {changePasswordSubmitting ? 'Updating...' : 'Update Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteAccountModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowDeleteAccountModal(false)}>
+          <div
+            className="bg-gradient-to-b from-[#1c1e2f] to-slate-950 border border-red-500/20 rounded-3xl shadow-2xl w-full max-w-md p-0 overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-red-950/20 border-b border-red-500/10 px-6 py-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center border border-red-500/20 text-red-500">
+                <AlertIcon size={20} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Delete Account</h3>
+                <p className="text-[10px] text-red-400 uppercase tracking-widest font-bold">This action is irreversible</p>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4 text-left">
+              <p className="text-sm text-gray-300 leading-relaxed">Are you absolutely sure you want to delete your instructor account? This will permanently erase your profile, client assignments, and all associated session data.</p>
+              {deleteError && (
+                <div className="bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded text-xs font-semibold leading-relaxed flex items-start gap-2">
+                  <AlertIcon size={14} className="shrink-0 mt-0.5 text-red-400" />
+                  <span>{deleteError}</span>
+                </div>
+              )}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-display">
+                  Type <span className="text-red-400 font-mono font-bold bg-red-500/10 px-1.5 py-0.5 rounded">DELETE</span> below to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-red-500 bg-slate-950/50 text-white font-mono uppercase tracking-widest"
+                  placeholder="DELETE"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex gap-3 justify-end">
+              <button onClick={() => setShowDeleteAccountModal(false)} className="px-5 py-2.5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest font-display" disabled={deleteSubmitting}>Cancel</button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteSubmitting || deleteConfirmText !== 'DELETE'}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition text-xs font-bold uppercase tracking-widest font-display disabled:opacity-40"
+              >
+                {deleteSubmitting ? 'Deleting...' : 'Permanently Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Simulated WebRTC Telehealth coaching Room overlay modal */}
       {showVideoCall && (

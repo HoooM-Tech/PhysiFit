@@ -39,7 +39,7 @@ export default function LoginPage() {
 
       if (redirect) {
         router.push(redirect)
-      } else if (user?.role === 'admin') {
+      } else if (user?.role === 'admin' || user?.role === 'super_admin') {
         router.push('/admin')
       } else if (user?.role === 'trainer') {
         router.push('/trainer-portal')

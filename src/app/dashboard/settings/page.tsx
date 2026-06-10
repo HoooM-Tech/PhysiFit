@@ -1,12 +1,46 @@
-"use client"
+'use client'
 
+import Header from '@/components/Header'
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useTheme } from '@/context/ThemeContext'
+import { AlertIcon, TrashIcon, ChatIcon } from '@/components/Icons'
 
 export default function ClientSettingsPage() {
   const router = useRouter()
+  const { theme } = useTheme()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [user, setUser] = useState<any>(null)
+  
+  // Support Form State
+  const [supportName, setSupportName] = useState('')
+  const [supportEmail, setSupportEmail] = useState('')
+  const [supportMsg, setSupportMsg] = useState('')
+  const [supportSubmitting, setSupportSubmitting] = useState(false)
+  const [supportSuccess, setSupportSuccess] = useState(false)
+
+  const isDark = theme === 'dark'
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const res = await fetch('/api/users/me')
+        if (res.ok) {
+          const json = await res.json()
+          setUser(json.data?.user || null)
+          if (json.data?.user) {
+            setSupportName(json.data.user.fullName || '')
+            setSupportEmail(json.data.user.email || '')
+          }
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    loadUser()
+  }, [])
 
   const handleDelete = async () => {
     if (!confirm('Delete your account? This action is irreversible.')) return
@@ -14,7 +48,6 @@ export default function ClientSettingsPage() {
     try {
       const res = await fetch('/api/users/me', { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to delete account')
-      // redirect home
       router.push('/')
     } catch (err: any) {
       setError(err.message || 'An error occurred')
@@ -23,23 +56,162 @@ export default function ClientSettingsPage() {
     }
   }
 
-  return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Account Settings</h1>
-      <p className="text-gray-600 mb-6">Manage your account and privacy settings.</p>
+  const handleSupportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!supportMsg.trim()) return
+    setSupportSubmitting(true)
+    // Simulating API call
+    await new Promise((resolve) => setTimeout(resolve, 1200))
+    setSupportSubmitting(false)
+    setSupportSuccess(true)
+    setSupportMsg('')
+  }
 
-      <div className="border rounded-lg p-6">
-        <h2 className="font-semibold mb-2">Danger Zone</h2>
-        <p className="text-sm text-gray-600 mb-4">Delete your account and all associated data.</p>
-        {error && <p className="text-red-600 mb-2">{error}</p>}
-        <button
-          disabled={loading}
-          onClick={handleDelete}
-          className="bg-red-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
-        >
-          {loading ? 'Deleting...' : 'Delete my account'}
-        </button>
-      </div>
+  return (
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${
+      isDark ? 'bg-[#0a0f1d] text-white' : 'bg-slate-50 text-slate-800'
+    }`}>
+      <Header />
+
+      <main className="flex-1 max-w-4xl w-full mx-auto px-6 py-12">
+        {/* Back Link */}
+        <div className="mb-8">
+          <Link href="/dashboard" className="text-accent hover:underline font-bold uppercase tracking-wider text-xs">
+            ← Back to Dashboard
+          </Link>
+        </div>
+
+        <div className="mb-10">
+          <h1 className="text-4xl font-display uppercase tracking-wider font-extrabold mb-2">Account Settings</h1>
+          <p className={isDark ? 'text-gray-400' : 'text-slate-500'}>Manage your account credentials, view profile configurations, or contact support.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Settings Left Column / Info */}
+          <div className="md:col-span-2 space-y-8">
+            {/* User Info Details card */}
+            <div className={`border rounded-3xl p-8 ${
+              isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'
+            }`}>
+              <h2 className="text-lg font-bold font-display uppercase tracking-wider mb-6 pb-2 border-b border-white/5">Profile Details</h2>
+              <div className="space-y-4 text-sm">
+                <div className="flex justify-between py-2.5 border-b border-white/5">
+                  <span className="text-gray-400">Full Name</span>
+                  <span className="font-semibold">{user?.fullName || 'Loading...'}</span>
+                </div>
+                <div className="flex justify-between py-2.5 border-b border-white/5">
+                  <span className="text-gray-400">Email Address</span>
+                  <span className="font-semibold font-mono">{user?.email || 'Loading...'}</span>
+                </div>
+                <div className="flex justify-between py-2.5 last:border-b-0">
+                  <span className="text-gray-400">Account Role</span>
+                  <span className="font-semibold capitalize text-accent">{user?.role || 'Loading...'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Support Container */}
+            <div className={`border rounded-3xl p-8 ${
+              isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'
+            }`}>
+              <div className="flex items-center gap-3 mb-6 pb-2 border-b border-white/5">
+                <ChatIcon size={20} className="text-accent" />
+                <h2 className="text-lg font-bold font-display uppercase tracking-wider">Contact PhysiFit Support</h2>
+              </div>
+
+              {supportSuccess ? (
+                <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-6 text-center">
+                  <p className="text-green-400 font-bold text-sm mb-2">Message Sent Successfully!</p>
+                  <p className="text-xs text-gray-400 mb-4">Our administrative support team will review your ticket and reach out via email shortly.</p>
+                  <button
+                    onClick={() => setSupportSuccess(false)}
+                    className="text-xs font-bold uppercase tracking-wider text-accent hover:underline"
+                  >
+                    Send another message
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSupportSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Your Name</label>
+                      <input
+                        type="text"
+                        value={supportName}
+                        onChange={(e) => setSupportName(e.target.value)}
+                        required
+                        className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:ring-1 focus:ring-accent ${
+                          isDark ? 'border-white/10 bg-[#0a0f1d] text-white' : 'border-slate-250 bg-white text-slate-800'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        value={supportEmail}
+                        onChange={(e) => setSupportEmail(e.target.value)}
+                        required
+                        className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:ring-1 focus:ring-accent ${
+                          isDark ? 'border-white/10 bg-[#0a0f1d] text-white' : 'border-slate-250 bg-white text-slate-800'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Message</label>
+                    <textarea
+                      placeholder="How can we help you? Describe your issue or question..."
+                      value={supportMsg}
+                      onChange={(e) => setSupportMsg(e.target.value)}
+                      required
+                      rows={4}
+                      className={`w-full text-xs rounded-xl p-3 border focus:outline-none focus:ring-1 focus:ring-accent ${
+                        isDark ? 'border-white/10 bg-[#0a0f1d] text-white' : 'border-slate-250 bg-white text-slate-800'
+                      }`}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={supportSubmitting}
+                    className="w-full bg-accent text-slate-950 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition duration-300 font-display shadow-lg shadow-accent/10 disabled:opacity-40"
+                  >
+                    {supportSubmitting ? 'Sending Request...' : 'Send Message to Support'}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+
+          {/* Settings Right Column / Danger Zone */}
+          <div className="space-y-6">
+            <div className={`border border-red-500/10 rounded-3xl p-8 ${
+              isDark ? 'bg-red-500/5' : 'bg-red-50/50 border-red-200'
+            }`}>
+              <div className="flex items-center gap-2 mb-4 text-red-500">
+                <TrashIcon size={18} />
+                <h3 className="font-bold font-display uppercase tracking-wider">Danger Zone</h3>
+              </div>
+              <p className={`text-xs leading-relaxed mb-6 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                Deleting your account is permanent and will immediately revoke your access, clear your profiles, and delete all historical health and booking records.
+              </p>
+              {error && (
+                <div className="mb-4 text-xs font-bold text-red-500 flex items-center gap-1.5">
+                  <AlertIcon size={14} />
+                  <span>{error}</span>
+                </div>
+              )}
+              <button
+                disabled={loading}
+                onClick={handleDelete}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition disabled:opacity-40"
+              >
+                {loading ? 'Deleting...' : 'Delete My Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

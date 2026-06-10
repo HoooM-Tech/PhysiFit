@@ -986,17 +986,53 @@ export default function AdminDashboard() {
                               )}
                             </td>
                             <td className="px-6 py-4 text-right">
-                              {trainer.profile?.approvedAt ? (
-                                <span className="text-gray-400 text-xs">Approved on {new Date(trainer.profile.approvedAt).toLocaleDateString()}</span>
-                              ) : (
-                                <button
-                                  onClick={() => handleApproveTrainer(trainer.id)}
-                                  disabled={actionLoading}
-                                  className="bg-accent hover:bg-accent-dark text-slate-950 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl transition disabled:opacity-40"
-                                >
-                                  Approve Instructor
-                                </button>
-                              )}
+                              <div className="flex items-center justify-end gap-3">
+                                {trainer.profile?.approvedAt ? (
+                                  <span className="text-gray-400 text-xs">Approved on {new Date(trainer.profile.approvedAt).toLocaleDateString()}</span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleApproveTrainer(trainer.id)}
+                                    disabled={actionLoading}
+                                    className="bg-accent hover:bg-accent-dark text-slate-950 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl transition disabled:opacity-40"
+                                  >
+                                    Approve Instructor
+                                  </button>
+                                )}
+                                {currentUserRole === 'super_admin' && (
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm(`Fully delete trainer ${trainer.fullName}? This will remove all associated profiles and fitness plans, and cannot be undone.`)) return
+                                      setErrorMessage('')
+                                      setSuccessMessage('')
+                                      setActionLoading(true)
+                                      try {
+                                        const res = await fetch('/api/admin/trainers', {
+                                          method: 'DELETE',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ trainerId: trainer.id })
+                                        })
+                                        const json = await res.json()
+                                        if (!res.ok) {
+                                          throw new Error(json.error?.message || json.message || 'Delete failed')
+                                        }
+                                        setSuccessMessage('Trainer deleted successfully!')
+                                        await fetchTrainers()
+                                      } catch (err: any) {
+                                        setErrorMessage(err.message || 'Error deleting trainer')
+                                      } finally {
+                                        setActionLoading(false)
+                                      }
+                                    }}
+                                    disabled={actionLoading}
+                                    className="text-red-500 hover:text-red-750 font-bold text-xs uppercase tracking-widest"
+                                  >
+                                    <span className="flex items-center gap-1.5">
+                                      <TrashIcon size={12} />
+                                      <span>Delete</span>
+                                    </span>
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}

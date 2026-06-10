@@ -39,5 +39,5 @@ export const PATCH = withAuth(
 
     return { data: { service: updated } };
   },
-  { roles: ["admin"] }
+  { roles: ["admin", "super_admin"] }
 );

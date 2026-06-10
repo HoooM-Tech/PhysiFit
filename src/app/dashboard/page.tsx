@@ -693,7 +693,7 @@ export default function Dashboard() {
 
         {/* Sidebar */}
         <aside
-          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-hidden ${isDark
+          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-y-auto scrollbar-none ${isDark
             ? 'bg-primary-darker/95 border-white/5 text-white'
             : 'bg-white/95 border-slate-200 text-slate-800'
             } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'

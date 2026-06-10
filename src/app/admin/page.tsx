@@ -394,7 +394,7 @@ export default function AdminDashboard() {
 
         {/* Sidebar */}
         <aside
-          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-y-auto ${
+          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-y-auto scrollbar-none ${
             isDark
               ? 'bg-slate-950/95 border-white/5 text-white'
               : 'bg-white/95 border-slate-200 text-slate-800'
@@ -713,121 +713,117 @@ export default function AdminDashboard() {
                               </button>
                             </td>
                             <td className="px-6 py-4 text-right">
-                              {assigningClientId === client.id ? (
-                                <div className="flex gap-2 items-center justify-end">
-                                  <select
-                                    value={selectedTrainerId}
-                                    onChange={(e) => setSelectedTrainerId(e.target.value)}
-                                    className={`border rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0b0e18] text-white' : 'border-slate-200 bg-white text-slate-800'}`}
-                                  >
-                                    <option value="">Select Specialist...</option>
-                                    <option value="unassign">-- Clear placement --</option>
-                                    {approvedTrainers.map(t => (
-                                      <option key={t.id} value={t.id}>{t.fullName} ({getSpecializationLabel(t.profile?.specialization || '')})</option>
-                                    ))}
-                                  </select>
-                                  <button
-                                    onClick={() => handleAssignTrainer(client.id)}
-                                    disabled={actionLoading}
-                                    className="bg-accent text-slate-950 px-4 py-2 rounded-xl text-xs hover:bg-accent-dark font-bold uppercase tracking-wider"
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    onClick={() => { setAssigningClientId(null); setSelectedTrainerId(''); }}
-                                    className={`border px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition ${isDark ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10' : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'}`}
-                                  >
-                                    <CloseIcon size={12} />
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => {
-                                    setAssigningClientId(client.id);
-                                    setSelectedTrainerId(client.profile?.assignedTrainerId || '');
-                                  }}
-                                  className="text-accent hover:text-accent-light font-bold text-xs uppercase tracking-widest"
-                                >
-                                  <span className="flex items-center gap-1.5 justify-center">
-                                    <RefreshIcon size={12} className="text-accent" />
-                                    <span>Assign Specialist</span>
-                                  </span>
-                                </button>
-                              )}
-                              &nbsp;
-                              {client.status === 'archived' ? (
-                                <button
-                                  onClick={async () => {
-                                    if (!confirm(`Recover client ${client.fullName}? This will restore account access.`)) return
-                                    try {
-                                      const res = await fetch('/api/admin/clients/recover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id }) })
-                                      if (!res.ok) {
-                                        const j = await res.json().catch(() => ({}))
-                                        throw new Error(j.error?.message || 'Recover failed')
-                                      }
-                                      await fetchClients()
-                                      setSuccessMessage('Client recovered')
-                                    } catch (err: any) {
-                                      setErrorMessage(err.message || 'Error recovering client')
-                                    }
-                                  }}
-                                  className="text-green-600 hover:text-green-800 font-bold text-xs uppercase tracking-widest ml-3"
-                                >
-                                  <span className="flex items-center gap-1.5">
-                                    <RefreshIcon size={12} />
-                                    <span>Recover</span>
-                                  </span>
-                                </button>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={async () => {
-                                      if (!confirm(`Archive client ${client.fullName}? This will disable the account but data can be recovered.`)) return
-                                      try {
-                                        const res = await fetch('/api/admin/clients', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id }) })
-                                        if (!res.ok) {
-                                          const j = await res.json().catch(() => ({}))
-                                          throw new Error(j.error?.message || 'Archive failed')
-                                        }
-                                        await fetchClients()
-                                        setSuccessMessage('Client archived')
-                                      } catch (err: any) {
-                                        setErrorMessage(err.message || 'Error archiving client')
-                                      }
-                                    }}
-                                    className="text-amber-600 hover:text-amber-800 font-bold text-xs uppercase tracking-widest ml-3"
-                                  >
-                                    <span className="flex items-center gap-1.5">
-                                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-                                      <span>Archive</span>
-                                    </span>
-                                  </button>
-                                  {currentUserRole === 'super_admin' && (
-                                    <button
-                                      onClick={async () => {
-                                        if (!confirm(`Fully delete client ${client.fullName}? This cannot be undone.`)) return
-                                        try {
-                                          const res = await fetch('/api/admin/clients', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, force: true }) })
-                                          if (!res.ok) {
-                                            const j = await res.json().catch(() => ({}))
-                                            throw new Error(j.error?.message || 'Full delete failed')
-                                          }
-                                          await fetchClients()
-                                          setSuccessMessage('Client fully deleted')
-                                        } catch (err: any) {
-                                          setErrorMessage(err.message || 'Error deleting client')
-                                        }
-                                      }}
-                                      className="text-red-500 hover:text-red-700 font-bold text-xs uppercase tracking-widest ml-3"
+                              <div className="flex flex-col sm:flex-row items-center justify-end gap-2">
+                                {assigningClientId === client.id ? (
+                                  <div className="flex gap-2 items-center justify-end">
+                                    <select
+                                      value={selectedTrainerId}
+                                      onChange={(e) => setSelectedTrainerId(e.target.value)}
+                                      className={`border rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0b0e18] text-white' : 'border-slate-200 bg-white text-slate-800'}`}
                                     >
-                                      <span className="flex items-center gap-1.5">
-                                        <TrashIcon size={12} />
-                                        <span>Full Delete</span>
-                                      </span>
+                                      <option value="">Select Specialist...</option>
+                                      <option value="unassign">-- Clear placement --</option>
+                                      {approvedTrainers.map(t => (
+                                        <option key={t.id} value={t.id}>{t.fullName} ({getSpecializationLabel(t.profile?.specialization || '')})</option>
+                                      ))}
+                                    </select>
+                                    <button
+                                      onClick={() => handleAssignTrainer(client.id)}
+                                      disabled={actionLoading}
+                                      className="bg-accent text-slate-950 px-4 py-2 rounded-xl text-xs hover:bg-accent-dark font-bold uppercase tracking-wider"
+                                    >
+                                      Save
                                     </button>
-                                  )}
-                                </>
-                              )}
+                                    <button
+                                      onClick={() => { setAssigningClientId(null); setSelectedTrainerId(''); }}
+                                      className={`border px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition ${isDark ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10' : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'}`}
+                                    >
+                                      <CloseIcon size={12} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        setAssigningClientId(client.id);
+                                        setSelectedTrainerId(client.profile?.assignedTrainerId || '');
+                                      }}
+                                      className="px-3 py-1.5 bg-accent hover:bg-accent-dark text-slate-950 text-[10px] font-bold uppercase tracking-wider rounded-xl transition whitespace-nowrap shadow-sm shadow-accent/5 flex items-center gap-1"
+                                    >
+                                      <RefreshIcon size={10} className="text-slate-950" />
+                                      <span>Assign Specialist</span>
+                                    </button>
+
+                                    {client.status === 'archived' ? (
+                                      <button
+                                        onClick={async () => {
+                                          if (!confirm(`Recover client ${client.fullName}? This will restore account access.`)) return
+                                          try {
+                                            const res = await fetch('/api/admin/clients/recover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id }) })
+                                            if (!res.ok) {
+                                              const j = await res.json().catch(() => ({}))
+                                              throw new Error(j.error?.message || 'Recover failed')
+                                            }
+                                            await fetchClients()
+                                            setSuccessMessage('Client recovered')
+                                          } catch (err: any) {
+                                            setErrorMessage(err.message || 'Error recovering client')
+                                          }
+                                        }}
+                                        className="px-3 py-1.5 border border-green-500/20 hover:border-green-500/40 bg-green-500/5 hover:bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-wider rounded-xl transition whitespace-nowrap flex items-center gap-1"
+                                      >
+                                        <RefreshIcon size={10} />
+                                        <span>Recover</span>
+                                      </button>
+                                    ) : (
+                                      <>
+                                        <button
+                                          onClick={async () => {
+                                            if (!confirm(`Archive client ${client.fullName}? This will disable the account but data can be recovered.`)) return
+                                            try {
+                                              const res = await fetch('/api/admin/clients', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id }) })
+                                              if (!res.ok) {
+                                                const j = await res.json().catch(() => ({}))
+                                                throw new Error(j.error?.message || 'Archive failed')
+                                              }
+                                              await fetchClients()
+                                              setSuccessMessage('Client archived')
+                                            } catch (err: any) {
+                                              setErrorMessage(err.message || 'Error archiving client')
+                                            }
+                                          }}
+                                          className="px-3 py-1.5 border border-amber-500/20 hover:border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase tracking-wider rounded-xl transition whitespace-nowrap flex items-center gap-1"
+                                        >
+                                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+                                          <span>Archive</span>
+                                        </button>
+                                        {currentUserRole === 'super_admin' && (
+                                          <button
+                                            onClick={async () => {
+                                              if (!confirm(`Fully delete client ${client.fullName}? This cannot be undone.`)) return
+                                              try {
+                                                const res = await fetch('/api/admin/clients', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, force: true }) })
+                                                if (!res.ok) {
+                                                  const j = await res.json().catch(() => ({}))
+                                                  throw new Error(j.error?.message || 'Full delete failed')
+                                                }
+                                                await fetchClients()
+                                                setSuccessMessage('Client fully deleted')
+                                              } catch (err: any) {
+                                                setErrorMessage(err.message || 'Error deleting client')
+                                              }
+                                            }}
+                                            className="px-3 py-1.5 border border-red-500/20 hover:border-red-500/40 bg-red-500/5 hover:bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-wider rounded-xl transition whitespace-nowrap flex items-center gap-1"
+                                          >
+                                            <TrashIcon size={10} />
+                                            <span>Full Delete</span>
+                                          </button>
+                                        )}
+                                      </>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -839,69 +835,7 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              {/* Side Drawer Inspection Panel */}
-              {inspectingClient && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-                  <div className={`w-full max-w-md h-full p-8 shadow-2xl border-l overflow-y-auto flex flex-col justify-between ${isDark ? 'bg-slate-950 border-white/5 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
-                    <div>
-                      <div className="flex justify-between items-center pb-4 border-b border-white/5 mb-8">
-                        <h3 className="text-xl font-bold font-display uppercase tracking-wider">Screener Inspection</h3>
-                        <button onClick={() => setInspectingClient(null)} className="text-gray-400 hover:text-red-500 transition" aria-label="Close details">
-                          <CloseIcon size={20} />
-                        </button>
-                      </div>
-
-                      <div className="mb-8">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">CLIENT PROFILE</span>
-                        <p className="text-xl font-bold font-display uppercase tracking-wider">{inspectingClient.fullName}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{inspectingClient.email}</p>
-                      </div>
-
-                      {inspectingClient.profile ? (
-                        <div className="space-y-8 text-left">
-                          <div>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-3">PHYSICAL STATS</span>
-                            <div className="grid grid-cols-3 gap-3">
-                              <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
-                                <span className="text-[10px] text-gray-400 block mb-0.5">Weight</span>
-                                <span className="font-extrabold">{inspectingClient.profile.weightKg ?? 'N/A'} kg</span>
-                              </div>
-                              <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
-                                <span className="text-[10px] text-gray-400 block mb-0.5">Height</span>
-                                <span className="font-extrabold">{inspectingClient.profile.heightCm ?? 'N/A'} cm</span>
-                              </div>
-                              <div className={`border p-3 rounded-2xl text-center flex flex-col items-center justify-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
-                                <span className="text-[10px] text-gray-400 block mb-0.5">Dizziness</span>
-                                <span className={`font-extrabold px-2 py-0.5 rounded text-[10px] uppercase font-display ${inspectingClient.profile.dizzinessHistory ? 'bg-red-500/25 text-red-300' : 'bg-green-500/20 text-green-300'}`}>
-                                  {inspectingClient.profile.dizzinessHistory ? 'Yes' : 'No'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 font-display">PAR-Q Screener Declarations:</span>
-                            <div className={`border p-5 rounded-2xl text-xs min-h-24 whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-                              {inspectingClient.profile.medicalNotes || 'No specific restrictions declared.'}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-8 text-center text-gray-400 bg-white/5 rounded-2xl border border-dashed border-white/10 text-sm">
-                          No profile information recorded.
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => setInspectingClient(null)}
-                      className="w-full bg-accent text-slate-950 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display shadow-lg shadow-accent/10 mt-8"
-                    >
-                      Close Health Card
-                    </button>
-                  </div>
-                </div>
-              )}
+              
             </ScrollReveal>
           )}
 
@@ -965,7 +899,12 @@ export default function AdminDashboard() {
                             </td>
                             <td className="px-6 py-4">
                               <button
-                                onClick={() => setInspectingTrainer(trainer)}
+                                onClick={() => {
+                                  setInspectingTrainer(trainer);
+                                  if (trainer.profile?.specialization) {
+                                    console.log(`[TRAINER REGISTRY] Reviewing trainer ${trainer.fullName} applying for specialization: ${getSpecializationLabel(trainer.profile.specialization)}`);
+                                  }
+                                }}
                                 className={`font-bold text-xs uppercase tracking-widest border px-4 py-2 rounded-xl transition ${isDark ? 'border-white/10 hover:border-accent/40 bg-white/5 text-white' : 'border-slate-300 hover:border-accent/40 bg-white text-slate-755'}`}
                               >
                                 <span className="flex items-center gap-1.5 justify-center">
@@ -1043,140 +982,6 @@ export default function AdminDashboard() {
                   <div className="p-8 text-center text-gray-400 text-sm">No matched instructors files found.</div>
                 )}
               </div>
-              {/* Side Drawer Trainer Inspection Panel */}
-              {inspectingTrainer && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-                  <div className={`w-full max-w-md h-full p-8 shadow-2xl border-l overflow-y-auto flex flex-col justify-between ${isDark ? 'bg-slate-950 border-white/5 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
-                    <div>
-                      <div className="flex justify-between items-center pb-4 border-b border-white/5 mb-8">
-                        <h3 className="text-xl font-bold font-display uppercase tracking-wider">Trainer Application Review</h3>
-                        <button onClick={() => setInspectingTrainer(null)} className="text-gray-400 hover:text-red-500 transition" aria-label="Close details">
-                          <CloseIcon size={20} />
-                        </button>
-                      </div>
-
-                      <div className="mb-8">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">TRAINER APPLICANT</span>
-                        <p className="text-xl font-bold font-display uppercase tracking-wider">{inspectingTrainer.fullName}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{inspectingTrainer.email}</p>
-                        {inspectingTrainer.phone && (
-                          <p className="text-xs text-gray-500 mt-0.5 font-mono">{inspectingTrainer.phone}</p>
-                        )}
-                      </div>
-
-                      {inspectingTrainer.profile ? (
-                        <div className="space-y-6 text-left">
-                          <div>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-3">PROFESSIONAL STATS</span>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
-                                <span className="text-[10px] text-gray-400 block mb-0.5">Experience</span>
-                                <span className="font-extrabold text-base">{inspectingTrainer.profile.yearsOfExperience ?? '0'} years</span>
-                              </div>
-                              <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
-                                <span className="text-[10px] text-gray-400 block mb-0.5">Specialization</span>
-                                <span className="font-extrabold text-xs uppercase block truncate">{getSpecializationLabel(inspectingTrainer.profile.specialization)}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">Education:</span>
-                            <p className={`text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>
-                              {inspectingTrainer.profile.education || 'Not specified'}
-                            </p>
-                          </div>
-
-                          <div>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">Certifications:</span>
-                            <div className={`border p-3 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-                              {inspectingTrainer.profile.certifications || 'None declared'}
-                            </div>
-                          </div>
-
-                          {/* Onboarding Answers */}
-                          {(() => {
-                            let q1 = 'No response';
-                            let q2 = 'No response';
-                            if (inspectingTrainer.profile.onboardingAnswers) {
-                              try {
-                                const parsed = JSON.parse(inspectingTrainer.profile.onboardingAnswers);
-                                if (parsed.q1) q1 = parsed.q1;
-                                if (parsed.q2) q2 = parsed.q2;
-                              } catch (e) {
-                                // fallback if not JSON
-                              }
-                            }
-                            return (
-                              <div className="space-y-4">
-                                <div>
-                                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">
-                                    Rehabilitation & Senior Wellness Experience:
-                                  </span>
-                                  <div className={`border p-3 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-                                    {q1}
-                                  </div>
-                                </div>
-                                <div>
-                                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">
-                                    Motivation to Join Network:
-                                  </span>
-                                  <div className={`border p-3 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-                                    {q2}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          {/* CV File Link */}
-                          {inspectingTrainer.profile.cvUrl && (
-                            <div>
-                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 font-display">Uploaded CV:</span>
-                              <a
-                                href={inspectingTrainer.profile.cvUrl}
-                                download={`CV_${inspectingTrainer.fullName.replace(/\s+/g, '_')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full bg-[#1e293b] hover:bg-[#334155] border border-white/10 text-white py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display flex items-center justify-center gap-2"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Download / View CV File
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="p-8 text-center text-gray-400 bg-white/5 rounded-2xl border border-dashed border-white/10 text-sm">
-                          No profile details recorded.
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-8 border-t border-white/5 space-y-3">
-                      {!inspectingTrainer.profile?.approvedAt && (
-                        <button
-                          onClick={async () => {
-                            await handleApproveTrainer(inspectingTrainer.id);
-                            setInspectingTrainer(null);
-                          }}
-                          className="w-full bg-accent text-slate-950 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display shadow-lg shadow-accent/10 block text-center"
-                        >
-                          Approve Instructor Application
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setInspectingTrainer(null)}
-                        className={`w-full border py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display text-center block ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/10' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}
-                      >
-                        Close Application
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </ScrollReveal>
           )}
 
@@ -1261,6 +1066,213 @@ export default function AdminDashboard() {
           )}
         </main>
       </div>
+
+      {/* Side Drawer Inspection Panel (Rendered outside transform containers) */}
+      {inspectingClient && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+          <div className={`w-full max-w-md h-full p-8 shadow-2xl border-l overflow-y-auto flex flex-col justify-between ${isDark ? 'bg-slate-950 border-white/5 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+            <div>
+              <div className="flex justify-between items-center pb-4 border-b border-white/5 mb-8">
+                <h3 className="text-xl font-bold font-display uppercase tracking-wider">Screener Inspection</h3>
+                <button onClick={() => setInspectingClient(null)} className="text-gray-400 hover:text-red-500 transition" aria-label="Close details">
+                  <CloseIcon size={20} />
+                </button>
+              </div>
+
+              <div className="mb-8">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">CLIENT PROFILE</span>
+                <p className="text-xl font-bold font-display uppercase tracking-wider">{inspectingClient.fullName}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{inspectingClient.email}</p>
+              </div>
+
+              {inspectingClient.profile ? (
+                <div className="space-y-8 text-left">
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-3">PHYSICAL STATS</span>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                        <span className="text-[10px] text-gray-400 block mb-0.5">Weight</span>
+                        <span className="font-extrabold">{inspectingClient.profile.weightKg ?? 'N/A'} kg</span>
+                      </div>
+                      <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                        <span className="text-[10px] text-gray-400 block mb-0.5">Height</span>
+                        <span className="font-extrabold">{inspectingClient.profile.heightCm ?? 'N/A'} cm</span>
+                      </div>
+                      <div className={`border p-3 rounded-2xl text-center flex flex-col items-center justify-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                        <span className="text-[10px] text-gray-400 block mb-0.5">Dizziness</span>
+                        <span className={`font-extrabold px-2 py-0.5 rounded text-[10px] uppercase font-display ${inspectingClient.profile.dizzinessHistory ? 'bg-red-500/25 text-red-300' : 'bg-green-500/20 text-green-300'}`}>
+                          {inspectingClient.profile.dizzinessHistory ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 font-display">PAR-Q Screener Declarations:</span>
+                    <div className={`border p-5 rounded-2xl text-xs min-h-24 whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                      {inspectingClient.profile.medicalNotes || 'No specific restrictions declared.'}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-400 bg-white/5 rounded-2xl border border-dashed border-white/10 text-sm">
+                  No profile information recorded.
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setInspectingClient(null)}
+              className="w-full bg-accent text-slate-950 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display shadow-lg shadow-accent/10 mt-8"
+            >
+              Close Health Card
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Side Drawer Trainer Inspection Panel (Rendered outside transform containers) */}
+      {inspectingTrainer && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+          <div className={`w-full max-w-2xl h-full p-8 shadow-2xl border-l overflow-y-auto flex flex-col justify-between ${isDark ? 'bg-slate-950 border-white/5 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+            <div>
+              <div className="flex justify-between items-center pb-4 border-b border-white/5 mb-8">
+                <h3 className="text-xl font-bold font-display uppercase tracking-wider">Trainer Application Review</h3>
+                <button onClick={() => setInspectingTrainer(null)} className="text-gray-400 hover:text-red-500 transition" aria-label="Close details">
+                  <CloseIcon size={20} />
+                </button>
+              </div>
+
+              <div className="mb-8">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">TRAINER APPLICANT</span>
+                <p className="text-xl font-bold font-display uppercase tracking-wider">{inspectingTrainer.fullName}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{inspectingTrainer.email}</p>
+                {inspectingTrainer.phone && (
+                  <p className="text-xs text-gray-500 mt-0.5 font-mono">{inspectingTrainer.phone}</p>
+                )}
+                {inspectingTrainer.profile?.specialization && (
+                  <div className="mt-3">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">APPLYING FOR SPECIALIZATION</span>
+                    <span className={`inline-block border px-3 py-1 rounded-full text-xs font-bold uppercase ${getSpecializationColor(inspectingTrainer.profile.specialization)}`}>
+                      {getSpecializationLabel(inspectingTrainer.profile.specialization)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {inspectingTrainer.profile ? (
+                <div className="space-y-6 text-left">
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-3">PROFESSIONAL STATS</span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                        <span className="text-[10px] text-gray-400 block mb-0.5">Experience</span>
+                        <span className="font-extrabold text-base">{inspectingTrainer.profile.yearsOfExperience ?? '0'} years</span>
+                      </div>
+                      <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                        <span className="text-[10px] text-gray-400 block mb-0.5">Specialization</span>
+                        <span className="font-extrabold text-xs uppercase block truncate">{getSpecializationLabel(inspectingTrainer.profile.specialization)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">Education:</span>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>
+                      {inspectingTrainer.profile.education || 'Not specified'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">Certifications:</span>
+                    <div className={`border p-3 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                      {inspectingTrainer.profile.certifications || 'None declared'}
+                    </div>
+                  </div>
+
+                  {/* Onboarding Answers */}
+                  {(() => {
+                    let q1 = 'No response';
+                    let q2 = 'No response';
+                    if (inspectingTrainer.profile.onboardingAnswers) {
+                      try {
+                        const parsed = JSON.parse(inspectingTrainer.profile.onboardingAnswers);
+                        if (parsed.q1) q1 = parsed.q1;
+                        if (parsed.q2) q2 = parsed.q2;
+                      } catch (e) {
+                        // fallback if not JSON
+                      }
+                    }
+                    return (
+                      <div className="space-y-4">
+                        <div>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">
+                            Rehabilitation & Senior Wellness Experience:
+                          </span>
+                          <div className={`border p-3 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                            {q1}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">
+                            Motivation to Join Network:
+                          </span>
+                          <div className={`border p-3 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                            {q2}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* CV File Link */}
+                  {inspectingTrainer.profile.cvUrl && (
+                    <div>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 font-display">Uploaded CV:</span>
+                      <a
+                        href={inspectingTrainer.profile.cvUrl}
+                        download={`CV_${inspectingTrainer.fullName.replace(/\s+/g, '_')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-[#1e293b] hover:bg-[#334155] border border-white/10 text-white py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display flex items-center justify-center gap-2"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download / View CV File
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-400 bg-white/5 rounded-2xl border border-dashed border-white/10 text-sm">
+                  No profile details recorded.
+                </div>
+              )}
+            </div>
+
+            <div className="pt-8 border-t border-white/5 space-y-3">
+              {!inspectingTrainer.profile?.approvedAt && (
+                <button
+                  onClick={async () => {
+                    await handleApproveTrainer(inspectingTrainer.id);
+                    setInspectingTrainer(null);
+                  }}
+                  className="w-full bg-accent text-slate-950 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display shadow-lg shadow-accent/10 block text-center"
+                >
+                  Approve Instructor Application
+                </button>
+              )}
+              <button
+                onClick={() => setInspectingTrainer(null)}
+                className={`w-full border py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display text-center block ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/10' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+              >
+                Close Application
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

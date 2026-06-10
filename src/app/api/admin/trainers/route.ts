@@ -44,7 +44,7 @@ export const GET = withAuth(
 
     return { data: { trainers: rows } };
   },
-  { roles: ["admin"] }
+  { roles: ["admin", "super_admin"] }
 );
 
 // PATCH: Approve a trainer application
@@ -86,7 +86,7 @@ export const PATCH = withAuth(
 
     return { data: { profile: updated } };
   },
-  { roles: ["admin"] }
+  { roles: ["admin", "super_admin"] }
 );
 
 // DELETE: Fully delete a trainer from the system (Super Admin Only)

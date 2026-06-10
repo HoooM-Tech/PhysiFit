@@ -44,5 +44,5 @@ export const GET = withAuth(
 
     return { data: { metrics: result.rows[0] } };
   },
-  { roles: ["admin"] }
+  { roles: ["admin", "super_admin"] }
 );

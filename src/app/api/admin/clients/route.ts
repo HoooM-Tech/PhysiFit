@@ -51,7 +51,7 @@ export const GET = withAuth(
 
     return { data: { clients: rows } };
   },
-  { roles: ["admin"] }
+  { roles: ["admin", "super_admin"] }
 );
 
 // PATCH: Assign or reassign a trainer to a client
@@ -137,7 +137,7 @@ export const PATCH = withAuth(
 
     return { data: { profile: updated } };
   },
-  { roles: ["admin"] }
+  { roles: ["admin", "super_admin"] }
 );
 
 // DELETE: Archive a client (admin) or fully delete (super-admin with force)

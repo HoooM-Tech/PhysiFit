@@ -413,3 +413,19 @@ export function eventConfirmationEmail(): string {
   `);
 }
 
+export function supportTicketEmail(name: string, email: string, message: string): string {
+  return baseTemplate("New Support Message", `
+    <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">New Support Ticket 🛠️</h2>
+    <p>A user has submitted a contact support request.</p>
+    ${infoBlock([
+      ["Sender Name", name],
+      ["Sender Email", email],
+    ])}
+    <h3 style="margin:24px 0 8px;font-size:15px;color:${BRAND_DARK};">Message Content:</h3>
+    <div style="background:${BRAND_LIGHT_BG};border-left:4px solid ${BRAND_BLUE};border-radius:8px;padding:16px;margin:16px 0;font-size:14px;color:#475569;white-space:pre-wrap;">
+      ${message}
+    </div>
+    ${ctaButton("View in Admin Dashboard", `${APP_URL()}/admin`)}
+  `);
+}
+

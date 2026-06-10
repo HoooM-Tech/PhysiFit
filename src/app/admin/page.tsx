@@ -85,7 +85,17 @@ interface Service {
   priceNairaPerSession: number;
 }
 
-type Tab = 'metrics' | 'clients' | 'trainers' | 'services';
+interface SupportTicket {
+  id: string;
+  userId: string | null;
+  name: string;
+  email: string;
+  message: string;
+  status: 'open' | 'resolved';
+  createdAt: string;
+}
+
+type Tab = 'metrics' | 'clients' | 'trainers' | 'services' | 'support';
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -103,6 +113,7 @@ export default function AdminDashboard() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
   const [trainers, setTrainers] = useState<Trainer[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
 
   // Interactive Admin Analytics mock points for dynamic tracking
   const [revenueData, setRevenueData] = useState([
@@ -124,6 +135,8 @@ export default function AdminDashboard() {
   // Action / UX States
   const [clientSearch, setClientSearch] = useState('')
   const [trainerFilter, setTrainerFilter] = useState<'all' | 'approved' | 'pending'>('all')
+  const [supportFilter, setSupportFilter] = useState<'all' | 'open' | 'resolved'>('all')
+  const [supportSearch, setSupportSearch] = useState('')
   const [inspectingClient, setInspectingClient] = useState<Client | null>(null)
   const [inspectingTrainer, setInspectingTrainer] = useState<Trainer | null>(null)
   const [assigningClientId, setAssigningClientId] = useState<string | null>(null)
@@ -165,6 +178,7 @@ export default function AdminDashboard() {
         await fetchClients()
         await fetchTrainers()
         await fetchServices()
+        await fetchSupportTickets()
       } catch (err) {
         console.error('Error fetching admin data:', err)
       } finally {
@@ -232,6 +246,15 @@ export default function AdminDashboard() {
       setServices(json.data?.services || [])
     }
   }
+
+  async function fetchSupportTickets() {
+    const res = await fetch('/api/admin/support')
+    if (res.ok) {
+      const json = await res.json()
+      setSupportTickets(json.data?.tickets || [])
+    }
+  }
+
 
   // Action Handlers
   const handleAssignTrainer = async (clientId: string) => {
@@ -316,8 +339,33 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleToggleTicketStatus = async (ticketId: string, currentStatus: 'open' | 'resolved') => {
+    setErrorMessage('')
+    setSuccessMessage('')
+    setActionLoading(true)
+    try {
+      const newStatus = currentStatus === 'open' ? 'resolved' : 'open'
+      const res = await fetch('/api/admin/support', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId, status: newStatus })
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json.error?.message || json.message || 'Failed to update ticket')
+      }
+      setSuccessMessage(`Ticket marked as ${newStatus}!`)
+      await fetchSupportTickets()
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An error occurred updating ticket status')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   // Theme Toggle
   const handleToggleTheme = toggleTheme
+
 
   // Helpers
   const getSpecializationLabel = (spec: string) => {
@@ -420,7 +468,8 @@ export default function AdminDashboard() {
                 { id: 'metrics', label: 'Platform Metrics' },
                 { id: 'clients', label: 'Matched Clients' },
                 { id: 'trainers', label: 'Trainer Registry' },
-                { id: 'services', label: 'Pricing Offers' }
+                { id: 'services', label: 'Pricing Offers' },
+                { id: 'support', label: 'Support Inbox' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -430,7 +479,7 @@ export default function AdminDashboard() {
                     setErrorMessage('')
                     if (window.innerWidth < 768) setSidebarOpen(false)
                   }}
-                  className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border flex items-center gap-2.5 ${
+                  className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border flex items-center justify-between ${
                     activeTab === tab.id
                       ? 'bg-accent text-slate-950 border-accent shadow-lg shadow-accent/20 scale-[1.02]'
                       : isDark
@@ -438,11 +487,19 @@ export default function AdminDashboard() {
                         : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
                   }`}
                 >
-                  {tab.id === 'metrics' && <DashboardIcon size={16} />}
-                  {tab.id === 'clients' && <UserIcon size={16} />}
-                  {tab.id === 'trainers' && <FitnessPlanIcon size={16} />}
-                  {tab.id === 'services' && <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>}
-                  <span>{tab.label}</span>
+                  <span className="flex items-center gap-2.5">
+                    {tab.id === 'metrics' && <DashboardIcon size={16} />}
+                    {tab.id === 'clients' && <UserIcon size={16} />}
+                    {tab.id === 'trainers' && <FitnessPlanIcon size={16} />}
+                    {tab.id === 'services' && <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>}
+                    {tab.id === 'support' && <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}
+                    <span>{tab.label}</span>
+                  </span>
+                  {tab.id === 'support' && supportTickets.filter(t => t.status === 'open').length > 0 && (
+                    <span className="bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 font-mono">
+                      {supportTickets.filter(t => t.status === 'open').length}
+                    </span>
+                  )}
                 </button>
               ))}
             </nav>
@@ -1061,6 +1118,164 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </ScrollReveal>
+          )}
+
+          {activeTab === 'support' && (
+            <ScrollReveal className="space-y-8">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Support Center</span>
+                <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Support Inbox</h1>
+                <p className={`mt-2 text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                  Review and manage contact support submissions sent by platform clients and trainers.
+                </p>
+              </div>
+
+              {/* Filters & Search */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                <div className="flex gap-2">
+                  {[
+                    { id: 'all', label: `All Tickets (${supportTickets.length})` },
+                    { id: 'open', label: `Open (${supportTickets.filter(t => t.status === 'open').length})` },
+                    { id: 'resolved', label: `Resolved (${supportTickets.filter(t => t.status === 'resolved').length})` }
+                  ].map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => setSupportFilter(tag.id as any)}
+                      className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-full border transition duration-300 ${
+                        supportFilter === tag.id
+                          ? 'bg-accent text-slate-950 border-accent shadow-md shadow-accent/5'
+                          : isDark ? 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      {tag.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="w-full sm:w-80 relative">
+                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search name, email, message..."
+                    value={supportSearch}
+                    onChange={(e) => setSupportSearch(e.target.value)}
+                    className={`w-full border rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0b0e18]/50 text-white' : 'border-slate-200 bg-white text-slate-800'}`}
+                  />
+                </div>
+              </div>
+
+              {/* Tickets Table Card */}
+              <div className={`border rounded-3xl overflow-hidden shadow-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800 shadow-slate-100'}`}>
+                {(() => {
+                  const filtered = supportTickets.filter(ticket => {
+                    if (supportFilter === 'open') return ticket.status === 'open'
+                    if (supportFilter === 'resolved') return ticket.status === 'resolved'
+                    return true
+                  }).filter(ticket => 
+                    ticket.name.toLowerCase().includes(supportSearch.toLowerCase()) ||
+                    ticket.email.toLowerCase().includes(supportSearch.toLowerCase()) ||
+                    ticket.message.toLowerCase().includes(supportSearch.toLowerCase())
+                  )
+
+                  if (filtered.length === 0) {
+                    return <div className="p-12 text-center text-gray-400 text-sm">No support messages found in this category.</div>
+                  }
+
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead className={`font-display text-[10px] uppercase tracking-widest ${isDark ? 'bg-white/5 border-b border-white/5 text-gray-400' : 'bg-slate-50 border-b border-slate-100 text-slate-500'}`}>
+                          <tr>
+                            <th className="px-6 py-4 min-w-[180px]">Submitter</th>
+                            <th className="px-6 py-4 min-w-[120px]">Date Sent</th>
+                            <th className="px-6 py-4 min-w-[320px]">Support Request Message</th>
+                            <th className="px-6 py-4 min-w-[100px]">Status</th>
+                            <th className="px-6 py-4 text-right min-w-[160px]">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className={`divide-y text-sm ${isDark ? 'divide-white/5' : 'divide-slate-100'}`}>
+                          {filtered.map((ticket) => (
+                            <tr key={ticket.id} className={`transition ${isDark ? 'hover:bg-white/5 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
+                              <td className="px-6 py-4">
+                                <div className="font-bold">{ticket.name}</div>
+                                <span className="text-[12px] text-gray-400 font-mono block">{ticket.email}</span>
+                                {ticket.userId && (
+                                  <span className="inline-block mt-1.5 text-[9px] font-bold uppercase rounded-full px-2 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                                    Registered User
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 text-xs text-gray-400">
+                                {new Date(ticket.createdAt).toLocaleDateString()}
+                                <span className="block text-[10px] opacity-75">{new Date(ticket.createdAt).toLocaleTimeString()}</span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-pre-wrap leading-relaxed max-w-lg text-xs">
+                                <div className={`p-4 rounded-2xl border ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                  {ticket.message}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                {ticket.status === 'resolved' ? (
+                                  <span className="inline-flex items-center gap-1.5 text-green-400 text-xs font-bold bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-full">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Resolved
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 text-amber-400 text-xs font-bold bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Open Ticket
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => handleToggleTicketStatus(ticket.id, ticket.status)}
+                                    disabled={actionLoading}
+                                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-xl transition ${
+                                      ticket.status === 'open'
+                                        ? 'bg-accent hover:bg-accent-dark text-slate-950 shadow-sm shadow-accent/5'
+                                        : isDark ? 'border border-white/10 hover:bg-white/10 text-white' : 'border border-slate-350 hover:bg-slate-50 text-slate-700'
+                                    }`}
+                                  >
+                                    {ticket.status === 'open' ? 'Resolve' : 'Reopen'}
+                                  </button>
+                                  {currentUserRole === 'super_admin' && (
+                                    <button
+                                      onClick={async () => {
+                                        if (!confirm(`Fully delete this ticket?`)) return
+                                        setErrorMessage('')
+                                        setSuccessMessage('')
+                                        setActionLoading(true)
+                                        try {
+                                          const res = await fetch(`/api/admin/support?ticketId=${ticket.id}`, {
+                                            method: 'DELETE',
+                                          })
+                                          if (!res.ok) throw new Error('Delete failed')
+                                          setSuccessMessage('Ticket deleted successfully')
+                                          await fetchSupportTickets()
+                                        } catch (err: any) {
+                                          setErrorMessage(err.message)
+                                        } finally {
+                                          setActionLoading(false)
+                                        }
+                                      }}
+                                      className="p-1.5 text-red-400 hover:text-red-500 transition"
+                                    >
+                                      <TrashIcon size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                })()}
               </div>
             </ScrollReveal>
           )}

@@ -170,10 +170,24 @@ export default function Dashboard() {
     e.preventDefault()
     if (!supportMsg.trim()) return
     setSupportSubmitting(true)
-    await new Promise((resolve) => setTimeout(resolve, 1200))
-    setSupportSubmitting(false)
-    setSupportSuccess(true)
-    setSupportMsg('')
+    try {
+      const res = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: supportName.trim(),
+          email: supportEmail.trim(),
+          message: supportMsg.trim(),
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to send support ticket')
+      setSupportSuccess(true)
+      setSupportMsg('')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSupportSubmitting(false)
+    }
   }
 
   // Interactive Workout Tracker & Charts States

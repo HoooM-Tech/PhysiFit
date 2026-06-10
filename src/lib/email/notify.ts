@@ -378,3 +378,22 @@ export function notifyEventRegistrationConfirmed(email: string): void {
   });
 }
 
+/**
+ * Support Ticket submitted → email to all admins
+ */
+export function notifySupportTicket(ticket: {
+  name: string;
+  email: string;
+  message: string;
+}): void {
+  fireAndForget(async () => {
+    const admins = await getAdminEmails();
+    if (admins.length === 0) return;
+    await sendEmail({
+      to: admins,
+      subject: `[SUPPORT TICKET] from ${ticket.name}`,
+      html: tpl.supportTicketEmail(ticket.name, ticket.email, ticket.message),
+    });
+  });
+}
+

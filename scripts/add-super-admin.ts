@@ -4,7 +4,7 @@ import { users } from "../src/db/schema";
 
 async function run() {
   const adminEmail = "admin@physifit.ng";
-  const newEmail = "Info.physifitservices@gmail.com";
+  const newEmail = "info.physifitservices@gmail.com";
 
   // Fetch the admin password hash
   const [adminUser] = await db

@@ -2,7 +2,6 @@
 
 import Header from '@/components/Header'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Footer from '@/components/Footer'
@@ -11,7 +10,7 @@ import CornerTriangle from '@/components/CornerTriangle'
 
 type Role = 'client' | 'trainer'
 type Specialization = 'senior_fitness' | 'postpartum' | 'corporate_wellness'
-type Step = 'role' | 'personal' | 'health' | 'specialization' | 'confirm'
+type Step = 'role' | 'personal' | 'health' | 'specialization' | 'trainerOnboarding' | 'confirm'
 
 const SPECIALIZATION_OPTIONS: { value: Specialization; label: string; description: string }[] = [
   {
@@ -42,12 +41,21 @@ export default function Signup() {
     phone: '',
     password: '',
     confirmPassword: '',
+    dateOfBirth: '',
+    gender: '',
     weight: 65,
     bmi: 24.5,
     height: 165,
     dizziness: 'No',
     medicalConditions: '',
     specialization: '' as '' | Specialization,
+    yearsOfExperience: '',
+    education: '',
+    certifications: '',
+    q1: '',
+    q2: '',
+    cvUrl: '',
+    cvFileName: '',
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -55,21 +63,31 @@ export default function Signup() {
   const [termsAgreed, setTermsAgreed] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
   const passwordsMatch = formData.password === formData.confirmPassword
   const isPasswordValid = formData.password.length >= 8
-  const canContinue = consent && isPasswordValid && formData.confirmPassword && passwordsMatch
-  const canPickSpecialization = !!formData.specialization
   const isTrainer = formData.role === 'trainer'
-  const canCreateAccount = termsAgreed && canPickSpecialization
 
-  const middleStepLabel = isTrainer ? 'Specialization' : 'Health Info'
-  const stepNumber: Record<Step, number> = {
-    role: 1,
-    personal: 2,
-    health: 3,
-    specialization: 3,
-    confirm: 4,
-  }
+  const steps: Step[] = isTrainer
+    ? ['role', 'personal', 'specialization', 'trainerOnboarding', 'confirm']
+    : ['role', 'personal', 'health', 'specialization', 'confirm']
+
+  const currentStepIndex = steps.indexOf(step) + 1
+  const totalSteps = steps.length
+
+  const canContinue =
+    consent &&
+    isPasswordValid &&
+    formData.confirmPassword &&
+    passwordsMatch &&
+    formData.firstName.trim().length > 0 &&
+    formData.lastName.trim().length > 0 &&
+    formData.email.trim().length > 0 &&
+    formData.dateOfBirth !== '' &&
+    formData.gender !== ''
+
+  const canPickSpecialization = !!formData.specialization
+  const canCreateAccount = termsAgreed && canPickSpecialization
 
   const pickRole = (role: Role) => {
     setFormData((prev) => ({
@@ -89,12 +107,22 @@ export default function Signup() {
         password: formData.password,
         fullName: `${formData.firstName} ${formData.lastName}`.trim(),
         phone: formData.phone || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        gender: formData.gender || undefined,
       }
       const body = isTrainer
         ? {
             ...baseBody,
             role: 'trainer' as const,
             specialization: formData.specialization || undefined,
+            yearsOfExperience: formData.yearsOfExperience ? parseInt(formData.yearsOfExperience) : undefined,
+            cvUrl: formData.cvUrl || undefined,
+            certifications: formData.certifications || undefined,
+            education: formData.education || undefined,
+            onboardingAnswers: JSON.stringify({
+              q1: formData.q1,
+              q2: formData.q2,
+            }),
           }
         : {
             ...baseBody,
@@ -168,7 +196,7 @@ export default function Signup() {
             <>
               <div className="mb-3 inline-flex items-center">
                 <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
-                <span className="text-gray-600 text-xs uppercase tracking-[0.2em] font-semibold">Step 1 of 4 — Choose your account type</span>
+                <span className="text-gray-600 text-xs uppercase tracking-[0.2em] font-semibold">Step {currentStepIndex} of {totalSteps} — Choose your account type</span>
               </div>
 
               <h1 className="font-display text-5xl uppercase tracking-condensed leading-none text-primary-darker mb-3">Join PhysiFit NG</h1>
@@ -218,7 +246,7 @@ export default function Signup() {
               <div className="mb-3 inline-flex items-center">
                 <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
                 <span className="text-gray-600 text-sm">
-                  Step {stepNumber.personal} of 4 — Personal Information
+                  Step {currentStepIndex} of {totalSteps} — Personal Information
                 </span>
               </div>
 
@@ -259,6 +287,32 @@ export default function Signup() {
                       placeholder="Okonkwo"
                       className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-bold mb-2">Date of Birth</label>
+                    <input
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold mb-2">Gender</label>
+                    <select
+                      value={formData.gender}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition bg-white"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                      <option value="Prefer Not to Say">Prefer Not to Say</option>
+                    </select>
                   </div>
                 </div>
 
@@ -349,13 +403,13 @@ export default function Signup() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
                     id="consent"
                     checked={consent}
                     onChange={(e) => setConsent(e.target.checked)}
-                    className="w-4 h-4"
+                    className="w-4 h-4 mt-1"
                   />
                   <label htmlFor="consent" className="text-sm text-gray-600">
                     I consent to PhysiFit NG contacting me about my sessions, health progress, and platform updates.
@@ -386,7 +440,7 @@ export default function Signup() {
               <div className="mb-3 inline-flex items-center">
                 <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
                 <span className="text-gray-600 text-sm">
-                  Step {stepNumber.health} of 4 — Required for safe training
+                  Step {currentStepIndex} of {totalSteps} — Required for safe training
                 </span>
               </div>
 
@@ -474,7 +528,7 @@ export default function Signup() {
               <div className="mb-3 inline-flex items-center">
                 <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
                 <span className="text-gray-600 text-sm">
-                  Step {stepNumber.specialization} of 4 — Your training focus
+                  Step {currentStepIndex} of {totalSteps} — Your training focus
                 </span>
               </div>
 
@@ -509,14 +563,14 @@ export default function Signup() {
 
               <div className="flex gap-4 mt-8">
                 <button
-                  onClick={() => setStep('personal')}
+                  onClick={() => setStep(isTrainer ? 'personal' : 'health')}
                   className="flex-1 border-2 border-gray-300 hover:border-gray-400 text-gray-900 py-3 rounded-lg font-bold transition"
                 >
                   ← Back
                 </button>
                 <button
                   disabled={!canPickSpecialization}
-                  onClick={() => setStep('confirm')}
+                  onClick={() => setStep(isTrainer ? 'trainerOnboarding' : 'confirm')}
                   className={`flex-1 py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition ${
                     canPickSpecialization
                       ? 'bg-primary-darker hover:bg-primary-dark text-white'
@@ -529,12 +583,147 @@ export default function Signup() {
             </>
           )}
 
+          {step === 'trainerOnboarding' && (
+            <>
+              <div className="mb-3 inline-flex items-center">
+                <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
+                <span className="text-gray-600 text-sm">
+                  Step {currentStepIndex} of {totalSteps} — Professional Details
+                </span>
+              </div>
+
+              <h1 className="font-display text-5xl uppercase tracking-condensed leading-none text-primary-darker mb-6">Trainer Application</h1>
+              <p className="text-gray-600 mb-8">
+                Complete your profile and provide information to verify your background.
+              </p>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block font-bold mb-2">Years of Experience</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.yearsOfExperience}
+                    onChange={(e) => setFormData({ ...formData, yearsOfExperience: e.target.value })}
+                    placeholder="e.g. 5"
+                    className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-2">Education / Degree</label>
+                  <input
+                    type="text"
+                    value={formData.education}
+                    onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                    placeholder="e.g. B.Sc. in Kinesiology, University of Ibadan"
+                    className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-2">Certifications</label>
+                  <textarea
+                    value={formData.certifications}
+                    onChange={(e) => setFormData({ ...formData, certifications: e.target.value })}
+                    placeholder="e.g. NASM-CPT, First Aid & CPR"
+                    className="w-full border border-gray-300 rounded-md p-3 h-24 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-2">
+                    Describe your experience working with rehabilitation or senior wellness programs.
+                  </label>
+                  <textarea
+                    value={formData.q1}
+                    onChange={(e) => setFormData({ ...formData, q1: e.target.value })}
+                    placeholder="Provide details of past experience..."
+                    className="w-full border border-gray-300 rounded-md p-3 h-24 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-2">
+                    Why do you wish to join the PhysiFit Specialist network?
+                  </label>
+                  <textarea
+                    value={formData.q2}
+                    onChange={(e) => setFormData({ ...formData, q2: e.target.value })}
+                    placeholder="Tell us about your motivation..."
+                    className="w-full border border-gray-300 rounded-md p-3 h-24 focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-2">Upload CV (PDF or document)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setFormData({
+                            ...formData,
+                            cvUrl: reader.result as string,
+                            cvFileName: file.name
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:border-primary-darker transition"
+                  />
+                  {formData.cvFileName && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Selected file: <strong>{formData.cvFileName}</strong>
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setStep('specialization')}
+                    className="flex-1 border-2 border-gray-300 hover:border-primary-darker text-primary-darker py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={() => setStep('confirm')}
+                    disabled={
+                      !formData.yearsOfExperience ||
+                      !formData.education ||
+                      !formData.certifications ||
+                      !formData.q1 ||
+                      !formData.q2 ||
+                      !formData.cvUrl
+                    }
+                    className={`flex-1 py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition ${
+                      formData.yearsOfExperience &&
+                      formData.education &&
+                      formData.certifications &&
+                      formData.q1 &&
+                      formData.q2 &&
+                      formData.cvUrl
+                        ? 'bg-primary-darker hover:bg-primary-dark text-white'
+                        : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    }`}
+                  >
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
           {step === 'confirm' && (
             <>
               <div className="mb-3 inline-flex items-center">
                 <div className="w-3 h-[3px] bg-accent inline-block mr-3"></div>
                 <span className="text-gray-600 text-sm">
-                  Step {stepNumber.confirm} of 4 — Review & Confirm
+                  Step {currentStepIndex} of {totalSteps} — Review & Confirm
                 </span>
               </div>
 
@@ -554,6 +743,14 @@ export default function Signup() {
                     </span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-gray-600">Gender</span>
+                    <span className="font-bold">{formData.gender || '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Date of Birth</span>
+                    <span className="font-bold">{formData.dateOfBirth || '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-gray-600">Email</span>
                     <span className="font-bold">{formData.email}</span>
                   </div>
@@ -561,16 +758,30 @@ export default function Signup() {
                     <span className="text-gray-600">Phone</span>
                     <span className="font-bold">{formData.phone}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Health data</span>
-                    <span className="font-bold text-green-600">✓ Completed</span>
-                  </div>
+                  {!isTrainer && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Health data</span>
+                      <span className="font-bold text-green-600">✓ Completed</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Preferred Specialization</span>
                     <span className="font-bold">
                       {SPECIALIZATION_OPTIONS.find((o) => o.value === formData.specialization)?.label || '—'}
                     </span>
                   </div>
+                  {isTrainer && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Experience</span>
+                        <span className="font-bold">{formData.yearsOfExperience} years</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">CV Uploaded</span>
+                        <span className="font-bold text-green-600">✓ Yes ({formData.cvFileName})</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -629,7 +840,7 @@ export default function Signup() {
               </button>
 
               <button
-                onClick={() => setStep(isTrainer ? 'specialization' : 'health')}
+                onClick={() => setStep(isTrainer ? 'trainerOnboarding' : 'health')}
                 className="w-full border-2 border-gray-300 hover:border-primary-darker text-primary-darker py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
               >
                 ← Back

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { and, eq, ne, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db/client";
-import { users, clientProfiles, bookings, trainingSessions } from "@/db/schema";
+import { users, clientProfiles, bookings, trainingSessions, authSessions } from "@/db/schema";
 import { withAuth } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
@@ -138,4 +138,46 @@ export const PATCH = withAuth(
     return { data: { profile: updated } };
   },
   { roles: ["admin"] }
+);
+
+// DELETE: Archive a client (admin) or fully delete (super-admin with force)
+const deleteSchema = z.object({ clientId: z.string().uuid(), force: z.boolean().optional() });
+export const DELETE = withAuth<{ success: boolean; deleted?: boolean; archived?: boolean }>(
+  async (ctx) => {
+    const { req, user } = ctx;
+    const body = await parseJsonBody(req, deleteSchema);
+    const clientId = body.clientId;
+    const force = !!body.force;
+
+    // Ensure user exists and is a client
+    const [existing] = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(eq(users.id, clientId))
+      .limit(1);
+    if (!existing) throw new ApiError("NOT_FOUND", "Client not found");
+    if (existing.role !== 'client') throw new ApiError("VALIDATION_ERROR", "Target is not a client");
+
+    // Super-admins may request a full hard-delete by setting `force: true`.
+    if (user.role === 'super_admin' && force) {
+      await db.transaction(async (tx) => {
+        await tx.delete(users).where(eq(users.id, clientId));
+      });
+      return { data: { success: true, deleted: true } };
+    }
+
+    // Default for admins and non-forced requests: soft-archive the account
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({ status: 'archived', updatedAt: new Date() })
+        .where(eq(users.id, clientId));
+
+      // Remove any active sessions so the archived account is immediately signed out
+      await tx.delete(authSessions).where(eq(authSessions.userId, clientId));
+    });
+
+    return { data: { success: true, archived: true } };
+  },
+  { roles: ["admin", "super_admin"] }
 );

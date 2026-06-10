@@ -106,7 +106,7 @@ export { hashToken };
 
 export function withAuth<T>(
   handler: AuthedHandler<T>,
-  opts: { roles?: Array<"client" | "trainer" | "admin"> } = {}
+  opts: { roles?: Array<"client" | "trainer" | "admin" | "super_admin"> } = {}
 ) {
   return withRoute<T>(async (ctx) => {
     const token = readSessionToken(ctx.req);
@@ -196,7 +196,7 @@ function hashBody(body: unknown): string {
 
 export function withIdempotency<T>(
   handler: AuthedHandler<T>,
-  opts: { roles?: Array<"client" | "trainer" | "admin"> } = {}
+  opts: { roles?: Array<"client" | "trainer" | "admin" | "super_admin"> } = {}
 ) {
   return withAuth<T>(async (ctx) => {
     const key = ctx.req.headers.get("idempotency-key");

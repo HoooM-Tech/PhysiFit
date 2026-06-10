@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Script from 'next/script'
+import { AlertIcon } from '@/components/Icons'
 
 declare global {
   interface Window {
@@ -79,9 +80,26 @@ export default function BookSession() {
 
   const getServiceIcon = (name: string) => {
     const n = name.toLowerCase()
-    if (n.includes('postpartum')) return '👶'
-    if (n.includes('senior')) return '😊'
-    return '🏢'
+    if (n.includes('postpartum')) return (
+      <svg className="w-10 h-10 text-primary-darker" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z" />
+        <path d="M12 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
+        <path d="M12 10v6" />
+        <path d="M9 13h6" />
+      </svg>
+    )
+    if (n.includes('senior')) return (
+      <svg className="w-10 h-10 text-primary-darker" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      </svg>
+    )
+    return (
+      <svg className="w-10 h-10 text-primary-darker" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <line x1="12" y1="8" x2="12" y2="16" />
+        <line x1="8" y1="12" x2="16" y2="12" />
+      </svg>
+    )
   }
 
   const handleProceedToPayment = async () => {
@@ -405,8 +423,9 @@ export default function BookSession() {
                 </div>
 
                 {!termsAgreed && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 text-left">
-                    <p className="text-red-700 font-semibold">⚠️ Please agree to the Terms & Conditions before proceeding.</p>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 text-left flex items-start gap-2.5">
+                    <AlertIcon size={16} className="text-red-700 shrink-0 mt-0.5" />
+                    <p className="text-red-700 font-semibold">Please agree to the Terms & Conditions before proceeding.</p>
                   </div>
                 )}
 
@@ -445,7 +464,9 @@ export default function BookSession() {
             <div className="max-w-2xl mx-auto px-6 py-20 text-center">
               <div className="mb-8">
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-5xl text-green-600">✓</span>
+                  <svg className="w-10 h-10 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
                 </div>
               </div>
 
@@ -454,12 +475,15 @@ export default function BookSession() {
               <p className="text-gray-600 mb-12">{sessionsCount} {selectedService?.name} sessions have been booked.</p>
 
               <div className="bg-accent/10 border-l-4 border-accent p-4 mb-12 text-left rounded shadow-sm">
-                <p className="flex items-start gap-3">
-                  <span className="text-2xl">🔔</span>
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-primary-darker shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
                   <span className="text-gray-700">
                     A trainer will be assigned to you within 24–48 hours. Once matched, your program will show up active in your profile!
                   </span>
-                </p>
+                </div>
               </div>
 
               <Link

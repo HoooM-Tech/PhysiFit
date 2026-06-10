@@ -11,6 +11,8 @@ export const users = pgTable(
     role: userRoleEnum("role").notNull().default("client"),
     fullName: text("full_name").notNull(),
     phone: text("phone"),
+    dateOfBirth: text("date_of_birth"),
+    gender: text("gender"),
     status: userStatusEnum("status").notNull().default("active"),
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

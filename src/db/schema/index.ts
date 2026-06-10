@@ -15,3 +15,4 @@ export * from "./event-registrations";
 export * from "./event-parq-submissions";
 export * from "./idempotency-keys";
 export * from "./rate-limits";
+export * from "./password-resets";

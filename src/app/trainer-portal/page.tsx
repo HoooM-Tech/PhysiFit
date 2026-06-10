@@ -6,6 +6,23 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import ScrollReveal from '@/components/ScrollReveal'
 import { useTheme } from '@/context/ThemeContext'
+import {
+  CloseIcon,
+  UserIcon,
+  CalendarIcon,
+  FitnessPlanIcon,
+  ChatIcon,
+  SunIcon,
+  MoonIcon,
+  ExitIcon,
+  MenuIcon,
+  AlertIcon,
+  RefreshIcon,
+  MicOffIcon,
+  MicIcon,
+  CameraOffIcon,
+  CameraIcon
+} from '@/components/Icons'
 
 interface Client {
   id: string;
@@ -271,13 +288,16 @@ export default function TrainerPortal() {
         stream.getTracks().forEach(track => track.stop())
         setStream(null)
       }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
     }
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop())
       }
     }
-  }, [showVideoCall, camOff])
+  }, [showVideoCall, camOff, stream])
 
   // Send message
   const handleSendMessage = async () => {
@@ -780,7 +800,7 @@ export default function TrainerPortal() {
                 className={`md:hidden w-8 h-8 rounded-full border flex items-center justify-center transition ${isDark ? 'border-white/10 hover:bg-white/10' : 'border-slate-200 hover:bg-slate-100'}`}
                 aria-label="Close sidebar"
               >
-                ✕
+                <CloseIcon size={14} />
               </button>
             </div>
 
@@ -799,10 +819,10 @@ export default function TrainerPortal() {
               <p className="text-[10px] uppercase text-gray-400 font-bold tracking-widest font-mono">Specialist Desk</p>
               <nav className="space-y-2">
                 {[
-                  { id: 'clients', label: '👥 My Assigned Clients' },
-                  { id: 'today', label: '📅 Sessions Timeline' },
-                  { id: 'plans', label: '📋 Plan Builder Panel' },
-                  { id: 'messages', label: '💬 Messages Desk', indicator: threads.some(t => t.unread_count > 0) }
+                  { id: 'clients', label: 'My Assigned Clients' },
+                  { id: 'today', label: 'Sessions Timeline' },
+                  { id: 'plans', label: 'Plan Builder Panel' },
+                  { id: 'messages', label: 'Messages Desk', indicator: threads.some(t => t.unread_count > 0) }
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -818,7 +838,13 @@ export default function TrainerPortal() {
                           : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
                     }`}
                   >
-                    <span>{tab.label}</span>
+                    <span className="flex items-center gap-2.5">
+                      {tab.id === 'clients' && <UserIcon size={16} />}
+                      {tab.id === 'today' && <CalendarIcon size={16} />}
+                      {tab.id === 'plans' && <FitnessPlanIcon size={16} />}
+                      {tab.id === 'messages' && <ChatIcon size={16} />}
+                      <span>{tab.label}</span>
+                    </span>
                     {tab.indicator && (
                       <span className="w-2.5 h-2.5 bg-red-500 border-2 border-slate-950 rounded-full animate-pulse"></span>
                     )}
@@ -838,7 +864,10 @@ export default function TrainerPortal() {
                     : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
                 }`}
               >
-                <span>{isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
+                <span className="flex items-center gap-2.5">
+                  {isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+                  <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                </span>
                 <span className="text-[9px] opacity-60 font-mono">Theme</span>
               </button>
             </div>
@@ -849,9 +878,10 @@ export default function TrainerPortal() {
               await fetch('/api/auth/logout', { method: 'POST' })
               router.push('/')
             }}
-            className="w-full text-left px-5 py-3 rounded-xl text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-xs font-bold font-display uppercase tracking-widest transition"
+            className="w-full text-left px-5 py-3 rounded-xl text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-xs font-bold font-display uppercase tracking-widest transition flex items-center justify-center gap-2"
           >
-            🚪 Exit Portal
+            <ExitIcon size={16} />
+            <span>Exit Portal</span>
           </button>
         </aside>
 
@@ -862,15 +892,16 @@ export default function TrainerPortal() {
             <button
               onClick={() => setSidebarOpen(true)}
               className={`w-12 h-12 border rounded-2xl flex items-center justify-center font-bold text-xl transition ${isDark ? 'bg-white/5 hover:bg-white/10 border-white/10' : 'bg-white hover:bg-slate-50 border-slate-200'}`}
+              aria-label="Open sidebar"
             >
-              ☰
+              <MenuIcon size={20} />
             </button>
             <span className="font-display uppercase tracking-widest text-accent text-xs font-bold">Trainer Portal</span>
           </div>
 
           {trainerProfile && !trainerProfile.approvedAt && (
-            <div className={`mb-8 border rounded-2xl p-6 text-left flex gap-4 ${isDark ? 'bg-amber-500/10 border-accent/20' : 'bg-amber-50 border-amber-200'}`}>
-              <span className="text-2xl">⏳</span>
+            <div className={`mb-8 border rounded-2xl p-6 text-left flex gap-4 items-center ${isDark ? 'bg-amber-500/10 border-accent/20' : 'bg-amber-50 border-amber-200'}`}>
+              <AlertIcon size={24} className="text-accent shrink-0" />
               <div>
                 <p className="font-bold text-accent uppercase tracking-wider text-xs font-display">Account Under Administrative Review</p>
                 <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
@@ -955,13 +986,19 @@ export default function TrainerPortal() {
                                   onClick={() => handleMessageClientClick(client.fullName, client.id)}
                                   className={`font-bold text-xs uppercase tracking-widest border px-4 py-2 rounded-xl transition ${isDark ? 'border-white/10 hover:border-accent/40 bg-white/5 text-white' : 'border-slate-300 hover:border-slate-400 bg-white text-slate-700'}`}
                                 >
-                                  💬 Chat
+                                  <span className="flex items-center gap-1.5 justify-center">
+                                    <ChatIcon size={14} />
+                                    <span>Chat</span>
+                                  </span>
                                 </button>
                                 <button
                                   onClick={() => handleAssignPlanClick(client.id)}
                                   className="text-slate-950 bg-accent hover:bg-accent-dark font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-xl transition"
                                 >
-                                  📋 Build Plan
+                                  <span className="flex items-center gap-1.5 justify-center">
+                                    <FitnessPlanIcon size={14} />
+                                    <span>Build Plan</span>
+                                  </span>
                                 </button>
                               </div>
                             </td>
@@ -1002,26 +1039,40 @@ export default function TrainerPortal() {
                             onClick={() => handleMessageClientClick(session.clientName, session.clientId)}
                             className={`flex-1 lg:flex-initial text-center px-5 py-2.5 border rounded-xl text-xs font-bold uppercase tracking-wider transition ${isDark ? 'border-white/10 bg-white/5 hover:bg-white/10 text-white' : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'}`}
                           >
-                            💬 Chat
+                            <span className="flex items-center gap-1.5 justify-center">
+                              <ChatIcon size={14} />
+                              <span>Chat</span>
+                            </span>
                           </button>
                           <button
                             onClick={() => handleCheckIn(session.id)}
                             disabled={checkingInId === session.id}
                             className="flex-1 lg:flex-initial text-center px-5 py-2.5 bg-accent text-slate-950 font-bold rounded-xl hover:bg-accent-dark transition text-xs uppercase tracking-wider disabled:opacity-40"
                           >
-                            {checkingInId === session.id ? 'Verifying...' : '✓ Check In'}
+                            {checkingInId === session.id ? 'Verifying...' : (
+                              <span className="flex items-center gap-1.5 justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span>Check In</span>
+                              </span>
+                            )}
                           </button>
                           <button
                             onClick={() => openRescheduleModal(session)}
                             className={`flex-1 lg:flex-initial text-center px-5 py-2.5 border rounded-xl text-xs font-bold uppercase tracking-wider transition ${isDark ? 'border-white/10 hover:border-accent/30 text-accent bg-white/5 hover:bg-accent/5' : 'border-slate-300 hover:border-accent/40 text-accent bg-white hover:bg-slate-50'}`}
                           >
-                            🔄 Reschedule
+                            <span className="flex items-center gap-1.5 justify-center">
+                              <RefreshIcon size={14} />
+                              <span>Reschedule</span>
+                            </span>
                           </button>
                           <button
                             onClick={() => openCancelModal(session)}
                             className="flex-1 lg:flex-initial text-center px-5 py-2.5 border border-red-500/20 text-red-400 bg-red-500/5 hover:bg-red-500/10 rounded-xl text-xs font-bold uppercase tracking-wider transition"
                           >
-                            ✕ Cancel
+                            <span className="flex items-center gap-1.5 justify-center">
+                              <CloseIcon size={14} />
+                              <span>Cancel</span>
+                            </span>
                           </button>
                         </div>
                       </div>
@@ -1164,7 +1215,9 @@ export default function TrainerPortal() {
                 </div>
               ) : (
                 <div className={`border rounded-3xl p-12 text-center shadow-2xl max-w-2xl mx-auto ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
-                  <div className="text-5xl mb-6">💬</div>
+                  <div className="flex justify-center mb-6">
+                    <ChatIcon size={48} className="text-accent/60" />
+                  </div>
                   <h3 className="text-xl font-bold font-display uppercase tracking-widest text-accent mb-2">No active communications</h3>
                   <p className={`text-sm max-w-sm mx-auto leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
                     Communications will appear automatically here when active program clients establish matched threads.
@@ -1198,7 +1251,7 @@ export default function TrainerPortal() {
                             <div className="flex justify-between items-start mb-3 pb-3 border-b border-white/5">
                               <div>
                                 <h4 className="font-bold text-base font-display uppercase tracking-wider flex items-center gap-2">
-                                  👤 {plan.clientName}
+                                  <UserIcon size={16} className="text-accent" /> {plan.clientName}
                                 </h4>
                                 <p className="text-[10px] text-gray-400 font-mono mt-0.5 uppercase tracking-widest">
                                   Assigned: {new Date(plan.createdAt).toLocaleDateString()}
@@ -1213,7 +1266,17 @@ export default function TrainerPortal() {
                                       : isDark ? 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
                                   }`}
                                 >
-                                  {editingPlanId === plan.id ? '✏️ Editing' : '✏️ Edit Plan'}
+                                  {editingPlanId === plan.id ? (
+                                    <span className="flex items-center gap-1">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                      Editing
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-1">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                      Edit Plan
+                                    </span>
+                                  )}
                                 </button>
                               </div>
                             </div>
@@ -1257,7 +1320,23 @@ export default function TrainerPortal() {
                     <div className="bg-gradient-to-r from-[#171a2e] to-[#121424] border border-accent/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="text-2xl">🧠</div>
+                        <div className="text-2xl flex items-center justify-center">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-accent"
+                          >
+                            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1 0-3.12 3 3 0 0 1 0-3.88 2.5 2.5 0 0 1 0-3.12A2.5 2.5 0 0 1 9.5 2Z" />
+                            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 0-3.12 3 3 0 0 0 0-3.88 2.5 2.5 0 0 0 0-3.12A2.5 2.5 0 0 0 14.5 2Z" />
+                          </svg>
+                        </div>
                         <div>
                           <h4 className="font-bold text-white font-display uppercase tracking-wider text-sm">PAR-Q Clinical AI Builder</h4>
                           <span className="text-[10px] text-accent uppercase tracking-widest font-mono">Rehabilitation Assessment</span>
@@ -1315,7 +1394,10 @@ export default function TrainerPortal() {
                             onClick={handleLoadAIPlan}
                             className="w-full py-2.5 bg-accent text-slate-950 font-bold uppercase tracking-widest text-[10px] rounded-xl transition hover:bg-accent-dark shadow-md shadow-accent/10"
                           >
-                            ⚡ Load Exercises Into Plan Builder
+                            <span className="flex items-center justify-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-950"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                              Load Exercises Into Plan Builder
+                            </span>
                           </button>
                         </div>
                       ) : (
@@ -1323,7 +1405,24 @@ export default function TrainerPortal() {
                           onClick={handleTriggerAIWorkoutAssistant}
                           className="w-full py-3 bg-[#1e234a] hover:bg-[#252c5c] text-accent rounded-xl font-bold uppercase tracking-widest text-[10px] transition border border-accent/30 flex items-center justify-center gap-2 shadow-lg shadow-accent/5"
                         >
-                          🧠 Analyze Screeners & Auto-Build Routine
+                          <span className="flex items-center justify-center gap-2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="text-accent"
+                            >
+                              <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1 0-3.12 3 3 0 0 1 0-3.88 2.5 2.5 0 0 1 0-3.12A2.5 2.5 0 0 1 9.5 2Z" />
+                              <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 0-3.12 3 3 0 0 0 0-3.88 2.5 2.5 0 0 0 0-3.12A2.5 2.5 0 0 0 14.5 2Z" />
+                            </svg>
+                            Analyze Screeners & Auto-Build Routine
+                          </span>
                         </button>
                       )}
                     </div>
@@ -1336,7 +1435,17 @@ export default function TrainerPortal() {
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
                     <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
                       <h3 className="text-xl font-bold font-display uppercase tracking-wider">
-                        {editingPlanId ? '✏️ Edit Workout Regimen' : '⚡ Fitness Plan Builder'}
+                        {editingPlanId ? (
+                          <span className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            Edit Workout Regimen
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            Fitness Plan Builder
+                          </span>
+                        )}
                       </h3>
                       <div className="flex gap-2">
                         {editingPlanId && (
@@ -1563,23 +1672,39 @@ export default function TrainerPortal() {
             <div className="flex gap-4">
               <button
                 onClick={() => setMicMuted(m => !m)}
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${
+                className={`w-28 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${
                   micMuted
                     ? 'bg-red-500/20 border-red-500 text-red-300'
                     : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
                 }`}
               >
-                {micMuted ? '🔇 Muted' : '🎙️ Mic On'}
+                {micMuted ? (
+                  <span className="flex items-center gap-1.5">
+                    <MicOffIcon size={16} /> Muted
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <MicIcon size={16} /> Mic On
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setCamOff(c => !c)}
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${
+                className={`w-28 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${
                   camOff
                     ? 'bg-red-500/20 border-red-500 text-red-300'
                     : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
                 }`}
               >
-                {camOff ? '📷 Cam Off' : '🎥 Cam On'}
+                {camOff ? (
+                  <span className="flex items-center gap-1.5">
+                    <CameraOffIcon size={16} /> Cam Off
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <CameraIcon size={16} /> Cam On
+                  </span>
+                )}
               </button>
             </div>
 
@@ -1589,10 +1714,15 @@ export default function TrainerPortal() {
                 if (stream) {
                   stream.getTracks().forEach(track => track.stop())
                 }
+                setStream(null)
+                if (videoRef.current) {
+                  videoRef.current.srcObject = null
+                }
               }}
-              className="px-10 py-4 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-red-600/25 border border-red-500/20"
+              className="px-10 py-4 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-red-600/25 border border-red-500/20 flex items-center gap-2"
             >
-              🛑 Disconnect Consultation Room
+              <CloseIcon size={16} />
+              <span>Disconnect Consultation Room</span>
             </button>
           </div>
         </div>
@@ -1608,7 +1738,7 @@ export default function TrainerPortal() {
             {/* Modal Header */}
             <div className="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center gap-3">
               <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center text-lg border border-red-500/20 text-red-400">
-                ⚠️
+                <AlertIcon size={20} />
               </div>
               <div>
                 <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Cancel Timed Session</h3>
@@ -1668,8 +1798,8 @@ export default function TrainerPortal() {
           >
             {/* Modal Header */}
             <div className="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center gap-3">
-              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-lg border border-accent/20">
-                🔄
+              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-lg border border-accent/20 text-accent">
+                <RefreshIcon size={20} />
               </div>
               <div>
                 <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Reschedule Scheduled Spot</h3>

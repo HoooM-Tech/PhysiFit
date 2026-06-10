@@ -65,7 +65,11 @@ async function seedAdmin() {
     .where(eq(users.email, email))
     .limit(1);
   if (existing) {
-    console.log(`✓ Admin already exists: ${email}`);
+    await db
+      .update(users)
+      .set({ role: "super_admin" })
+      .where(eq(users.id, existing.id));
+    console.log(`✓ Admin role updated to super_admin: ${email}`);
     return;
   }
   const tempPassword = process.env.SEED_ADMIN_PASSWORD;
@@ -79,7 +83,7 @@ async function seedAdmin() {
     email,
     passwordHash: await hashPassword(tempPassword),
     fullName: "PhysiFit Admin",
-    role: "admin",
+    role: "super_admin",
     status: "active",
     emailVerifiedAt: new Date(),
   });

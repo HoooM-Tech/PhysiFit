@@ -22,6 +22,13 @@ const registerSchema = z
     heightCm: z.number().int().positive().optional(),
     dizzinessHistory: z.boolean().optional(),
     medicalNotes: z.string().max(2000).optional(),
+    dateOfBirth: z.string().optional(),
+    gender: z.string().optional(),
+    yearsOfExperience: z.number().int().nonnegative().optional(),
+    cvUrl: z.string().optional(),
+    certifications: z.string().optional(),
+    education: z.string().optional(),
+    onboardingAnswers: z.string().optional(),
   })
   .refine((d) => d.role !== "trainer" || !!d.specialization, {
     message: "Trainers must specify a specialization",
@@ -58,6 +65,8 @@ export const POST = withRoute(async ({ req, requestId }) => {
         fullName: body.fullName,
         phone: body.phone,
         role: body.role,
+        dateOfBirth: body.dateOfBirth,
+        gender: body.gender,
       })
       .returning({
         id: users.id,
@@ -81,6 +90,11 @@ export const POST = withRoute(async ({ req, requestId }) => {
       await tx.insert(trainerProfiles).values({
         userId: u.id,
         specialization: body.specialization!,
+        yearsOfExperience: body.yearsOfExperience,
+        cvUrl: body.cvUrl,
+        certifications: body.certifications,
+        education: body.education,
+        onboardingAnswers: body.onboardingAnswers,
       });
     }
     return u;

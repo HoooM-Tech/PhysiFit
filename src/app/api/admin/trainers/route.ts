@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { users, trainerProfiles } from "@/db/schema";
+import { users, trainerProfiles, fitnessPlans } from "@/db/schema";
 import { withAuth } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
@@ -30,6 +30,11 @@ export const GET = withAuth(
           bio: trainerProfiles.bio,
           isOnline: trainerProfiles.isOnline,
           approvedAt: trainerProfiles.approvedAt,
+          yearsOfExperience: trainerProfiles.yearsOfExperience,
+          cvUrl: trainerProfiles.cvUrl,
+          certifications: trainerProfiles.certifications,
+          education: trainerProfiles.education,
+          onboardingAnswers: trainerProfiles.onboardingAnswers,
         },
       })
       .from(users)

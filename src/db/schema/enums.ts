@@ -1,7 +1,8 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
-export const userRoleEnum = pgEnum("user_role", ["client", "trainer", "admin"]);
-export const userStatusEnum = pgEnum("user_status", ["active", "inactive"]);
+export const userRoleEnum = pgEnum("user_role", ["client", "trainer", "admin", "super_admin"]);
+// Add 'archived' so accounts can be soft-deactivated/recoverable
+export const userStatusEnum = pgEnum("user_status", ["active", "inactive", "archived"]);
 
 export const trainerSpecializationEnum = pgEnum("trainer_specialization", [
   "senior_fitness",

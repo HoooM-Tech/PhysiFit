@@ -9,10 +9,11 @@ const BRAND_BLUE = "#2563EB";
 const BRAND_DARK = "#1e293b";
 const BRAND_LIGHT_BG = "#f8fafc";
 const APP_URL = () => {
-  const url = env.PUBLIC_APP_URL;
-  if (!url || url.includes("localhost") || url.includes("127.0.0.1")) {
-    return "https://physifit.co";
-  }
+  const url = env.PUBLIC_APP_URL || 'https://physifit.co';
+  // Prefer configured public URL, but default to the canonical production domain
+  if (!url) return 'https://physifit.co';
+  // Avoid localhost being used in email links in dev; prefer canonical domain
+  if (url.includes('localhost') || url.includes('127.0.0.1')) return 'https://physifit.co';
   return url;
 };
 
@@ -362,6 +363,16 @@ export function trainerDailyDigestEmail(
     </table>
 
     ${ctaButton("Open Trainer Portal", `${APP_URL()}/trainer-portal`)}
+  `);
+}
+
+export function passwordResetEmail(fullName: string | null, resetUrl: string): string {
+  return baseTemplate("Reset Your Password", `
+    <h2 style="margin:0 0 12px;font-size:20px;color:${BRAND_DARK};">Reset your PhysiFit password</h2>
+    <p>We received a request to reset the password for your account${fullName ? `, ${fullName}` : ''}.</p>
+    <p>If you made this request, click the button below to set a new password. This link will expire in one hour.</p>
+    ${ctaButton('Reset Password', resetUrl)}
+    <p style="font-size:13px;color:#64748b;">If you did not request a password reset, you can safely ignore this email.</p>
   `);
 }
 

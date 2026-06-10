@@ -131,6 +131,9 @@ export default function LoginPage() {
                 <p className="text-red-700 text-sm font-semibold">{error}</p>
               </div>
             )}
+            <div className="text-right">
+              <a href="/forgot-password" className="text-sm text-accent hover:underline">Forgot password?</a>
+            </div>
 
             <button
               type="button"

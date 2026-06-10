@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { TrophyIcon, CloseIcon } from '@/components/Icons'
 
 interface Exercise {
   name: string
@@ -68,8 +69,9 @@ export default function WorkoutPlayer({ exercises, onClose, onComplete }: Workou
         <button
           onClick={onClose}
           className="w-12 h-12 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center font-bold text-xl border border-white/10 transition"
+          aria-label="Close Workout Tracker"
         >
-          ✕
+          <CloseIcon size={18} />
         </button>
       </div>
 
@@ -117,7 +119,21 @@ export default function WorkoutPlayer({ exercises, onClose, onComplete }: Workou
                     : 'bg-white/5 border-white/20 text-white hover:border-white/40'
                 }`}
               >
-                {i < completedSets ? '✓' : i + 1}
+                {i < completedSets ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : i + 1}
               </button>
             ))}
           </div>
@@ -156,16 +172,52 @@ export default function WorkoutPlayer({ exercises, onClose, onComplete }: Workou
         <button
           onClick={handlePrev}
           disabled={currentIdx === 0}
-          className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/20 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl font-bold uppercase tracking-wider text-sm transition"
+          className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/20 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl font-bold uppercase tracking-wider text-sm transition flex items-center gap-2"
         >
-          ← Previous
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          Previous
         </button>
 
         <button
           onClick={handleNext}
-          className="px-8 py-3 bg-accent text-primary-darker hover:bg-accent-dark rounded-xl font-bold uppercase tracking-wider text-sm transition shadow-lg hover:shadow-accent/20"
+          className="px-8 py-3 bg-accent text-primary-darker hover:bg-accent-dark rounded-xl font-bold uppercase tracking-wider text-sm transition shadow-lg hover:shadow-accent/20 flex items-center gap-2"
         >
-          {currentIdx === exercises.length - 1 ? 'Finish Workout 🏆' : 'Next Exercise →'}
+          {currentIdx === exercises.length - 1 ? (
+            <>
+              Finish Workout <TrophyIcon size={16} />
+            </>
+          ) : (
+            <>
+              Next Exercise
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </>
+          )}
         </button>
       </div>
     </div>

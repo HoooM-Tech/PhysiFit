@@ -9,6 +9,30 @@ import ProgressChart from '@/components/ProgressChart'
 import WorkoutPlayer from '@/components/WorkoutPlayer'
 import ScrollReveal from '@/components/ScrollReveal'
 import { useTheme } from '@/context/ThemeContext'
+import {
+  DashboardIcon,
+  CalendarIcon,
+  FitnessPlanIcon,
+  ChatIcon,
+  SettingsIcon,
+  SunIcon,
+  MoonIcon,
+  ExitIcon,
+  PlusIcon,
+  UserIcon,
+  LockIcon,
+  TrashIcon,
+  AlertIcon,
+  RefreshIcon,
+  VideoIcon,
+  MicIcon,
+  MicOffIcon,
+  CameraIcon,
+  CameraOffIcon,
+  TrophyIcon,
+  MenuIcon,
+  CloseIcon,
+} from '@/components/Icons'
 
 interface TrainingSession {
   id: string;
@@ -56,12 +80,35 @@ interface ChatMessage {
   createdAt: string;
 }
 
+
+function InfoCard({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-widest text-gray-400 mb-2">
+        {label}
+      </p>
+
+      <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+        <p className="font-medium break-words">
+          {value}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'overview' | 'sessions' | 'messages' | 'plan'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'sessions' | 'messages' | 'plan' | 'settings'>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileChatActive, setMobileChatActive] = useState(false)
-  
+
   // Theme States
   const { theme, toggleTheme } = useTheme()
 
@@ -74,7 +121,7 @@ export default function Dashboard() {
   const [threads, setThreads] = useState<ChatThread[]>([])
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
   const [activeMessages, setActiveMessages] = useState<ChatMessage[]>([])
-  
+
   const [loading, setLoading] = useState(true)
   const [messageText, setMessageText] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
@@ -87,6 +134,30 @@ export default function Dashboard() {
   const [rescheduleReason, setRescheduleReason] = useState('')
   const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false)
   const [rescheduleError, setRescheduleError] = useState('')
+
+  // Edit Profile States
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false)
+  const [editFullName, setEditFullName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editWeightKg, setEditWeightKg] = useState<number | ''>('')
+  const [editHeightCm, setEditHeightCm] = useState<number | ''>('')
+  const [editMedicalNotes, setEditMedicalNotes] = useState('')
+  const [editProfileSubmitting, setEditProfileSubmitting] = useState(false)
+  const [editProfileError, setEditProfileError] = useState('')
+
+  // Change Password States
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [changePasswordSubmitting, setChangePasswordSubmitting] = useState(false)
+  const [changePasswordError, setChangePasswordError] = useState('')
+
+  // Delete Account States
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   // Interactive Workout Tracker & Charts States
   const [showWorkoutPlayer, setShowWorkoutPlayer] = useState(false)
@@ -138,6 +209,13 @@ export default function Dashboard() {
         setUser(userJson.data?.user)
         const userProfile = userJson.data?.profile
         setProfile(userProfile)
+
+        // Populate edit profile values
+        setEditFullName(userJson.data?.user?.fullName || '')
+        setEditPhone(userJson.data?.user?.phone || '')
+        setEditWeightKg(userProfile?.weightKg ?? '')
+        setEditHeightCm(userProfile?.heightCm ?? '')
+        setEditMedicalNotes(userProfile?.medicalNotes || '')
 
         // If trainer is assigned, fetch trainer details
         if (userProfile?.assignedTrainerId) {
@@ -192,9 +270,9 @@ export default function Dashboard() {
         if (msgRes.ok) {
           const msgJson = await msgRes.json()
           setActiveMessages(msgJson.data?.messages || [])
-          
+
           // Mark thread as read locally
-          setThreads(prev => 
+          setThreads(prev =>
             prev.map(t => t.thread_id === activeThreadId ? { ...t, unread_count: 0 } : t)
           )
         }
@@ -204,7 +282,7 @@ export default function Dashboard() {
     }
 
     loadMessages()
-    
+
     // Auto-scroll chat to bottom
     setTimeout(() => {
       activeMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -228,7 +306,7 @@ export default function Dashboard() {
           if (msgRes.ok) {
             const msgJson = await msgRes.json()
             const freshMsgs = msgJson.data?.messages || []
-            
+
             // Only update state if message counts differ to prevent rerendering cycles
             if (freshMsgs.length !== activeMessages.length) {
               setActiveMessages(freshMsgs)
@@ -264,13 +342,16 @@ export default function Dashboard() {
         stream.getTracks().forEach(track => track.stop())
         setStream(null)
       }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
     }
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop())
       }
     }
-  }, [showVideoCall, camOff])
+  }, [showVideoCall, camOff, stream])
 
   // Theme Toggle
   const handleToggleTheme = toggleTheme
@@ -333,6 +414,11 @@ export default function Dashboard() {
       setRescheduleError('Please select both a date and time.')
       return
     }
+    const originalTime = new Date(rescheduleTargetSession.scheduledAt).getTime()
+    if (originalTime - Date.now() < 24 * 60 * 60 * 1000) {
+      setRescheduleError('You cannot reschedule this session. Rescheduling must be done at least 24 hours before the fixed session time.')
+      return
+    }
 
     const newDateTime = new Date(`${rescheduleDate}T${rescheduleTime}`)
     if (isNaN(newDateTime.getTime())) {
@@ -380,10 +466,121 @@ export default function Dashboard() {
     }
   }
 
+  // Account deletion (basic flow)
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      setDeleteError('Please type "DELETE" exactly to confirm.')
+      return
+    }
+
+    setDeleteSubmitting(true)
+    setDeleteError('')
+    try {
+      const res = await fetch('/api/users/me', { method: 'DELETE' })
+      if (res.ok) {
+        // log out and redirect home
+        await fetch('/api/auth/logout', { method: 'POST' })
+        router.push('/')
+      } else {
+        const text = await res.text()
+        console.error('Delete failed', text)
+        setDeleteError('Failed to delete account. Please try again.')
+      }
+    } catch (err) {
+      console.error(err)
+      setDeleteError('An error occurred. Please try again.')
+    } finally {
+      setDeleteSubmitting(false)
+    }
+  }
+
+  // Save profile info
+  const handleSaveProfile = async () => {
+    setEditProfileSubmitting(true)
+    setEditProfileError('')
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: editFullName.trim(),
+          phone: editPhone.trim() || null,
+          weightKg: editWeightKg !== '' ? Number(editWeightKg) : null,
+          heightCm: editHeightCm !== '' ? Number(editHeightCm) : null,
+          medicalNotes: editMedicalNotes.trim() || null,
+        }),
+      })
+
+      if (res.ok) {
+        // Refetch user data
+        const userRes = await fetch('/api/users/me')
+        if (userRes.ok) {
+          const userJson = await userRes.json()
+          setUser(userJson.data?.user)
+          setProfile(userJson.data?.profile)
+        }
+        setShowEditProfileModal(false)
+      } else {
+        const json = await res.json()
+        setEditProfileError(json.error?.message || 'Failed to update profile.')
+      }
+    } catch (err) {
+      console.error(err)
+      setEditProfileError('An error occurred. Please try again.')
+    } finally {
+      setEditProfileSubmitting(false)
+    }
+  }
+
+  // Change password handler
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError('New passwords do not match.')
+      return
+    }
+    if (newPassword.length < 8) {
+      setChangePasswordError('New password must be at least 8 characters.')
+      return
+    }
+
+    setChangePasswordSubmitting(true)
+    setChangePasswordError('')
+    try {
+      const res = await fetch('/api/users/me/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      })
+
+      if (res.ok) {
+        setShowChangePasswordModal(false)
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        alert('Password changed successfully!')
+      } else {
+        const json = await res.json()
+        setChangePasswordError(json.error?.message || 'Failed to change password.')
+      }
+    } catch (err) {
+      console.error(err)
+      setChangePasswordError('An error occurred. Please try again.')
+    } finally {
+      setChangePasswordSubmitting(false)
+    }
+  }
+
   const handleWorkoutComplete = () => {
     setShowWorkoutPlayer(false)
     setWorkoutSuccess(true)
-    
+
     // Dynamically bump the last week's values to show responsive progress tracking!
     setComplianceData(prev => {
       const updated = [...prev]
@@ -454,12 +651,12 @@ export default function Dashboard() {
     )
   }
 
+
   return (
-    <div className={`min-h-screen transition-colors duration-300 flex flex-col ${
-      isDark
+    <div className={`min-h-screen transition-colors duration-300 flex flex-col ${isDark
         ? 'bg-gradient-to-br from-primary-darker via-[#120f3a] to-primary-dark text-white'
         : 'bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 text-slate-900'
-    }`}>
+      }`}>
       {/* Top Banner Header */}
       <Header />
 
@@ -474,36 +671,41 @@ export default function Dashboard() {
 
         {/* Sidebar */}
         <aside
-          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-y-auto ${
-            isDark
+          className={`fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-50 w-72 backdrop-blur-xl border-r p-8 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-y-auto scrollbar-none ${isDark
               ? 'bg-primary-darker/95 border-white/5 text-white'
               : 'bg-white/95 border-slate-200 text-slate-800'
-          } ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-          }`}
+            } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+            }`}
         >
           <div className="space-y-10">
             <div className="flex items-center justify-between">
-              <span className={`text-xl font-display uppercase tracking-widest font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                PhysiFit <span className="text-accent font-extrabold">NG</span>
-              </span>
+              <Link
+                href="/dashboard"
+                className={`text-xl font-display uppercase tracking-widest font-bold inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-accent rounded ${isDark ? 'text-white' : 'text-slate-800'}`}
+                aria-label="Go to Dashboard"
+              >
+                <span>PhysiFit</span>
+                <span className="text-accent font-extrabold">NG</span>
+              </Link>
               <button
                 onClick={() => setSidebarOpen(false)}
                 className={`md:hidden w-8 h-8 rounded-full border flex items-center justify-center transition ${isDark ? 'border-white/10 hover:bg-white/10' : 'border-slate-200 hover:bg-slate-100'}`}
                 aria-label="Close sidebar"
               >
-                ✕
+                <CloseIcon size={14} />
               </button>
             </div>
 
             {/* User Profile Summary */}
             <div className={`border rounded-2xl p-4 flex items-center gap-3 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100/80 border-slate-200'}`}>
-              <div className="w-12 h-12 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center font-bold text-accent font-display text-lg">
-                {user?.fullName ? user.fullName.charAt(0) : 'U'}
-              </div>
-              <div className="overflow-hidden">
-                <p className="font-bold text-sm truncate">{user?.fullName || 'Client'}</p>
-                <span className={`text-[10px] font-mono tracking-wider block uppercase ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Member Card</span>
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-12 h-12 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center font-bold text-accent font-display text-lg">
+                  {user?.fullName ? user.fullName.charAt(0) : 'U'}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-sm truncate">{user?.fullName || 'Client'}</p>
+                  <span className={`text-[10px] font-mono tracking-wider block uppercase ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Member Card</span>
+                </div>
               </div>
             </div>
 
@@ -511,31 +713,39 @@ export default function Dashboard() {
               <p className="text-[10px] uppercase text-gray-400 font-bold tracking-widest">Main Dashboard</p>
               <nav className="space-y-2">
                 {[
-                  { id: 'overview', label: ' Core Cockpit' },
-                  { id: 'sessions', label: '📅 My Timeline' },
-                  { id: 'plan', label: '📋 Clinical Fitness Plan' },
-                  { id: 'messages', label: '💬 Trainer Chat', indicator: threads.some(t => t.unread_count > 0) }
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id as any)
-                      if (window.innerWidth < 768) setSidebarOpen(false)
-                    }}
-                    className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 relative border flex items-center justify-between ${
-                      activeTab === tab.id
-                        ? 'bg-accent text-primary-darker border-accent shadow-lg shadow-accent/20 scale-[1.02]'
-                        : isDark
-                          ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
-                          : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    {tab.indicator && (
-                      <span className="w-2.5 h-2.5 bg-red-500 border-2 border-primary-darker rounded-full animate-pulse"></span>
-                    )}
-                  </button>
-                ))}
+                  { id: 'overview', label: 'Core Cockpit', icon: <DashboardIcon size={16} className="mr-3" /> },
+                  { id: 'sessions', label: 'My Timeline', icon: <CalendarIcon size={16} className="mr-3" /> },
+                  { id: 'plan', label: 'Clinical Fitness Plan', icon: <FitnessPlanIcon size={16} className="mr-3" /> },
+                  { id: 'messages', label: 'Trainer Chat', icon: <ChatIcon size={16} className="mr-3" />, indicator: threads.some(t => t.unread_count > 0) },
+                  { id: 'settings', label: 'Settings', icon: <SettingsIcon size={16} className="mr-3" /> },
+                ].map((tab) => {
+                  const btnClass = `w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 relative border flex items-center justify-between ${activeTab === tab.id
+                      ? 'bg-accent text-primary-darker border-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                      : isDark
+                        ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
+                        : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
+                    }`
+
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as any)
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) setSidebarOpen(false)
+                      }}
+                      className={btnClass}
+                      aria-label={`Open ${tab.label.trim()}`}
+                    >
+                      <span className="flex items-center">
+                        {tab.icon}
+                        {tab.label}
+                      </span>
+                      {tab.indicator && (
+                        <span className="w-2.5 h-2.5 bg-red-500 border-2 border-primary-darker rounded-full animate-pulse"></span>
+                      )}
+                    </button>
+                  )
+                })}
               </nav>
             </div>
 
@@ -544,13 +754,15 @@ export default function Dashboard() {
               <p className="text-[10px] uppercase text-gray-400 font-bold tracking-widest font-mono">Appearance</p>
               <button
                 onClick={handleToggleTheme}
-                className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border flex items-center justify-between ${
-                  isDark
+                className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border flex items-center justify-between ${isDark
                     ? 'text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/5'
                     : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
-                }`}
+                  }`}
               >
-                <span>{isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
+                <span className="flex items-center gap-3">
+                  {isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+                  {isDark ? 'Light Mode' : 'Dark Mode'}
+                </span>
                 <span className="text-[9px] opacity-60 font-mono">Theme</span>
               </button>
             </div>
@@ -560,9 +772,10 @@ export default function Dashboard() {
               <nav className="space-y-2">
                 <Link
                   href="/book-session"
-                  className="block text-center px-5 py-3 rounded-xl border border-accent/30 text-accent hover:bg-accent/10 text-xs font-bold font-display uppercase tracking-widest transition"
+                  className="flex items-center justify-center gap-2 block text-center px-5 py-3 rounded-xl border border-accent/30 text-accent hover:bg-accent/10 text-xs font-bold font-display uppercase tracking-widest transition"
                 >
-                  ➕ Book Session Spot
+                  <PlusIcon size={14} />
+                  Book Session Spot
                 </Link>
               </nav>
             </div>
@@ -573,9 +786,10 @@ export default function Dashboard() {
               await fetch('/api/auth/logout', { method: 'POST' })
               router.push('/')
             }}
-            className="w-full text-left px-5 py-3 rounded-xl text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-xs font-bold font-display uppercase tracking-widest transition"
+            className="flex items-center gap-3 w-full text-left px-5 py-3 rounded-xl text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-xs font-bold font-display uppercase tracking-widest transition"
           >
-            🚪 Exit Platform
+            <ExitIcon size={16} />
+            Exit Platform
           </button>
         </aside>
 
@@ -585,9 +799,10 @@ export default function Dashboard() {
           <div className="flex md:hidden items-center justify-between mb-8">
             <button
               onClick={() => setSidebarOpen(true)}
-              className={`w-12 h-12 border rounded-2xl flex items-center justify-center font-bold text-xl transition ${isDark ? 'bg-white/5 hover:bg-white/10 border-white/10' : 'bg-white hover:bg-slate-50 border-slate-200'}`}
+              className={`w-12 h-12 border rounded-2xl flex items-center justify-center transition ${isDark ? 'bg-white/5 hover:bg-white/10 border-white/10' : 'bg-white hover:bg-slate-50 border-slate-200'}`}
+              aria-label="Open sidebar"
             >
-              ☰
+              <MenuIcon size={20} />
             </button>
             <span className="font-display uppercase tracking-widest text-accent text-xs font-bold">PhysiFit Member Dashboard</span>
           </div>
@@ -610,9 +825,10 @@ export default function Dashboard() {
                       setShowWorkoutPlayer(true)
                       setWorkoutSuccess(false)
                     }}
-                    className="px-8 py-3 bg-gradient-to-r from-accent to-accent-light text-primary-darker hover:scale-105 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 shadow-xl shadow-accent/20 border-2 border-accent/20"
+                    className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-accent to-accent-light text-primary-darker hover:scale-105 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 shadow-xl shadow-accent/20 border-2 border-accent/20"
                   >
-                    ▶ Launch Workout Player
+                    <VideoIcon size={14} className="fill-current" />
+                    Launch Workout Player
                   </button>
                 )}
               </div>
@@ -625,11 +841,10 @@ export default function Dashboard() {
                   { label: 'Upcoming Training', val: upcomingSessions, sub: sessions.find(s => s.status === 'upcoming')?.scheduledAt ? formatDateTime(sessions.find(s => s.status === 'upcoming')!.scheduledAt) : 'None pending' },
                   { label: 'Assessment / Missed', val: missedSessions + assessmentSessions, sub: 'Attendance metric is stable' }
                 ].map((card, i) => (
-                  <div key={i} className={`rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden transition hover:scale-[1.02] duration-300 ${
-                    card.highlighted
+                  <div key={i} className={`rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden transition hover:scale-[1.02] duration-300 ${card.highlighted
                       ? isDark ? 'bg-accent/15 border border-accent/30 text-white' : 'bg-accent/20 border border-accent/30 text-slate-800 shadow-sm'
                       : isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm shadow-slate-100'
-                  }`}>
+                    }`}>
                     <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
                     <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block mb-2 ${isDark ? 'text-gray-400' : 'text-slate-400'} truncate`}>{card.label}</span>
                     <p className={`text-3xl sm:text-4xl font-extrabold font-display tracking-tight mb-1 sm:mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>{card.val}</p>
@@ -657,11 +872,10 @@ export default function Dashboard() {
               </div>
 
               {/* Specialist Bio Card */}
-              <div className={`border rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden ${
-                isDark 
-                  ? 'bg-gradient-to-r from-primary-darker to-[#19154a] border-white/10' 
+              <div className={`border rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden ${isDark
+                  ? 'bg-gradient-to-r from-primary-darker to-[#19154a] border-white/10'
                   : 'bg-gradient-to-r from-slate-100 to-slate-200 border-slate-200 text-slate-800 shadow-sm shadow-slate-100'
-              }`}>
+                }`}>
                 <div className="absolute top-0 right-0 w-48 h-48 bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
@@ -686,15 +900,17 @@ export default function Dashboard() {
                     <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                       <button
                         onClick={() => setActiveTab('messages')}
-                        className={`px-6 py-3 border rounded-xl font-bold uppercase tracking-wider text-[11px] text-center transition ${isDark ? 'border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white' : 'border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700'}`}
+                        className={`flex items-center justify-center gap-2 px-6 py-3 border rounded-xl font-bold uppercase tracking-wider text-[11px] text-center transition ${isDark ? 'border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white' : 'border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700'}`}
                       >
-                        💬 Text Specialist
+                        <ChatIcon size={14} />
+                        Text Specialist
                       </button>
                       <button
                         onClick={() => setShowVideoCall(true)}
                         className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold uppercase tracking-wider text-[11px] text-center transition shadow-lg shadow-red-600/10 flex items-center justify-center gap-2 border border-red-500/20"
                       >
-                        📹 Video Call Room
+                        <VideoIcon size={14} />
+                        Video Call Room
                       </button>
                     </div>
                   )}
@@ -750,11 +966,12 @@ export default function Dashboard() {
                   <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">Scheduling Timeline</span>
                   <h1 className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>My Sessions Card</h1>
                 </div>
-                <Link
+                 <Link
                   href="/book-session"
-                  className="px-6 py-3 bg-gradient-to-r from-accent to-accent-light text-primary-darker hover:scale-105 rounded-xl font-bold uppercase tracking-widest text-[11px] transition"
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-accent to-accent-light text-primary-darker hover:scale-105 rounded-xl font-bold uppercase tracking-widest text-[11px] transition"
                 >
-                  ➕ Book Wellness Session
+                  <PlusIcon size={14} />
+                  Book Wellness Session
                 </Link>
               </div>
 
@@ -780,9 +997,10 @@ export default function Dashboard() {
                               {(session.status === 'upcoming' || session.status === 'assessment') && (
                                 <button
                                   onClick={() => openRescheduleModal(session)}
-                                  className="text-accent hover:text-accent-light font-bold text-xs uppercase tracking-widest border border-accent/20 hover:border-accent/40 bg-accent/5 px-4 py-2 rounded-xl transition"
+                                  className="inline-flex items-center gap-2 text-accent hover:text-accent-light font-bold text-xs uppercase tracking-widest border border-accent/20 hover:border-accent/40 bg-accent/5 px-4 py-2 rounded-xl transition"
                                 >
-                                  🔄 Reschedule
+                                  <RefreshIcon size={12} />
+                                  Reschedule
                                 </button>
                               )}
                             </td>
@@ -824,9 +1042,10 @@ export default function Dashboard() {
                               setShowWorkoutPlayer(true)
                               setWorkoutSuccess(false)
                             }}
-                            className="px-6 py-2 bg-accent text-primary-darker hover:bg-accent-dark rounded-xl font-bold uppercase tracking-wider text-xs transition"
+                            className="flex items-center gap-2 px-6 py-2 bg-accent text-primary-darker hover:bg-accent-dark rounded-xl font-bold uppercase tracking-wider text-xs transition"
                           >
-                            ▶ Start Workout
+                            <VideoIcon size={12} className="fill-current" />
+                            Start Workout
                           </button>
                         </div>
                       </div>
@@ -869,7 +1088,9 @@ export default function Dashboard() {
                 ))
               ) : (
                 <div className={`border rounded-3xl p-12 text-center shadow-2xl max-w-2xl mx-auto ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800'}`}>
-                  <div className="text-5xl mb-6">📋</div>
+                  <div className="flex justify-center text-accent mb-6">
+                    <FitnessPlanIcon size={48} />
+                  </div>
                   <h3 className="text-xl font-bold font-display uppercase tracking-widest text-accent mb-2">Prescription Under Review</h3>
                   <p className={`text-sm max-w-sm mx-auto leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
                     Following your initial Physical Assessment session, your Recovery Specialist will structure and upload your tailored therapeutic program here. Keep a look out!
@@ -889,11 +1110,9 @@ export default function Dashboard() {
               {threads.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[550px] items-stretch">
                   {/* Threads List */}
-                  <div className={`md:col-span-1 border rounded-3xl p-6 shadow-2xl flex flex-col justify-between ${
-                    isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800'
-                  } ${
-                    mobileChatActive ? 'hidden md:flex' : 'flex'
-                  }`}>
+                  <div className={`md:col-span-1 border rounded-3xl p-6 shadow-2xl flex flex-col justify-between ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800'
+                    } ${mobileChatActive ? 'hidden md:flex' : 'flex'
+                    }`}>
                     <div>
                       <h3 className="font-display font-bold text-xs uppercase tracking-widest mb-6 pb-2 border-b border-white/5">Conversations</h3>
                       <div className="space-y-3 overflow-y-auto max-h-[400px]">
@@ -904,11 +1123,10 @@ export default function Dashboard() {
                               setActiveThreadId(t.thread_id)
                               setMobileChatActive(true)
                             }}
-                            className={`p-4 rounded-2xl cursor-pointer transition border-2 ${
-                              t.thread_id === activeThreadId
+                            className={`p-4 rounded-2xl cursor-pointer transition border-2 ${t.thread_id === activeThreadId
                                 ? 'bg-accent/15 border-accent shadow-lg shadow-accent/5'
                                 : isDark ? 'bg-white/5 hover:bg-white/10 border-white/5' : 'bg-slate-50 hover:bg-slate-100 border-slate-200/60'
-                            }`}
+                              }`}
                           >
                             <div className="flex justify-between items-start mb-1">
                               <p className={`font-bold text-sm font-display uppercase tracking-wider ${isDark ? 'text-white' : 'text-slate-800'}`}>{t.other_user_name}</p>
@@ -926,11 +1144,9 @@ export default function Dashboard() {
                   </div>
 
                   {/* Active Chat */}
-                  <div className={`md:col-span-2 border rounded-3xl flex flex-col shadow-2xl relative overflow-hidden ${
-                    isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800'
-                  } ${
-                    mobileChatActive ? 'flex' : 'hidden md:flex'
-                  }`}>
+                  <div className={`md:col-span-2 border rounded-3xl flex flex-col shadow-2xl relative overflow-hidden ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 text-slate-800'
+                    } ${mobileChatActive ? 'flex' : 'hidden md:flex'
+                    }`}>
                     {activeThread ? (
                       <>
                         <div className="border-b border-white/10 p-6 flex justify-between items-center gap-4 bg-white/5">
@@ -946,20 +1162,21 @@ export default function Dashboard() {
                               <p className="text-[10px] text-accent font-bold uppercase tracking-widest mt-0.5">Clinical Wellness Specialist</p>
                             </div>
                           </div>
-                          
+
                           <button
                             onClick={() => setShowVideoCall(true)}
                             className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold uppercase tracking-wider text-[10px] transition flex items-center gap-2 border border-red-500/20"
                           >
-                            📹 Live Session
+                            <VideoIcon size={12} />
+                            Live Session
                           </button>
                         </div>
 
                         {/* Pulsing Live Invitation banner */}
                         <div className="bg-red-600/10 border-b border-red-500/20 px-6 py-3.5 flex items-center justify-between text-xs text-red-200">
                           <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-                            <span>🟢 Live Consultation Room is Active. Join now!</span>
+                            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                            <span>Live Consultation Room is Active. Join now!</span>
                           </div>
                           <button
                             onClick={() => setShowVideoCall(true)}
@@ -975,11 +1192,10 @@ export default function Dashboard() {
                             <div key={msg.id} className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
                               <div className="max-w-[70%]">
                                 <div
-                                  className={`rounded-2xl px-5 py-3.5 text-sm shadow-md leading-relaxed ${
-                                    msg.senderId === user?.id
+                                  className={`rounded-2xl px-5 py-3.5 text-sm shadow-md leading-relaxed ${msg.senderId === user?.id
                                       ? 'bg-accent text-primary-darker rounded-tr-none font-medium'
                                       : isDark ? 'bg-white/5 border border-white/10 text-white rounded-tl-none' : 'bg-slate-100 border border-slate-200 text-slate-800 rounded-tl-none'
-                                  }`}
+                                    }`}
                                 >
                                   {msg.body}
                                 </div>
@@ -1022,7 +1238,9 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className={`border rounded-3xl p-12 text-center shadow-2xl max-w-2xl mx-auto ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
-                  <div className="text-5xl mb-6">💬</div>
+                  <div className="flex justify-center text-accent mb-6">
+                    <ChatIcon size={48} />
+                  </div>
                   <h3 className="text-xl font-bold font-display uppercase tracking-widest text-accent mb-2">No active communications</h3>
                   <p className={`text-sm max-w-sm mx-auto leading-relaxed ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
                     Once a clinical Recovery Specialist is matched to your PAR-Q screening profile, a secure communication channel will open automatically right here.
@@ -1031,6 +1249,265 @@ export default function Dashboard() {
               )}
             </ScrollReveal>
           )}
+
+          {activeTab === 'settings' && (
+            <ScrollReveal className="space-y-8">
+              <div className="pb-6 border-b border-white/10">
+                <span className="text-accent text-xs font-bold uppercase tracking-[0.25em]">
+                  Account Controls
+                </span>
+
+                <h1
+                  className={`text-4xl font-extrabold uppercase font-display mt-1 ${isDark ? 'text-white' : 'text-slate-800'
+                    }`}
+                >
+                  Account Settings
+                </h1>
+
+                <p
+                  className={`mt-2 text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'
+                    }`}
+                >
+                  Manage your profile, preferences, security settings and account details.
+                </p>
+              </div>
+
+              {/* Profile Overview */}
+              <div
+                className={`rounded-3xl p-8 shadow-2xl border ${isDark
+                    ? 'bg-white/5 border-white/10'
+                    : 'bg-white border-slate-200'
+                  }`}
+              >
+                <div className="flex flex-col md:flex-row items-start gap-6">
+                  <div className="w-24 h-24 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-accent text-4xl font-bold">
+                    {user?.fullName?.charAt(0) || 'U'}
+                  </div>
+
+                  <div className="flex-1">
+                    <h2
+                      className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'
+                        }`}
+                    >
+                      {user?.fullName || 'User'}
+                    </h2>
+
+                    <p
+                      className={`mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'
+                        }`}
+                    >
+                      {user?.email || 'No email available'}
+                    </p>
+
+                    <div className="flex flex-wrap gap-3 mt-4">
+                      <button
+                        onClick={() => {
+                          setEditFullName(user?.fullName || '')
+                          setEditPhone(user?.phone || '')
+                          setEditWeightKg(profile?.weightKg ?? '')
+                          setEditHeightCm(profile?.heightCm ?? '')
+                          setEditMedicalNotes(profile?.medicalNotes || '')
+                          setEditProfileError('')
+                          setShowEditProfileModal(true)
+                        }}
+                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-accent text-primary-darker font-bold text-sm"
+                      >
+                        <UserIcon size={14} />
+                        Edit Profile
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setCurrentPassword('')
+                          setNewPassword('')
+                          setConfirmPassword('')
+                          setChangePasswordError('')
+                          setShowChangePasswordModal(true)
+                        }}
+                        className={`flex items-center gap-2 px-5 py-2 rounded-xl border font-bold text-sm ${isDark
+                            ? 'border-white/10 text-white'
+                            : 'border-slate-200 text-slate-700'
+                          }`}
+                      >
+                        <LockIcon size={14} />
+                        Change Password
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Personal Information */}
+              <div
+                className={`rounded-3xl p-8 shadow-2xl border ${isDark
+                    ? 'bg-white/5 border-white/10'
+                    : 'bg-white border-slate-200'
+                  }`}
+              >
+                <h3 className="text-xl font-bold mb-6">
+                  Personal Information
+                </h3>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <InfoCard
+                    label="Full Name"
+                    value={user?.fullName || 'Not provided'}
+                  />
+
+                  <InfoCard
+                    label="Email Address"
+                    value={user?.email || 'Not provided'}
+                  />
+
+                  <InfoCard
+                    label="Phone Number"
+                    value={
+                      profile?.phoneNumber ||
+                      profile?.phone ||
+                      user?.phone ||
+                      'Not provided'
+                    }
+                  />
+
+                  <InfoCard
+                    label="Gender"
+                    value={profile?.gender || 'Not provided'}
+                  />
+
+                  <InfoCard
+                    label="Date of Birth"
+                    value={profile?.dateOfBirth || 'Not provided'}
+                  />
+
+                  <InfoCard
+                    label="Assigned Specialist"
+                    value={
+                      assignedTrainer?.fullName ||
+                      'No specialist assigned'
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Trainer Information */}
+              {assignedTrainer && (
+                <div
+                  className={`rounded-3xl p-8 shadow-2xl border ${isDark
+                      ? 'bg-white/5 border-white/10'
+                      : 'bg-white border-slate-200'
+                    }`}
+                >
+                  <h3 className="text-xl font-bold mb-6">
+                    Recovery Specialist
+                  </h3>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <InfoCard
+                      label="Specialist Name"
+                      value={assignedTrainer.fullName}
+                    />
+
+                    <InfoCard
+                      label="Specialization"
+                      value={
+                        assignedTrainer.specialization ||
+                        'General Physiotherapy'
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Preferences */}
+              <div
+                className={`rounded-3xl p-8 shadow-2xl border ${isDark
+                    ? 'bg-white/5 border-white/10'
+                    : 'bg-white border-slate-200'
+                  }`}
+              >
+                <h3 className="text-xl font-bold mb-6">
+                  Preferences
+                </h3>
+
+                <div className="space-y-5">
+                  <label className="flex items-center justify-between">
+                    <span>Email Notifications</span>
+                    <input type="checkbox" defaultChecked />
+                  </label>
+
+                  <label className="flex items-center justify-between">
+                    <span>SMS Notifications</span>
+                    <input type="checkbox" />
+                  </label>
+
+                  <label className="flex items-center justify-between">
+                    <span>Dark Mode</span>
+                    <input
+                      type="checkbox"
+                      checked={isDark}
+                      onChange={handleToggleTheme}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Account Statistics */}
+              <div
+                className={`rounded-3xl p-8 shadow-2xl border ${isDark
+                    ? 'bg-white/5 border-white/10'
+                    : 'bg-white border-slate-200'
+                  }`}
+              >
+                <h3 className="text-xl font-bold mb-6">
+                  Account Summary
+                </h3>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                  <InfoCard
+                    label="Total Sessions"
+                    value={`${sessions.length}`}
+                  />
+
+                  <InfoCard
+                    label="Fitness Plans"
+                    value={`${fitnessPlansList.length}`}
+                  />
+
+                  <InfoCard
+                    label="Unread Messages"
+                    value={`${threads.reduce(
+                      (acc, t) => acc + t.unread_count,
+                      0
+                    )}`}
+                  />
+                </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="rounded-3xl border border-red-500/20 bg-red-500/5 p-8">
+                <h3 className="text-red-500 text-xl font-bold">
+                  Danger Zone
+                </h3>
+
+                <p className="mt-2 text-sm text-gray-500">
+                  Delete your account permanently. This action cannot be undone.
+                </p>
+
+                <button
+                  onClick={() => {
+                    setDeleteConfirmText('')
+                    setDeleteError('')
+                    setDeleteSubmitting(false)
+                    setShowDeleteAccountModal(true)
+                  }}
+                  className="mt-5 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </ScrollReveal>
+          )}
+
         </main>
       </div>
 
@@ -1039,14 +1516,16 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-primary-darker/95 z-[110] flex items-center justify-center p-6 animate-fade-in">
           <div className="bg-gradient-to-b from-[#181549] to-primary-darker border border-accent/20 rounded-3xl p-10 max-w-md w-full text-center shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-accent/15 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="text-6xl mb-6 animate-bounce">🏆</div>
+            <div className="flex justify-center mb-6">
+              <TrophyIcon size={64} className="text-accent animate-bounce" />
+            </div>
             <span className="text-accent text-[10px] font-bold uppercase tracking-[0.25em]">Session Verified</span>
             <h2 className="text-3xl font-bold font-display uppercase tracking-tight text-white mt-2 mb-4 leading-none">Workout Logged!</h2>
             <p className="text-gray-300 text-sm leading-relaxed mb-8">
               Fantastic work! Your exercise completion has been checked off and synchronized with your Wellness Compliance records.
             </p>
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-8 text-left">
-              <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Daily Progress Indicators:</p>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 font-display">Daily Progress Indicators:</p>
               <div className="flex justify-between text-xs py-1">
                 <span className="text-gray-300">Vitals Stability:</span>
                 <span className="text-green-400 font-bold">+5% Gain</span>
@@ -1101,14 +1580,14 @@ export default function Dashboard() {
               <div className="absolute top-4 left-4 bg-primary-darker/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase text-accent border border-accent/20 z-10">
                 Recovery Specialist (Active)
               </div>
-              
+
               {/* Pulsating premium therapeutic specializer icon placeholder */}
               <div className="w-24 h-24 rounded-full bg-accent/15 border-2 border-accent flex items-center justify-center font-display font-black text-4xl text-accent animate-pulse mb-4 shadow-xl">
                 {assignedTrainer?.fullName ? assignedTrainer.fullName.charAt(0) : 'T'}
               </div>
               <p className="font-display font-bold uppercase tracking-wider text-white text-lg">{assignedTrainer?.fullName || 'Clinical Instructor'}</p>
               <p className="text-xs text-gray-400 mt-1 italic">"Adjusting focus sequence to support balance indexes..."</p>
-              
+
               {/* Pulsing signal waveform */}
               <div className="absolute bottom-4 right-4 flex items-center gap-1">
                 <span className="w-1 h-3 bg-accent rounded-full animate-pulse"></span>
@@ -1136,7 +1615,7 @@ export default function Dashboard() {
               ) : (
                 <div className="flex flex-col items-center justify-center p-8">
                   <div className="w-20 h-20 rounded-full bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center font-bold text-gray-500 text-3xl mb-4">
-                    ✕
+                    <CameraOffIcon size={32} className="text-gray-500" />
                   </div>
                   <p className="text-sm font-bold text-gray-400">Camera Stream Blocked</p>
                   <p className="text-[10px] text-gray-500 mt-1">Check system permissions or toggle camera controls.</p>
@@ -1150,23 +1629,27 @@ export default function Dashboard() {
             <div className="flex gap-4">
               <button
                 onClick={() => setMicMuted(m => !m)}
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${
-                  micMuted
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${micMuted
                     ? 'bg-red-500/20 border-red-500 text-red-300'
                     : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-                }`}
+                  }`}
               >
-                {micMuted ? '🔇 Muted' : '🎙️ Mic On'}
+                <span className="flex flex-col items-center gap-1">
+                  {micMuted ? <MicOffIcon size={20} /> : <MicIcon size={20} />}
+                  <span className="text-[9px] lowercase tracking-wider mt-0.5">{micMuted ? 'Muted' : 'On'}</span>
+                </span>
               </button>
               <button
                 onClick={() => setCamOff(c => !c)}
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${
-                  camOff
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center border font-bold text-xs uppercase tracking-wider transition ${camOff
                     ? 'bg-red-500/20 border-red-500 text-red-300'
                     : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-                }`}
+                  }`}
               >
-                {camOff ? '📷 Cam Off' : '🎥 Cam On'}
+                <span className="flex flex-col items-center gap-1">
+                  {camOff ? <CameraOffIcon size={20} /> : <CameraIcon size={20} />}
+                  <span className="text-[9px] lowercase tracking-wider mt-0.5">{camOff ? 'Off' : 'On'}</span>
+                </span>
               </button>
             </div>
 
@@ -1176,10 +1659,15 @@ export default function Dashboard() {
                 if (stream) {
                   stream.getTracks().forEach(track => track.stop())
                 }
+                setStream(null)
+                if (videoRef.current) {
+                  videoRef.current.srcObject = null
+                }
               }}
-              className="px-10 py-4 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-red-600/25 border border-red-500/20"
+              className="flex items-center gap-2 px-10 py-4 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-red-600/25 border border-red-500/20"
             >
-              🛑 Disconnect Consultation Session
+              <CloseIcon size={14} />
+              Disconnect Consultation Session
             </button>
           </div>
         </div>
@@ -1194,8 +1682,8 @@ export default function Dashboard() {
           >
             {/* Modal Header */}
             <div className="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center gap-3">
-              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-lg border border-accent/20">
-                🔄
+              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center border border-accent/20 text-accent">
+                <RefreshIcon size={20} />
               </div>
               <div>
                 <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Reschedule Wellness Spot</h3>
@@ -1212,12 +1700,13 @@ export default function Dashboard() {
               </div>
 
               <div className="bg-accent/10 border-l-4 border-accent rounded p-3 text-[11px] text-accent leading-relaxed">
-                <strong>Attention:</strong> Reschedules require active notice so Recovery Specialists can optimize their calendar timeline indices.
+                <strong>Attention:</strong> Rescheduling a session must be done at least 24 hours before the fixed target time.
               </div>
 
               {rescheduleError && (
-                <div className="bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded text-xs font-semibold leading-relaxed">
-                  ⚠ {rescheduleError}
+                <div className="bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded text-xs font-semibold leading-relaxed flex items-start gap-2">
+                  <AlertIcon size={14} className="shrink-0 mt-0.5 text-red-400" />
+                  <span>{rescheduleError}</span>
                 </div>
               )}
 
@@ -1272,6 +1761,254 @@ export default function Dashboard() {
                 className="px-5 py-2.5 bg-accent hover:bg-accent-dark text-primary-darker rounded-xl transition text-xs font-bold uppercase tracking-widest font-display disabled:opacity-40"
               >
                 {rescheduleSubmitting ? 'Rescheduling...' : 'Confirm Reschedule'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {showEditProfileModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowEditProfileModal(false)}>
+          <div
+            className="bg-[#181549] border border-white/10 rounded-3xl shadow-2xl w-full max-w-md p-0 overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center border border-accent/20 text-accent">
+                <UserIcon size={20} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Edit Profile</h3>
+                <p className="text-[10px] text-accent uppercase tracking-widest">Update your personal information</p>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 space-y-4 text-left">
+              {editProfileError && (
+                <div className="bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded text-xs font-semibold leading-relaxed flex items-start gap-2">
+                  <AlertIcon size={14} className="shrink-0 mt-0.5 text-red-400" />
+                  <span>{editProfileError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Full Name</label>
+                <input
+                  type="text"
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-[#0c0a27]/50 text-white"
+                  placeholder="Enter full name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Phone Number</label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-[#0c0a27]/50 text-white"
+                  placeholder="Enter phone number"
+                />
+              </div>
+
+              {user?.role === 'client' && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Weight (kg)</label>
+                      <input
+                        type="number"
+                        value={editWeightKg}
+                        onChange={(e) => setEditWeightKg(e.target.value !== '' ? Number(e.target.value) : '')}
+                        className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-[#0c0a27]/50 text-white"
+                        placeholder="e.g. 70"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Height (cm)</label>
+                      <input
+                        type="number"
+                        value={editHeightCm}
+                        onChange={(e) => setEditHeightCm(e.target.value !== '' ? Number(e.target.value) : '')}
+                        className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-[#0c0a27]/50 text-white"
+                        placeholder="e.g. 175"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Medical Notes</label>
+                    <textarea
+                      rows={3}
+                      value={editMedicalNotes}
+                      onChange={(e) => setEditMedicalNotes(e.target.value)}
+                      placeholder="List any medical history, allergies, physical constraints..."
+                      className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-gray-600 bg-[#0c0a27]/50 text-white resize-none"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowEditProfileModal(false)}
+                className="px-5 py-2.5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest font-display"
+                disabled={editProfileSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={editProfileSubmitting || !editFullName.trim()}
+                className="px-5 py-2.5 bg-accent hover:bg-accent-dark text-primary-darker rounded-xl transition text-xs font-bold uppercase tracking-widest font-display disabled:opacity-40"
+              >
+                {editProfileSubmitting ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowChangePasswordModal(false)}>
+          <div
+            className="bg-[#181549] border border-white/10 rounded-3xl shadow-2xl w-full max-w-md p-0 overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white/5 border-b border-white/5 px-6 py-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center border border-accent/20 text-accent">
+                <LockIcon size={20} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Change Password</h3>
+                <p className="text-[10px] text-accent uppercase tracking-widest">Update your login security credentials</p>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 space-y-4 text-left">
+              {changePasswordError && (
+                <div className="bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded text-xs font-semibold leading-relaxed flex items-start gap-2">
+                  <AlertIcon size={14} className="shrink-0 mt-0.5 text-red-400" />
+                  <span>{changePasswordError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-[#0c0a27]/50 text-white"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-[#0c0a27]/50 text-white"
+                  placeholder="•••••••• (min 8 chars)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 font-display">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-[#0c0a27]/50 text-white"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowChangePasswordModal(false)}
+                className="px-5 py-2.5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest font-display"
+                disabled={changePasswordSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleChangePassword}
+                disabled={changePasswordSubmitting || !currentPassword || !newPassword || !confirmPassword}
+                className="px-5 py-2.5 bg-accent hover:bg-accent-dark text-primary-darker rounded-xl transition text-xs font-bold uppercase tracking-widest font-display disabled:opacity-40"
+              >
+                {changePasswordSubmitting ? 'Updating...' : 'Update Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteAccountModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowDeleteAccountModal(false)}>
+          <div
+            className="bg-[#181549] border border-red-500/20 rounded-3xl shadow-2xl w-full max-w-md p-0 overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-red-950/20 border-b border-red-500/10 px-6 py-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center border border-red-500/20 text-red-500">
+                <AlertIcon size={20} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-white text-lg uppercase tracking-wider">Delete Account</h3>
+                <p className="text-[10px] text-red-400 uppercase tracking-widest font-bold">This action is irreversible</p>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 space-y-4 text-left">
+              <p className="text-sm text-gray-300 leading-relaxed">
+                Are you absolutely sure you want to delete your account? This will permanently erase your profile, recovery timeline index, and clinic fitness plan data.
+              </p>
+
+              {deleteError && (
+                <div className="bg-red-500/25 border-l-4 border-red-500 text-red-200 p-3 rounded text-xs font-semibold leading-relaxed flex items-start gap-2">
+                  <AlertIcon size={14} className="shrink-0 mt-0.5 text-red-400" />
+                  <span>{deleteError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-display">
+                  Type <span className="text-red-400 font-mono font-bold bg-red-500/10 px-1.5 py-0.5 rounded">DELETE</span> below to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-full border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-red-500 bg-[#0c0a27]/50 text-white font-mono uppercase tracking-widest"
+                  placeholder="DELETE"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteAccountModal(false)}
+                className="px-5 py-2.5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 transition text-xs font-bold uppercase tracking-widest font-display"
+                disabled={deleteSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteSubmitting || deleteConfirmText !== 'DELETE'}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition text-xs font-bold uppercase tracking-widest font-display disabled:opacity-40"
+              >
+                {deleteSubmitting ? 'Deleting...' : 'Permanently Delete'}
               </button>
             </div>
           </div>

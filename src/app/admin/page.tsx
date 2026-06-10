@@ -6,6 +6,19 @@ import { useRouter } from 'next/navigation'
 import ProgressChart from '@/components/ProgressChart'
 import ScrollReveal from '@/components/ScrollReveal'
 import { useTheme } from '@/context/ThemeContext'
+import {
+  CloseIcon,
+  AlertIcon,
+  SunIcon,
+  MoonIcon,
+  ExitIcon,
+  MenuIcon,
+  RefreshIcon,
+  TrashIcon,
+  UserIcon,
+  FitnessPlanIcon,
+  DashboardIcon,
+} from '@/components/Icons'
 
 interface AdminMetrics {
   active_users: number;
@@ -56,6 +69,11 @@ interface Trainer {
     bio: string | null;
     isOnline: boolean;
     approvedAt: string | null;
+    yearsOfExperience: number | null;
+    cvUrl: string | null;
+    certifications: string | null;
+    education: string | null;
+    onboardingAnswers: string | null;
   } | null;
 }
 
@@ -82,6 +100,7 @@ export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null)
   const [activities, setActivities] = useState<PlatformActivity[]>([])
   const [clients, setClients] = useState<Client[]>([])
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
   const [trainers, setTrainers] = useState<Trainer[]>([])
   const [services, setServices] = useState<Service[]>([])
 
@@ -106,6 +125,7 @@ export default function AdminDashboard() {
   const [clientSearch, setClientSearch] = useState('')
   const [trainerFilter, setTrainerFilter] = useState<'all' | 'approved' | 'pending'>('all')
   const [inspectingClient, setInspectingClient] = useState<Client | null>(null)
+  const [inspectingTrainer, setInspectingTrainer] = useState<Trainer | null>(null)
   const [assigningClientId, setAssigningClientId] = useState<string | null>(null)
   const [selectedTrainerId, setSelectedTrainerId] = useState<string>('')
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
@@ -131,10 +151,13 @@ export default function AdminDashboard() {
           return
         }
         const meJson = await meRes.json()
-        if (meJson.data?.user?.role !== 'admin') {
+        const role = meJson.data?.user?.role
+        // allow both admin and super_admin to access this console
+        if (role !== 'admin' && role !== 'super_admin') {
           router.push('/dashboard')
           return
         }
+        setCurrentUserRole(role)
 
         // Fetch Metrics & Activities on mount
         await fetchMetricsAndActivity()
@@ -394,10 +417,10 @@ export default function AdminDashboard() {
 
             <nav className="space-y-2">
               {[
-                { id: 'metrics', label: '📊 Platform Metrics' },
-                { id: 'clients', label: '👥 Matched Clients' },
-                { id: 'trainers', label: '🏋️ Trainer Registry' },
-                { id: 'services', label: '🏷️ Pricing Offers' }
+                { id: 'metrics', label: 'Platform Metrics' },
+                { id: 'clients', label: 'Matched Clients' },
+                { id: 'trainers', label: 'Trainer Registry' },
+                { id: 'services', label: 'Pricing Offers' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -407,7 +430,7 @@ export default function AdminDashboard() {
                     setErrorMessage('')
                     if (window.innerWidth < 768) setSidebarOpen(false)
                   }}
-                  className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border ${
+                  className={`w-full text-left px-5 py-3.5 rounded-xl font-display font-semibold uppercase tracking-wider text-xs transition-all duration-300 border flex items-center gap-2.5 ${
                     activeTab === tab.id
                       ? 'bg-accent text-slate-950 border-accent shadow-lg shadow-accent/20 scale-[1.02]'
                       : isDark
@@ -415,7 +438,11 @@ export default function AdminDashboard() {
                         : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
                   }`}
                 >
-                  {tab.label}
+                  {tab.id === 'metrics' && <DashboardIcon size={16} />}
+                  {tab.id === 'clients' && <UserIcon size={16} />}
+                  {tab.id === 'trainers' && <FitnessPlanIcon size={16} />}
+                  {tab.id === 'services' && <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>}
+                  <span>{tab.label}</span>
                 </button>
               ))}
             </nav>
@@ -431,7 +458,10 @@ export default function AdminDashboard() {
                     : 'text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100/80 border-slate-200/60'
                 }`}
               >
-                <span>{isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
+                <span className="flex items-center gap-2.5">
+                  {isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+                  <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                </span>
                 <span className="text-[9px] opacity-60 font-mono">Theme</span>
               </button>
             </div>
@@ -442,9 +472,10 @@ export default function AdminDashboard() {
               await fetch('/api/auth/logout', { method: 'POST' })
               router.push('/')
             }}
-            className="w-full text-left px-5 py-3 rounded-xl text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-xs font-bold font-display uppercase tracking-widest transition"
+            className="w-full text-left px-5 py-3 rounded-xl text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-xs font-bold font-display uppercase tracking-widest transition flex items-center justify-center gap-2"
           >
-            🚪 Exit Console
+            <ExitIcon size={16} />
+            <span>Exit Console</span>
           </button>
         </aside>
 
@@ -455,8 +486,9 @@ export default function AdminDashboard() {
             <button
               onClick={() => setSidebarOpen(true)}
               className={`w-12 h-12 border rounded-2xl flex items-center justify-center font-bold text-xl transition ${isDark ? 'bg-white/5 hover:bg-white/10 border-white/10' : 'bg-white hover:bg-slate-50 border-slate-200'}`}
+              aria-label="Open sidebar"
             >
-              ☰
+              <MenuIcon size={20} />
             </button>
             <span className="font-display uppercase tracking-widest text-accent text-xs font-bold font-mono">System Supervisor</span>
           </div>
@@ -465,14 +497,16 @@ export default function AdminDashboard() {
           {successMessage && (
             <div className="mb-8 bg-green-500/15 border-l-4 border-green-500 rounded-2xl p-4 text-left border border-green-500/20">
               <p className="text-green-300 font-semibold flex items-center gap-2 text-sm">
-                <span>✓</span> {successMessage}
+                <svg className="w-4 h-4 text-green-300 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>{successMessage}</span>
               </p>
             </div>
           )}
           {errorMessage && (
             <div className="mb-8 bg-red-500/15 border-l-4 border-red-500 rounded-2xl p-4 text-left border border-red-500/20">
               <p className="text-red-300 font-semibold flex items-center gap-2 text-sm">
-                <span>⚠️</span> {errorMessage}
+                <AlertIcon size={16} className="text-red-300 shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
               </p>
             </div>
           )}
@@ -551,9 +585,9 @@ export default function AdminDashboard() {
                   <h3 className="text-lg font-bold font-display uppercase tracking-wider mb-6 pb-2 border-b border-white/5">Platform Shortcuts</h3>
                   <div className="grid gap-3">
                     {[
-                      { tab: 'trainers', label: '🏋️ Review Pending Instructor Files', sub: `${trainers.filter(t => t.profile?.approvedAt === null).length} reviews awaiting` },
-                      { tab: 'clients', label: '👥 Matched Client Placements', sub: `${clients.filter(c => !c.assignedTrainerName).length} unassigned patients` },
-                      { tab: 'services', label: '🏷️ Price Session Packages', sub: 'Syncing naira checkout parameters' }
+                      { tab: 'trainers', label: 'Review Pending Instructor Files', icon: <FitnessPlanIcon size={16} />, sub: `${trainers.filter(t => t.profile?.approvedAt === null).length} reviews awaiting` },
+                      { tab: 'clients', label: 'Matched Client Placements', icon: <UserIcon size={16} />, sub: `${clients.filter(c => !c.assignedTrainerName).length} unassigned patients` },
+                      { tab: 'services', label: 'Price Session Packages', icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>, sub: 'Syncing naira checkout parameters' }
                     ].map((btn, i) => (
                       <button
                         key={i}
@@ -561,10 +595,10 @@ export default function AdminDashboard() {
                         className={`w-full text-left border rounded-2xl p-4 transition-all duration-300 flex items-center justify-between ${isDark ? 'bg-[#0c101c]/60 hover:bg-white/5 border-white/5 hover:border-white/10' : 'bg-slate-50 hover:bg-slate-100 border-slate-200'}`}
                       >
                         <div>
-                          <p className="font-bold text-xs uppercase tracking-wider font-display">{btn.label}</p>
+                          <p className="font-bold text-xs uppercase tracking-wider font-display flex items-center gap-2">{btn.icon} <span>{btn.label}</span></p>
                           <span className="text-[10px] text-accent mt-0.5 block font-semibold">{btn.sub}</span>
                         </div>
-                        <span className="text-accent text-lg">→</span>
+                        <span className="text-accent text-lg">&rarr;</span>
                       </button>
                     ))}
                   </div>
@@ -609,13 +643,16 @@ export default function AdminDashboard() {
               </div>
 
               {/* Search bar */}
-              <div className="max-w-md">
+              <div className="max-w-md relative">
+                <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
                 <input
                   type="text"
-                  placeholder="🔍 Search clients by name or email..."
+                  placeholder="Search clients by name or email..."
                   value={clientSearch}
                   onChange={(e) => setClientSearch(e.target.value)}
-                  className={`w-full border rounded-2xl p-3.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0b0e18]/50 text-white' : 'border-slate-200 bg-white text-slate-800'}`}
+                  className={`w-full border rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent ${isDark ? 'border-white/10 bg-[#0b0e18]/50 text-white' : 'border-slate-200 bg-white text-slate-800'}`}
                 />
               </div>
 
@@ -638,12 +675,12 @@ export default function AdminDashboard() {
                           <tr key={client.id} className={`transition ${isDark ? 'hover:bg-white/5 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
                             <td className="px-6 py-4">
                               <div className="font-bold">{client.fullName}</div>
-                              <span className="text-[10px] text-gray-400 font-mono block">{client.email}</span>
+                              <span className="text-[14px] text-gray-400 font-mono block">{client.email}</span>
                               {client.phone && (
-                                <span className="text-[10px] text-gray-500 font-mono block mt-1">{client.phone}</span>
+                                <span className="text-[14px] text-gray-500 font-mono block mt-1">{client.phone}</span>
                               )}
                               {client.profile?.preferredSpecialization && (
-                                <span className="inline-block mt-2 text-[10px] font-semibold uppercase rounded-full px-2 py-0.5 bg-purple-50 text-purple-600">
+                                <span className="inline-block mt-2 text-[14px] font-bold uppercase rounded-full px-2 py-0.5 bg-purple-50 text-purple-600">
                                   {getSpecializationLabel(client.profile.preferredSpecialization)}
                                 </span>
                               )}
@@ -654,11 +691,13 @@ export default function AdminDashboard() {
                             <td className="px-6 py-4">
                               {client.assignedTrainerName ? (
                                 <span className="inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs font-semibold">
-                                  🏋️ {client.assignedTrainerName}
+                                  <FitnessPlanIcon size={12} className="text-green-300" />
+                                  <span>{client.assignedTrainerName}</span>
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-accent/20 text-accent px-3 py-1 rounded-full text-xs font-semibold animate-pulse">
-                                  ⚠️ Unassigned
+                                  <AlertIcon size={12} className="text-accent" />
+                                  <span>Unassigned</span>
                                 </span>
                               )}
                             </td>
@@ -667,7 +706,10 @@ export default function AdminDashboard() {
                                 onClick={() => setInspectingClient(client)}
                                 className={`font-bold text-xs uppercase tracking-widest border px-4 py-2 rounded-xl transition ${isDark ? 'border-white/10 hover:border-accent/40 bg-white/5 text-white' : 'border-slate-300 hover:border-accent/40 bg-white text-slate-750'}`}
                               >
-                                🔍 Inspect Health
+                                <span className="flex items-center gap-1.5 justify-center">
+                                  <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                  <span>Inspect Health</span>
+                                </span>
                               </button>
                             </td>
                             <td className="px-6 py-4 text-right">
@@ -695,7 +737,7 @@ export default function AdminDashboard() {
                                     onClick={() => { setAssigningClientId(null); setSelectedTrainerId(''); }}
                                     className={`border px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition ${isDark ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10' : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'}`}
                                   >
-                                    ✕
+                                    <CloseIcon size={12} />
                                   </button>
                                 </div>
                               ) : (
@@ -706,8 +748,85 @@ export default function AdminDashboard() {
                                   }}
                                   className="text-accent hover:text-accent-light font-bold text-xs uppercase tracking-widest"
                                 >
-                                  🔄 Assign Specialist
+                                  <span className="flex items-center gap-1.5 justify-center">
+                                    <RefreshIcon size={12} className="text-accent" />
+                                    <span>Assign Specialist</span>
+                                  </span>
                                 </button>
+                              )}
+                              &nbsp;
+                              {client.status === 'archived' ? (
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`Recover client ${client.fullName}? This will restore account access.`)) return
+                                    try {
+                                      const res = await fetch('/api/admin/clients/recover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id }) })
+                                      if (!res.ok) {
+                                        const j = await res.json().catch(() => ({}))
+                                        throw new Error(j.error?.message || 'Recover failed')
+                                      }
+                                      await fetchClients()
+                                      setSuccessMessage('Client recovered')
+                                    } catch (err: any) {
+                                      setErrorMessage(err.message || 'Error recovering client')
+                                    }
+                                  }}
+                                  className="text-green-600 hover:text-green-800 font-bold text-xs uppercase tracking-widest ml-3"
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    <RefreshIcon size={12} />
+                                    <span>Recover</span>
+                                  </span>
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm(`Archive client ${client.fullName}? This will disable the account but data can be recovered.`)) return
+                                      try {
+                                        const res = await fetch('/api/admin/clients', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id }) })
+                                        if (!res.ok) {
+                                          const j = await res.json().catch(() => ({}))
+                                          throw new Error(j.error?.message || 'Archive failed')
+                                        }
+                                        await fetchClients()
+                                        setSuccessMessage('Client archived')
+                                      } catch (err: any) {
+                                        setErrorMessage(err.message || 'Error archiving client')
+                                      }
+                                    }}
+                                    className="text-amber-600 hover:text-amber-800 font-bold text-xs uppercase tracking-widest ml-3"
+                                  >
+                                    <span className="flex items-center gap-1.5">
+                                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+                                      <span>Archive</span>
+                                    </span>
+                                  </button>
+                                  {currentUserRole === 'super_admin' && (
+                                    <button
+                                      onClick={async () => {
+                                        if (!confirm(`Fully delete client ${client.fullName}? This cannot be undone.`)) return
+                                        try {
+                                          const res = await fetch('/api/admin/clients', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, force: true }) })
+                                          if (!res.ok) {
+                                            const j = await res.json().catch(() => ({}))
+                                            throw new Error(j.error?.message || 'Full delete failed')
+                                          }
+                                          await fetchClients()
+                                          setSuccessMessage('Client fully deleted')
+                                        } catch (err: any) {
+                                          setErrorMessage(err.message || 'Error deleting client')
+                                        }
+                                      }}
+                                      className="text-red-500 hover:text-red-700 font-bold text-xs uppercase tracking-widest ml-3"
+                                    >
+                                      <span className="flex items-center gap-1.5">
+                                        <TrashIcon size={12} />
+                                        <span>Full Delete</span>
+                                      </span>
+                                    </button>
+                                  )}
+                                </>
                               )}
                             </td>
                           </tr>
@@ -727,7 +846,9 @@ export default function AdminDashboard() {
                     <div>
                       <div className="flex justify-between items-center pb-4 border-b border-white/5 mb-8">
                         <h3 className="text-xl font-bold font-display uppercase tracking-wider">Screener Inspection</h3>
-                        <button onClick={() => setInspectingClient(null)} className="text-2xl text-gray-400 hover:text-red-500">✕</button>
+                        <button onClick={() => setInspectingClient(null)} className="text-gray-400 hover:text-red-500 transition" aria-label="Close details">
+                          <CloseIcon size={20} />
+                        </button>
                       </div>
 
                       <div className="mb-8">
@@ -821,7 +942,7 @@ export default function AdminDashboard() {
                         <tr>
                           <th className="px-6 py-4 min-w-[200px]">Specialist Member</th>
                           <th className="px-6 py-4 min-w-[150px]">Specialization</th>
-                          <th className="px-6 py-4 min-w-[250px]">Credentials & Bio</th>
+                          <th className="px-6 py-4 min-w-[200px]">Application File</th>
                           <th className="px-6 py-4 min-w-[150px]">Validation Status</th>
                           <th className="px-6 py-4 text-right min-w-[180px]">Administrative Action</th>
                         </tr>
@@ -842,8 +963,16 @@ export default function AdminDashboard() {
                                 <span className="text-gray-400 text-xs">No profile registered</span>
                               )}
                             </td>
-                            <td className={`px-6 py-4 max-w-xs text-xs italic ${isDark ? 'text-gray-300' : 'text-slate-500'}`}>
-                              "{trainer.profile?.bio || 'No credentials uploaded.'}"
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() => setInspectingTrainer(trainer)}
+                                className={`font-bold text-xs uppercase tracking-widest border px-4 py-2 rounded-xl transition ${isDark ? 'border-white/10 hover:border-accent/40 bg-white/5 text-white' : 'border-slate-300 hover:border-accent/40 bg-white text-slate-755'}`}
+                              >
+                                <span className="flex items-center gap-1.5 justify-center">
+                                  <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                  <span>Review File</span>
+                                </span>
+                              </button>
                             </td>
                             <td className="px-6 py-4">
                               {trainer.profile?.approvedAt ? (
@@ -878,6 +1007,140 @@ export default function AdminDashboard() {
                   <div className="p-8 text-center text-gray-400 text-sm">No matched instructors files found.</div>
                 )}
               </div>
+              {/* Side Drawer Trainer Inspection Panel */}
+              {inspectingTrainer && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+                  <div className={`w-full max-w-md h-full p-8 shadow-2xl border-l overflow-y-auto flex flex-col justify-between ${isDark ? 'bg-slate-950 border-white/5 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+                    <div>
+                      <div className="flex justify-between items-center pb-4 border-b border-white/5 mb-8">
+                        <h3 className="text-xl font-bold font-display uppercase tracking-wider">Trainer Application Review</h3>
+                        <button onClick={() => setInspectingTrainer(null)} className="text-gray-400 hover:text-red-500 transition" aria-label="Close details">
+                          <CloseIcon size={20} />
+                        </button>
+                      </div>
+
+                      <div className="mb-8">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">TRAINER APPLICANT</span>
+                        <p className="text-xl font-bold font-display uppercase tracking-wider">{inspectingTrainer.fullName}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{inspectingTrainer.email}</p>
+                        {inspectingTrainer.phone && (
+                          <p className="text-xs text-gray-500 mt-0.5 font-mono">{inspectingTrainer.phone}</p>
+                        )}
+                      </div>
+
+                      {inspectingTrainer.profile ? (
+                        <div className="space-y-6 text-left">
+                          <div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-3">PROFESSIONAL STATS</span>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                <span className="text-[10px] text-gray-400 block mb-0.5">Experience</span>
+                                <span className="font-extrabold text-base">{inspectingTrainer.profile.yearsOfExperience ?? '0'} years</span>
+                              </div>
+                              <div className={`border p-3 rounded-2xl text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                <span className="text-[10px] text-gray-400 block mb-0.5">Specialization</span>
+                                <span className="font-extrabold text-xs uppercase block truncate">{getSpecializationLabel(inspectingTrainer.profile.specialization)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">Education:</span>
+                            <p className={`text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>
+                              {inspectingTrainer.profile.education || 'Not specified'}
+                            </p>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">Certifications:</span>
+                            <div className={`border p-3 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                              {inspectingTrainer.profile.certifications || 'None declared'}
+                            </div>
+                          </div>
+
+                          {/* Onboarding Answers */}
+                          {(() => {
+                            let q1 = 'No response';
+                            let q2 = 'No response';
+                            if (inspectingTrainer.profile.onboardingAnswers) {
+                              try {
+                                const parsed = JSON.parse(inspectingTrainer.profile.onboardingAnswers);
+                                if (parsed.q1) q1 = parsed.q1;
+                                if (parsed.q2) q2 = parsed.q2;
+                              } catch (e) {
+                                // fallback if not JSON
+                              }
+                            }
+                            return (
+                              <div className="space-y-4">
+                                <div>
+                                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">
+                                    Rehabilitation & Senior Wellness Experience:
+                                  </span>
+                                  <div className={`border p-3 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                                    {q1}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1 font-display">
+                                    Motivation to Join Network:
+                                  </span>
+                                  <div className={`border p-3 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed ${isDark ? 'bg-white/5 border-white/5 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                                    {q2}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* CV File Link */}
+                          {inspectingTrainer.profile.cvUrl && (
+                            <div>
+                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 font-display">Uploaded CV:</span>
+                              <a
+                                href={inspectingTrainer.profile.cvUrl}
+                                download={`CV_${inspectingTrainer.fullName.replace(/\s+/g, '_')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full bg-[#1e293b] hover:bg-[#334155] border border-white/10 text-white py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display flex items-center justify-center gap-2"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Download / View CV File
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center text-gray-400 bg-white/5 rounded-2xl border border-dashed border-white/10 text-sm">
+                          No profile details recorded.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-8 border-t border-white/5 space-y-3">
+                      {!inspectingTrainer.profile?.approvedAt && (
+                        <button
+                          onClick={async () => {
+                            await handleApproveTrainer(inspectingTrainer.id);
+                            setInspectingTrainer(null);
+                          }}
+                          className="w-full bg-accent text-slate-950 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display shadow-lg shadow-accent/10 block text-center"
+                        >
+                          Approve Instructor Application
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setInspectingTrainer(null)}
+                        className={`w-full border py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition duration-300 font-display text-center block ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/10' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+                      >
+                        Close Application
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </ScrollReveal>
           )}
 
@@ -937,7 +1200,7 @@ export default function AdminDashboard() {
                             onClick={() => { setEditingServiceId(null); setTempPrice(''); }}
                             className={`border font-bold py-2.5 px-4 rounded-xl text-xs transition uppercase tracking-widest font-display ${isDark ? 'border-white/10 text-gray-300 hover:bg-white/10' : 'border-slate-350 text-slate-700 hover:bg-slate-50'}`}
                           >
-                            ✕
+                            <CloseIcon size={12} className="mx-auto" />
                           </button>
                         </div>
                       ) : (
@@ -948,7 +1211,10 @@ export default function AdminDashboard() {
                           }}
                           className={`w-full border hover:border-accent/40 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 uppercase tracking-widest font-display bg-white/5 ${isDark ? 'border-white/10 text-gray-300 hover:text-white' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}
                         >
-                          ✏️ Edit Offer Price
+                          <span className="flex items-center gap-1.5 justify-center">
+                            <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            <span>Edit Offer Price</span>
+                          </span>
                         </button>
                       )}
                     </div>

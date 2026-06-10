@@ -10,9 +10,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-3 gap-10">
         <div>
           <div className="mb-4">
-            <Link href="/" className="inline-flex bg-white px-3.5 py-1.5 rounded-lg shadow-sm hover:opacity-95 transition">
+            <Link href="/" className="inline-flex hover:opacity-85 transition">
               <Image
-                src="/images/logo.png"
+                src="/images/logo_dark.png"
                 alt="PhysiFit NG Logo"
                 width={130}
                 height={35}

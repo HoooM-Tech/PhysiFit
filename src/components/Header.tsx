@@ -39,9 +39,14 @@ export default function Header() {
       isDark ? 'bg-primary-darker/95 border-white/5 text-white backdrop-blur' : 'bg-white border-gray-100 text-gray-800 shadow-sm'
     }`}>
       <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded bg-white px-2 py-1 rounded-lg">
+        <Link 
+          href="/" 
+          className={`flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded px-2 py-1 rounded-lg transition-colors ${
+            isDark ? 'bg-transparent' : 'bg-white'
+          }`}
+        >
           <Image
-            src="/images/logo.png"
+            src={isDark ? "/images/logo_dark.png" : "/images/logo.png"}
             alt="PhysiFit NG Logo"
             width={150}
             height={42}

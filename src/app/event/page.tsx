@@ -109,10 +109,10 @@ export default function EventPage() {
             alt="Joyful Black and African senior citizens participating in an outdoor group fitness class"
             fill
             priority
-            className="object-cover opacity-30"
+            className="object-cover opacity-60"
             sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-darker via-primary-darker/95 to-primary-darker/60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-darker/90 via-primary-darker/65 to-primary-darker/30" />
           <DotPattern className="absolute top-12 right-12 w-44 h-44 text-accent/30" />
           <CornerTriangle corner="tl" size={56} color="bg-accent" />
           <CornerTriangle corner="br" size={56} color="bg-accent" />

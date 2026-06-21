@@ -28,7 +28,7 @@ const heroSlides: HeroSlide[] = [
     tagline: 'Senior Fitness — strength, balance, independence',
   },
   {
-    image: '/images/Postpartum-fitness-1.jpg',
+    image: '/images/Postpartum-fitness-1.png',
     alt: 'Postpartum fitness training session',
     eyebrow: 'WELCOME TO PHYSIFIT',
     headline: 'Fitness designed for your journey',
@@ -41,7 +41,7 @@ const heroSlides: HeroSlide[] = [
     tagline: 'Postpartum Recovery — safe, evidence-based',
   },
   {
-    image: '/images/cooperate-wellness.jpg',
+    image: '/images/corporate-wellness.png',
     alt: 'Corporate wellness team training',
     eyebrow: 'WELCOME TO PHYSIFIT',
     headline: 'Fitness designed for your journey',
@@ -110,13 +110,13 @@ export default function Home() {
                   body: 'Low-impact, mobility-focused programs designed specifically for older adults to maintain strength, balance, and independence.',
                 },
                 {
-                  image: '/images/Postpartum-fitness-1.jpg',
+                  image: '/images/Postpartum-fitness-1.png',
                   alt: 'Postpartum fitness class',
                   title: 'Postpartum Fitness',
                   body: 'Safe, evidence-based recovery programs helping new mothers regain strength, core stability, and overall wellbeing.',
                 },
                 {
-                  image: '/images/cooperate-wellness.jpg',
+                  image: '/images/corporate-wellness.png',
                   alt: 'Corporate wellness class',
                   title: 'Corporate Wellness',
                   body: 'Group wellness programs for teams — improving productivity, reducing burnout, and building a healthier workplace culture.',

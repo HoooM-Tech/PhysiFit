@@ -41,7 +41,7 @@ export default function Header() {
       <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link 
           href="/" 
-          className={`flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded px-2 py-1 rounded-lg transition-colors ${
+          className={`flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded px-2 py-1 rounded-lg transition-colors flex-shrink-0 ${
             isDark ? 'bg-transparent' : 'bg-white'
           }`}
         >
@@ -55,12 +55,13 @@ export default function Header() {
           />
         </Link>
 
-        <div className="hidden md:flex items-center gap-9">
+        <div className="hidden md:flex items-center lg:gap-7 md:gap-4 gap-2 flex-shrink">
           <Link href="/" className={navLinkClass}>Home</Link>
           <Link href="/event" className={navLinkClass}>Event</Link>
           <Link href="/#services" className={navLinkClass}>Services</Link>
           <Link href="/#how-it-works" className={navLinkClass}>How It Works</Link>
           <Link href="/#faq" className={navLinkClass}>FAQ</Link>
+          <Link href="/invest" className={navLinkClass}>Invest</Link>
           <Link
             href="/trainer-portal"
             className="text-accent hover:text-accent-light transition font-semibold text-sm uppercase tracking-[0.18em]"
@@ -153,6 +154,9 @@ export default function Header() {
             <Link href="/#faq" className={`py-3 border-b font-medium uppercase tracking-wider text-sm hover:text-accent transition ${
               isDark ? 'border-white/10 text-white' : 'border-gray-100 text-gray-700'
             }`}>FAQ</Link>
+            <Link href="/invest" className={`py-3 border-b font-medium uppercase tracking-wider text-sm hover:text-accent transition ${
+              isDark ? 'border-white/10 text-white' : 'border-gray-100 text-gray-700'
+            }`}>Invest</Link>
             
             <button
               onClick={toggleTheme}

@@ -34,6 +34,7 @@ export default function Footer() {
             <li><Link href="/#services" className="hover:text-white transition">Services</Link></li>
             <li><Link href="/#how-it-works" className="hover:text-white transition">How It Works</Link></li>
             <li><Link href="/#faq" className="hover:text-white transition">FAQ</Link></li>
+            <li><Link href="/terms" className="hover:text-white transition">Terms & Conditions</Link></li>
             <li><Link href="/invest" className="hover:text-white transition">Invest</Link></li>
             <li><Link href="/trainer-portal" className="hover:text-white transition">Trainer Portal</Link></li>
           </ul>
@@ -59,8 +60,13 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-6 text-center text-gray-400 text-sm">
-          © 2026 PhysiFit · <a href="https://physifit.co" className="hover:text-white transition">physifit.co</a> · All rights reserved · Built for Nigerian wellness
+        <div className="max-w-7xl mx-auto px-6 py-6 text-center text-gray-400 text-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div>
+            © 2026 PhysiFit · <a href="https://physifit.co" className="hover:text-white transition">physifit.co</a> · <Link href="/terms" className="hover:text-white transition underline">Terms & Conditions</Link> · All rights reserved
+          </div>
+          <div>
+            Made by <a href="https://www.hooom.org/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline font-semibold">HoooM</a>
+          </div>
         </div>
       </div>
     </footer>

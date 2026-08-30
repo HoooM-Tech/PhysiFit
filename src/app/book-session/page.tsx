@@ -21,9 +21,70 @@ interface Service {
   priceNairaPerSession: number;
 }
 
+type YesNo = 'yes' | 'no' | null
+
+interface ParqState {
+  heartCondition: YesNo;
+  chestPain: YesNo;
+  dizzinessOrLossOfConsciousness: YesNo;
+  boneOrJointProblems: YesNo;
+  bpOrHeartMedication: YesNo;
+  informationCorrect: YesNo;
+  otherReasonsNotToExercise: YesNo;
+  otherReasonsDetails: string;
+  healthChangeAcknowledged: YesNo;
+  additionalQuestions: string;
+}
+
+const PARQ_QUESTIONS: {
+  key: keyof Pick<
+    ParqState,
+    | 'heartCondition'
+    | 'chestPain'
+    | 'dizzinessOrLossOfConsciousness'
+    | 'boneOrJointProblems'
+    | 'bpOrHeartMedication'
+    | 'informationCorrect'
+    | 'otherReasonsNotToExercise'
+  >;
+  label: string;
+  icon: string;
+}[] = [
+  {
+    key: 'heartCondition',
+    label: 'Has a doctor ever said you have a heart condition and should only do recommended physical activity?',
+    icon: '❤️',
+  },
+  {
+    key: 'chestPain',
+    label: 'Do you feel pain in your chest when performing physical activities?',
+    icon: '🫀',
+  },
+  {
+    key: 'dizzinessOrLossOfConsciousness',
+    label: 'Do you ever lose balance because of dizziness or experience loss of consciousness?',
+    icon: '🌀',
+  },
+  {
+    key: 'boneOrJointProblems',
+    label: 'Do you have a bone or joint problem (e.g. back, knee, hip) that could be made worse by exercise?',
+    icon: '🦴',
+  },
+  {
+    key: 'bpOrHeartMedication',
+    label: 'Is your doctor currently prescribing medication for your blood pressure or heart condition?',
+    icon: '💊',
+  },
+  {
+    key: 'otherReasonsNotToExercise',
+    label: 'Do you know of any other reason why you should not undergo physical activity (e.g. asthma, diabetes, recent injury)?',
+    icon: '🩺',
+  },
+]
+
 export default function BookSession() {
   const router = useRouter()
-  const [step, setStep] = useState<'service' | 'terms' | 'payment_loading' | 'confirmed'>('service')
+  const [step, setStep] = useState<'service' | 'parq' | 'terms' | 'payment_loading' | 'confirmed'>('service')
   const [termsAgreed, setTermsAgreed] = useState(false)
   const [services, setServices] = useState<Service[]>([])
   const [selectedService, setSelectedService] = useState<Service | null>(null)
@@ -41,6 +102,20 @@ export default function BookSession() {
   })
   const [timeSlot, setTimeSlot] = useState<'morning' | 'midday' | 'afternoon' | 'evening'>('afternoon')
 
+  // PAR-Q Health Screening State
+  const [parq, setParq] = useState<ParqState>({
+    heartCondition: 'no',
+    chestPain: 'no',
+    dizzinessOrLossOfConsciousness: 'no',
+    boneOrJointProblems: 'no',
+    bpOrHeartMedication: 'no',
+    informationCorrect: 'yes',
+    otherReasonsNotToExercise: 'no',
+    otherReasonsDetails: '',
+    healthChangeAcknowledged: 'yes',
+    additionalQuestions: '',
+  })
+
   useEffect(() => {
     async function loadData() {
       setLoading(true)
@@ -52,7 +127,6 @@ export default function BookSession() {
           const fetchedServices = json.data?.services || []
           setServices(fetchedServices)
           if (fetchedServices.length > 0) {
-            // Prefer Senior Fitness, else first available
             const defaultSvc = fetchedServices.find((s: Service) => s.slug === 'senior-fitness') || fetchedServices[0]
             setSelectedService(defaultSvc)
           }
@@ -77,6 +151,21 @@ export default function BookSession() {
 
   const pricePerSession = selectedService?.priceNairaPerSession ?? 33333
   const totalPrice = sessionsCount * pricePerSession
+
+  const setAllParqNo = () => {
+    setParq({
+      heartCondition: 'no',
+      chestPain: 'no',
+      dizzinessOrLossOfConsciousness: 'no',
+      boneOrJointProblems: 'no',
+      bpOrHeartMedication: 'no',
+      informationCorrect: 'yes',
+      otherReasonsNotToExercise: 'no',
+      otherReasonsDetails: '',
+      healthChangeAcknowledged: 'yes',
+      additionalQuestions: '',
+    })
+  }
 
   const getServiceIcon = (name: string) => {
     const n = name.toLowerCase()
@@ -109,7 +198,7 @@ export default function BookSession() {
 
     let bookingId = ''
     try {
-      // 1. Create the pending booking record
+      // 1. Create the pending booking record with PAR-Q screening
       const bookingPayload = {
         serviceId: selectedService.id,
         sessionType,
@@ -117,6 +206,18 @@ export default function BookSession() {
         startDate,
         preferredTimeSlots: [timeSlot],
         termsAccepted: true,
+        parq: {
+          heartCondition: parq.heartCondition === 'yes',
+          chestPain: parq.chestPain === 'yes',
+          dizzinessOrLossOfConsciousness: parq.dizzinessOrLossOfConsciousness === 'yes',
+          boneOrJointProblems: parq.boneOrJointProblems === 'yes',
+          bpOrHeartMedication: parq.bpOrHeartMedication === 'yes',
+          informationCorrect: parq.informationCorrect === 'yes',
+          otherReasonsNotToExercise: parq.otherReasonsNotToExercise === 'yes',
+          otherReasonsDetails: parq.otherReasonsDetails,
+          healthChangeAcknowledged: parq.healthChangeAcknowledged === 'yes',
+          additionalQuestions: parq.additionalQuestions,
+        },
       }
 
       const bookingRes = await fetch('/api/bookings', {
@@ -206,13 +307,15 @@ export default function BookSession() {
       </div>
 
       {/* Page Header */}
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="inline-flex items-center gap-3 mb-4">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="inline-flex items-center gap-3 mb-3">
           <span aria-hidden="true" className="h-[2px] w-10 bg-accent" />
-          <span className="text-accent text-xs font-bold tracking-[0.25em] uppercase">BOOKING</span>
+          <span className="text-accent text-xs font-bold tracking-[0.25em] uppercase">BOOKING & MATCHING</span>
         </div>
-        <h1 className="font-display text-5xl sm:text-6xl uppercase tracking-condensed leading-none text-primary-darker mb-3">Book a Session</h1>
-        <p className="text-gray-600">Select your service and configure your training plan.</p>
+        <h1 className="font-display text-4xl sm:text-5xl uppercase tracking-condensed leading-none text-primary-darker mb-3">
+          Book a Session
+        </h1>
+        <p className="text-gray-600">Select your service, verify your health readiness, and configure your plan.</p>
       </div>
 
       {loading ? (
@@ -230,11 +333,48 @@ export default function BookSession() {
             </div>
           )}
 
+          {/* Step Progress Indicator */}
+          {step !== 'payment_loading' && step !== 'confirmed' && (
+            <div className="max-w-4xl mx-auto px-6 mb-8">
+              <div className="flex items-center gap-2 bg-gray-50 p-2.5 rounded-xl border border-gray-200">
+                <div
+                  onClick={() => setStep('service')}
+                  className={`flex-1 text-center py-2.5 px-3 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition ${
+                    step === 'service' ? 'bg-primary-darker text-white shadow-sm' : 'bg-white text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  1. Program & Dates
+                </div>
+                <div className="text-gray-300">→</div>
+                <div
+                  onClick={() => setStep('parq')}
+                  className={`flex-1 text-center py-2.5 px-3 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition ${
+                    step === 'parq' ? 'bg-primary-darker text-white shadow-sm' : 'bg-white text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  2. Health Screening
+                </div>
+                <div className="text-gray-300">→</div>
+                <div
+                  onClick={() => setStep('terms')}
+                  className={`flex-1 text-center py-2.5 px-3 rounded-lg font-bold text-xs uppercase tracking-wider cursor-pointer transition ${
+                    step === 'terms' ? 'bg-primary-darker text-white shadow-sm' : 'bg-white text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  3. Terms & Payment
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 1: SERVICE & OPTIONS */}
           {step === 'service' && (
-            <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="max-w-4xl mx-auto px-6 py-2">
               {/* Service Selection */}
-              <div className="mb-12">
-                <h2 className="font-display text-2xl uppercase tracking-wide mb-6 text-primary-darker pb-2 border-b border-gray-200">1. Choose Your Service</h2>
+              <div className="mb-10">
+                <h2 className="font-display text-2xl uppercase tracking-wide mb-6 text-primary-darker pb-2 border-b border-gray-200">
+                  1. Choose Your Service
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {services.map((service) => (
                     <div
@@ -257,8 +397,10 @@ export default function BookSession() {
               </div>
 
               {/* Session Type */}
-              <div className="mb-12">
-                <h2 className="font-display text-2xl uppercase tracking-wide mb-6 text-primary-darker pb-2 border-b border-gray-200">2. Session Type</h2>
+              <div className="mb-10">
+                <h2 className="font-display text-2xl uppercase tracking-wide mb-6 text-primary-darker pb-2 border-b border-gray-200">
+                  2. Session Type
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div
                     onClick={() => setSessionType('one_on_one')}
@@ -313,7 +455,7 @@ export default function BookSession() {
                 </div>
               </div>
 
-              <div className="mb-12">
+              <div className="mb-10">
                 <label className="block font-bold mb-2 text-gray-700 text-sm">Preferred Time Slot</label>
                 <select
                   value={timeSlot}
@@ -328,7 +470,7 @@ export default function BookSession() {
               </div>
 
               {/* Session Summary */}
-              <div className="bg-gray-50 rounded-md p-8 mb-12 border border-gray-200">
+              <div className="bg-gray-50 rounded-md p-8 mb-10 border border-gray-200">
                 <h3 className="font-display text-2xl uppercase tracking-wide mb-6 text-primary-darker">Session Summary</h3>
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
@@ -354,24 +496,150 @@ export default function BookSession() {
                 </div>
 
                 <button
-                  onClick={() => setStep('terms')}
+                  onClick={() => setStep('parq')}
                   className="w-full bg-primary-darker hover:bg-primary-dark text-white py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition shadow-md"
                 >
-                  Continue to Terms →
+                  Continue to Health Screening →
                 </button>
               </div>
             </div>
           )}
 
+          {/* STEP 2: PAR-Q HEALTH SCREENING */}
+          {step === 'parq' && (
+            <div className="max-w-4xl mx-auto px-6 py-2">
+              <div className="mb-10">
+                <div className="inline-flex items-center gap-3 mb-3">
+                  <span aria-hidden="true" className="h-[2px] w-10 bg-accent" />
+                  <span className="text-accent text-xs font-bold tracking-[0.25em] uppercase">STEP 2 OF 3</span>
+                </div>
+                <h2 className="font-display text-4xl uppercase tracking-condensed mb-2 text-primary-darker leading-none">
+                  Health & Readiness Screening (PAR-Q)
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  These quick questions ensure safety and allow our clinical team to match you with the ideal certified trainer.
+                </p>
+
+                {/* Trainer Matching Value Banner */}
+                <div className="bg-blue-50/80 border-l-4 border-blue-600 p-5 rounded-r-xl mb-8 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl shrink-0">🩺</span>
+                    <div>
+                      <h4 className="font-bold text-blue-950 text-sm uppercase tracking-wide">Personalized Trainer Matching</h4>
+                      <p className="text-blue-900 text-xs mt-1 leading-relaxed">
+                        Your answers are confidential. They enable PhysiFit to assign a trainer specifically certified for your physical profile (e.g. Senior Fitness, Cardiac Wellness, or Postpartum Rehab).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* All-Clear Shortcut */}
+                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 p-4 rounded-xl mb-8">
+                  <span className="text-sm font-semibold text-gray-700">Healthy with no medical restrictions?</span>
+                  <button
+                    type="button"
+                    onClick={setAllParqNo}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition shadow-sm"
+                  >
+                    ⚡ All Clear (Set All to No)
+                  </button>
+                </div>
+
+                {/* Questions List */}
+                <div className="space-y-4 mb-8">
+                  {PARQ_QUESTIONS.map((q, idx) => (
+                    <div key={q.key} className="border border-gray-200 rounded-xl p-5 bg-white shadow-xs">
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="text-xl shrink-0 mt-0.5">{q.icon}</span>
+                        <p className="font-semibold text-gray-900 text-sm leading-snug">
+                          <span className="text-accent font-bold mr-2">Q{idx + 1}.</span>
+                          {q.label}
+                        </p>
+                      </div>
+                      <div className="flex gap-3 ml-8">
+                        <button
+                          type="button"
+                          onClick={() => setParq({ ...parq, [q.key]: 'yes' })}
+                          className={`flex-1 sm:flex-none sm:min-w-[110px] py-2 px-4 rounded-lg font-bold text-xs uppercase tracking-wider border-2 transition ${
+                            parq[q.key] === 'yes'
+                              ? 'border-amber-600 bg-amber-600 text-white'
+                              : 'border-gray-200 text-gray-700 hover:border-gray-300 bg-gray-50'
+                          }`}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setParq({ ...parq, [q.key]: 'no' })}
+                          className={`flex-1 sm:flex-none sm:min-w-[110px] py-2 px-4 rounded-lg font-bold text-xs uppercase tracking-wider border-2 transition ${
+                            parq[q.key] === 'no'
+                              ? 'border-primary-darker bg-primary-darker text-white'
+                              : 'border-gray-200 text-gray-700 hover:border-gray-300 bg-gray-50'
+                          }`}
+                        >
+                          No
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Details if other reasons */}
+                  {parq.otherReasonsNotToExercise === 'yes' && (
+                    <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-5">
+                      <label className="block font-bold text-amber-900 text-sm mb-2">
+                        Please specify details for any health conditions or medical restrictions:
+                      </label>
+                      <textarea
+                        value={parq.otherReasonsDetails}
+                        onChange={(e) => setParq({ ...parq, otherReasonsDetails: e.target.value })}
+                        placeholder="e.g. Mild asthma, lower back stiffness, controlled hypertension..."
+                        className="w-full border border-amber-300 rounded-lg p-3 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 h-24 resize-none"
+                      />
+                    </div>
+                  )}
+
+                  {/* Additional notes for trainer */}
+                  <div className="border border-gray-200 rounded-xl p-5 bg-white">
+                    <label className="block font-semibold text-gray-900 text-sm mb-2">
+                      Additional notes for your assigned trainer (Optional):
+                    </label>
+                    <textarea
+                      value={parq.additionalQuestions}
+                      onChange={(e) => setParq({ ...parq, additionalQuestions: e.target.value })}
+                      placeholder="Share your specific goals, preferences, or questions..."
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:border-primary-darker focus:ring-2 focus:ring-accent/40 h-20 resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setStep('service')}
+                    className="border-2 border-gray-300 hover:border-primary-darker text-primary-darker py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
+                  >
+                    ← Back to Service
+                  </button>
+                  <button
+                    onClick={() => setStep('terms')}
+                    className="bg-primary-darker hover:bg-primary-dark text-white py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition shadow-md"
+                  >
+                    Continue to Terms →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: TERMS & CONDITIONS */}
           {step === 'terms' && (
-            <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="max-w-4xl mx-auto px-6 py-2">
               <div className="mb-12">
                 <div className="inline-flex items-center gap-3 mb-4">
                   <span aria-hidden="true" className="h-[2px] w-10 bg-accent" />
                   <span className="text-accent text-xs font-bold tracking-[0.25em] uppercase">FINAL STEP</span>
                 </div>
                 <h2 className="font-display text-4xl uppercase tracking-condensed mb-2 text-primary-darker leading-none">Terms & Conditions</h2>
-                <p className="text-gray-600 mb-8">Please read carefully before proceeding</p>
+                <p className="text-gray-600 mb-8">Please read carefully before proceeding to payment.</p>
 
                 <div className="bg-gray-50 rounded-md p-8 mb-8 space-y-4 border border-gray-200">
                   <div>
@@ -380,7 +648,7 @@ export default function BookSession() {
                       Sessions are primarily one-on-one unless you specifically selected a group session.
                     </p>
                     <p className="text-gray-600">
-                      Trainers will be matched to clients within 24-48 hours after booking a session.
+                      Trainers will be matched to clients within 24-48 hours after booking a session based on your PAR-Q screening.
                     </p>
                   </div>
                   <div>
@@ -415,7 +683,7 @@ export default function BookSession() {
                     id="agree"
                     checked={termsAgreed}
                     onChange={(e) => setTermsAgreed(e.target.checked)}
-                    className="w-5 h-5"
+                    className="w-5 h-5 cursor-pointer accent-primary-darker"
                   />
                   <label htmlFor="agree" className="text-gray-900 font-semibold cursor-pointer">
                     I have read, understood, and agree to the above Terms & Conditions.
@@ -431,10 +699,10 @@ export default function BookSession() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
-                    onClick={() => setStep('service')}
+                    onClick={() => setStep('parq')}
                     className="border-2 border-gray-300 hover:border-primary-darker text-primary-darker py-3.5 rounded-md font-bold uppercase tracking-wider text-sm transition"
                   >
-                    ← Back
+                    ← Back to Health Screen
                   </button>
                   <button
                     disabled={!termsAgreed}
@@ -481,7 +749,7 @@ export default function BookSession() {
                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                   </svg>
                   <span className="text-gray-700">
-                    A trainer will be assigned to you within 24–48 hours. Once matched, your program will show up active in your profile!
+                    Our clinical team is matching you with a certified trainer based on your PAR-Q health profile within 24–48 hours!
                   </span>
                 </div>
               </div>

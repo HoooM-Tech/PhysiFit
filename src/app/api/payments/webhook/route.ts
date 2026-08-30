@@ -1,10 +1,10 @@
 import { createHmac } from "crypto";
 import { eq, and, desc, asc, gte } from "drizzle-orm";
 import { db } from "@/db/client";
-import { payments, bookings, eventRegistrations, users, eventParqSubmissions, events } from "@/db/schema";
+import { payments, bookings, services, eventRegistrations, users, eventParqSubmissions, events } from "@/db/schema";
 import { env } from "@/lib/env";
 import { successResponse } from "@/lib/api/errors";
-import { notifyEventRegistrationConfirmed } from "@/lib/email/notify";
+import { notifyEventRegistrationConfirmed, notifySessionBooked } from "@/lib/email/notify";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -62,6 +62,32 @@ export async function POST(req: NextRequest) {
               updatedAt: new Date(),
             })
             .where(eq(bookings.id, payment.bookingId));
+
+          const [bookingDetails] = await tx
+            .select({
+              serviceName: services.name,
+              sessionCount: bookings.sessionCount,
+              startDate: bookings.startDate,
+              totalAmountNaira: bookings.totalAmountNaira,
+              userEmail: users.email,
+              userName: users.fullName,
+            })
+            .from(bookings)
+            .innerJoin(services, eq(services.id, bookings.serviceId))
+            .innerJoin(users, eq(users.id, bookings.clientId))
+            .where(eq(bookings.id, payment.bookingId))
+            .limit(1);
+
+          if (bookingDetails) {
+            notifySessionBooked({
+              clientEmail: bookingDetails.userEmail,
+              clientName: bookingDetails.userName,
+              serviceName: bookingDetails.serviceName,
+              sessionCount: bookingDetails.sessionCount,
+              startDate: bookingDetails.startDate,
+              totalAmountNaira: bookingDetails.totalAmountNaira,
+            });
+          }
         } else {
           // If bookingId is null, this is an event payment!
           // Get the user's email

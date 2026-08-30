@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { and, desc, eq, asc, gte } from "drizzle-orm";
 import { db } from "@/db/client";
-import { payments, bookings, users, authSessions, eventParqSubmissions, eventRegistrations, events } from "@/db/schema";
+import { payments, bookings, services, users, authSessions, eventParqSubmissions, eventRegistrations, events } from "@/db/schema";
 import { withAuth, withRoute, readSessionToken, hashToken } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
-import { notifyPaymentConfirmed, notifyEventRegistrationConfirmed } from "@/lib/email/notify";
+import { notifyPaymentConfirmed, notifyEventRegistrationConfirmed, notifySessionBooked } from "@/lib/email/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -94,8 +94,12 @@ export const POST = withRoute(async ({ req }) => {
           clientId: bookings.clientId,
           totalAmountNaira: bookings.totalAmountNaira,
           status: bookings.status,
+          serviceName: services.name,
+          sessionCount: bookings.sessionCount,
+          startDate: bookings.startDate,
         })
         .from(bookings)
+        .innerJoin(services, eq(services.id, bookings.serviceId))
         .where(eq(bookings.id, body.bookingId))
         .limit(1);
 
@@ -124,7 +128,7 @@ export const POST = withRoute(async ({ req }) => {
         })
         .returning();
 
-      if (isDev) {
+      if (paymentStatus === "confirmed") {
         await tx
           .update(bookings)
           .set({
@@ -132,6 +136,15 @@ export const POST = withRoute(async ({ req }) => {
             updatedAt: new Date(),
           })
           .where(eq(bookings.id, booking.id));
+
+        notifySessionBooked({
+          clientEmail: sessionUser!.email,
+          clientName: sessionUser!.fullName,
+          serviceName: booking.serviceName,
+          sessionCount: booking.sessionCount,
+          startDate: booking.startDate,
+          totalAmountNaira: booking.totalAmountNaira,
+        });
       }
 
       // Email notification — fire-and-forget

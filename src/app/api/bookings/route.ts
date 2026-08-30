@@ -5,13 +5,15 @@ import {
   bookings,
   services,
   trainingSessions,
+  clientProfiles,
+  eventParqSubmissions,
+  users,
   timeSlotEnum,
   sessionTypeEnum,
 } from "@/db/schema";
 import { withAuth, withIdempotency } from "@/lib/api/handler";
 import { parseJsonBody } from "@/lib/api/validate";
 import { ApiError } from "@/lib/api/errors";
-import { notifySessionBooked } from "@/lib/email/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +48,19 @@ export const GET = withAuth(async ({ user }) => {
 // POST /api/bookings — create a new booking (idempotent)
 // =============================================================================
 
+const parqSchema = z.object({
+  heartCondition: z.boolean(),
+  chestPain: z.boolean(),
+  dizzinessOrLossOfConsciousness: z.boolean(),
+  boneOrJointProblems: z.boolean(),
+  bpOrHeartMedication: z.boolean(),
+  informationCorrect: z.boolean(),
+  otherReasonsNotToExercise: z.boolean(),
+  otherReasonsDetails: z.string().optional(),
+  healthChangeAcknowledged: z.boolean(),
+  additionalQuestions: z.string().optional(),
+});
+
 const createBookingSchema = z.object({
   serviceId: z.string().uuid(),
   sessionType: z.enum(sessionTypeEnum.enumValues),
@@ -57,6 +72,7 @@ const createBookingSchema = z.object({
   termsAccepted: z.literal(true, {
     errorMap: () => ({ message: "You must accept the terms and conditions" }),
   }),
+  parq: parqSchema.optional(),
 });
 
 export const POST = withIdempotency(async ({ req, user }) => {
@@ -69,6 +85,7 @@ export const POST = withIdempotency(async ({ req, user }) => {
       .select({
         id: services.id,
         name: services.name,
+        slug: services.slug,
         priceNairaPerSession: services.priceNairaPerSession,
         active: services.active,
       })
@@ -102,8 +119,90 @@ export const POST = withIdempotency(async ({ req, user }) => {
 
     if (!booking) throw new ApiError("INTERNAL_ERROR", "Failed to create booking");
 
+    // Process PAR-Q screening data if provided
+    if (body.parq) {
+      const parq = body.parq;
+      const flags: string[] = [];
+      if (parq.heartCondition) flags.push("Heart Condition");
+      if (parq.chestPain) flags.push("Chest Pain");
+      if (parq.dizzinessOrLossOfConsciousness) flags.push("Dizziness/Loss of Balance");
+      if (parq.boneOrJointProblems) flags.push("Bone/Joint Issues");
+      if (parq.bpOrHeartMedication) flags.push("BP/Heart Medication");
+      if (parq.otherReasonsNotToExercise && parq.otherReasonsDetails) {
+        flags.push(`Other: ${parq.otherReasonsDetails}`);
+      }
+
+      const medicalNotes = flags.length > 0
+        ? `PAR-Q Flagged Conditions: ${flags.join("; ")}${parq.additionalQuestions ? ` | Notes: ${parq.additionalQuestions}` : ""}`
+        : `PAR-Q Cleared (All No)${parq.additionalQuestions ? ` | Notes: ${parq.additionalQuestions}` : ""}`;
+
+      let prefSpec: "postpartum" | "senior_fitness" | "corporate_wellness" | null = null;
+      const slug = (svc.slug || svc.name).toLowerCase();
+      if (slug.includes("postpartum")) {
+        prefSpec = "postpartum";
+      } else if (slug.includes("senior")) {
+        prefSpec = "senior_fitness";
+      } else if (slug.includes("corporate")) {
+        prefSpec = "corporate_wellness";
+      }
+
+      // Upsert client profile
+      const [existingProfile] = await tx
+        .select({ id: clientProfiles.id })
+        .from(clientProfiles)
+        .where(eq(clientProfiles.userId, user.id))
+        .limit(1);
+
+      if (existingProfile) {
+        await tx
+          .update(clientProfiles)
+          .set({
+            dizzinessHistory: parq.dizzinessOrLossOfConsciousness,
+            medicalNotes,
+            preferredSpecialization: prefSpec,
+            updatedAt: new Date(),
+          })
+          .where(eq(clientProfiles.userId, user.id));
+      } else {
+        await tx.insert(clientProfiles).values({
+          userId: user.id,
+          dizzinessHistory: parq.dizzinessOrLossOfConsciousness,
+          medicalNotes,
+          preferredSpecialization: prefSpec,
+        });
+      }
+
+      const [uRow] = await tx
+        .select({ phone: users.phone, dateOfBirth: users.dateOfBirth })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1);
+
+      // Record in eventParqSubmissions for centralized medical tracking
+      await tx.insert(eventParqSubmissions).values({
+        fullName: user.fullName || "Client User",
+        email: user.email,
+        phone: uRow?.phone || "N/A",
+        country: "Nigeria",
+        address: "N/A",
+        dateOfBirth: uRow?.dateOfBirth || "1980-01-01",
+        heartCondition: parq.heartCondition,
+        chestPain: parq.chestPain,
+        dizzinessOrLossOfConsciousness: parq.dizzinessOrLossOfConsciousness,
+        boneOrJointProblems: parq.boneOrJointProblems,
+        bpOrHeartMedication: parq.bpOrHeartMedication,
+        informationCorrect: parq.informationCorrect,
+        otherReasonsNotToExercise: parq.otherReasonsNotToExercise,
+        otherReasonsDetails: parq.otherReasonsDetails || null,
+        healthChangeAcknowledged: parq.healthChangeAcknowledged,
+        additionalQuestions: parq.additionalQuestions || null,
+        goals: `${svc.name} (${sessionCount} sessions)`,
+        plannedStartDate: body.startDate,
+        seriousnessScore: 10,
+      });
+    }
+
     // Pre-create N placeholder training sessions, all at start_date 09:00 local.
-    // Trainer + final times are assigned later by an admin/scheduling task.
     const initialAt = new Date(`${body.startDate}T09:00:00.000Z`);
     const placeholders = Array.from({ length: sessionCount }, (_, i) => {
       const dt = new Date(initialAt);
@@ -123,16 +222,6 @@ export const POST = withIdempotency(async ({ req, user }) => {
     return { booking, serviceName: svc.name, sessionCount, totalAmountNaira };
   });
 
-  // Email notification — fire-and-forget
-  notifySessionBooked({
-    clientEmail: user.email,
-    clientName: user.fullName,
-    serviceName: result.serviceName,
-    sessionCount: result.sessionCount,
-    startDate: body.startDate,
-    totalAmountNaira: result.totalAmountNaira,
-  });
-
   return {
     data: {
       booking: result.booking,
@@ -140,3 +229,4 @@ export const POST = withIdempotency(async ({ req, user }) => {
     status: 201,
   };
 });
+

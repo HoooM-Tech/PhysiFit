@@ -797,28 +797,27 @@ export default function Signup() {
 
               <div className="space-y-4 mb-8">
                 <div className="border border-gray-200 rounded-md p-5 bg-gray-50">
-                  <h3 className="font-display text-lg uppercase tracking-wide text-primary-darker mb-3">Terms & Conditions</h3>
-                  <div className="max-h-64 overflow-y-auto text-sm text-gray-700 mb-4 space-y-3">
-                    <p><strong>Session Cancellation & Rescheduling:</strong> Sessions must be cancelled or rescheduled at least 24 hours in advance. Cancellations made within 24 hours will be charged as a full session fee.</p>
-                    <p><strong>Health & Safety:</strong> You agree to provide accurate health information. PhysiFit NG is not responsible for injuries resulting from undisclosed medical conditions or failure to follow trainer guidance.</p>
-                    <p><strong>Account Responsibility:</strong> You are responsible for maintaining the confidentiality of your password and account information. All activities under your account are your responsibility.</p>
-                    <p><strong>Payment & Billing:</strong> You authorize PhysiFit NG to charge your payment method for all sessions and services as agreed.</p>
-                    <p><strong>Liability Waiver:</strong> By creating this account, you acknowledge the physical risks associated with fitness training and assume full responsibility for your health and safety.</p>
-                  </div>
+                  <h3 className="font-display text-lg uppercase tracking-wide text-primary-darker mb-2">Terms & Conditions</h3>
+                  <p className="text-xs text-gray-600 mb-4">
+                    Please review our official legal policies regarding health safety, session cancellation rules, and account terms before creating your account.
+                  </p>
                   <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
                       id="agree-terms"
                       checked={termsAgreed}
                       onChange={(e) => setTermsAgreed(e.target.checked)}
-                      className="w-4 h-4 mt-1"
+                      className="w-5 h-5 mt-0.5 shrink-0 cursor-pointer accent-primary-darker"
                     />
-                    <label htmlFor="agree-terms" className="text-sm text-gray-700">
-                      I have read and agree to the Terms & Conditions, session policies, and rescheduling rules above.
+                    <label htmlFor="agree-terms" className="text-sm text-gray-800 cursor-pointer font-medium">
+                      I have read, understood, and agree to the{' '}
+                      <Link href="/terms" target="_blank" className="text-primary-darker hover:text-accent font-bold underline">
+                        Terms & Conditions
+                      </Link>
+                      , session policies, and assumption of risk.
                     </label>
                   </div>
                 </div>
-
               </div>
 
               {error && (

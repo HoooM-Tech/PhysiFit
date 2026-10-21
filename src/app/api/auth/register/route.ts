@@ -29,6 +29,20 @@ const registerSchema = z
     certifications: z.string().optional(),
     education: z.string().optional(),
     onboardingAnswers: z.string().optional(),
+    parq: z
+      .object({
+        heartCondition: z.boolean().optional(),
+        chestPain: z.boolean().optional(),
+        dizzinessOrLossOfConsciousness: z.boolean().optional(),
+        boneOrJointProblems: z.boolean().optional(),
+        bpOrHeartMedication: z.boolean().optional(),
+        informationCorrect: z.boolean().optional(),
+        otherReasonsNotToExercise: z.boolean().optional(),
+        otherReasonsDetails: z.string().max(2000).optional(),
+        healthChangeAcknowledged: z.boolean().optional(),
+        additionalQuestions: z.string().max(2000).optional(),
+      })
+      .optional(),
   })
   .refine((d) => d.role !== "trainer" || !!d.specialization, {
     message: "Trainers must specify a specialization",
@@ -78,12 +92,38 @@ export const POST = withRoute(async ({ req, requestId }) => {
     if (!u) throw new ApiError("INTERNAL_ERROR", "Failed to create account");
 
     if (body.role === "client") {
+      let dizzinessHistory = body.dizzinessHistory ?? false;
+      let medicalNotes = body.medicalNotes;
+
+      if (body.parq) {
+        const parq = body.parq;
+        if (parq.dizzinessOrLossOfConsciousness !== undefined) {
+          dizzinessHistory = parq.dizzinessOrLossOfConsciousness;
+        }
+
+        const flags: string[] = [];
+        if (parq.heartCondition) flags.push("Heart Condition");
+        if (parq.chestPain) flags.push("Chest Pain");
+        if (parq.dizzinessOrLossOfConsciousness) flags.push("Dizziness/Loss of Balance");
+        if (parq.boneOrJointProblems) flags.push("Bone/Joint Issues");
+        if (parq.bpOrHeartMedication) flags.push("BP/Heart Medication");
+        if (parq.otherReasonsNotToExercise && parq.otherReasonsDetails) {
+          flags.push(`Other: ${parq.otherReasonsDetails.trim()}`);
+        }
+
+        const parqSummary = flags.length > 0
+          ? `PAR-Q Flagged Conditions: ${flags.join("; ")}${parq.additionalQuestions ? ` | Notes: ${parq.additionalQuestions.trim()}` : ""}`
+          : `PAR-Q Cleared (All No)${parq.additionalQuestions ? ` | Notes: ${parq.additionalQuestions.trim()}` : ""}`;
+
+        medicalNotes = medicalNotes || parqSummary;
+      }
+
       await tx.insert(clientProfiles).values({
         userId: u.id,
         weightKg: body.weightKg,
         heightCm: body.heightCm,
-        dizzinessHistory: body.dizzinessHistory ?? false,
-        medicalNotes: body.medicalNotes,
+        dizzinessHistory,
+        medicalNotes,
         preferredSpecialization: body.specialization ?? null,
       });
     } else if (body.role === "trainer") {

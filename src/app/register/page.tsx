@@ -183,6 +183,12 @@ export default function RegisterPage() {
             <h1 className="text-4xl sm:text-5xl font-bold text-primary-dark mb-3">
               PAR-Q & Goals Form
             </h1>
+            <div className="bg-amber-50/90 border border-amber-200/80 rounded-xl p-3.5 mb-6 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
+              <span className="font-medium">Looking to create a full PhysiFit member account or join as a client/trainer?</span>
+              <Link href="/signup" className="font-bold underline text-primary-darker hover:text-accent shrink-0">
+                Create Account on Platform →
+              </Link>
+            </div>
             <p className="text-gray-600 mb-10 max-w-2xl">
               A short health screening so we can run a safe, personalized program for you.
               Takes about 3 minutes.
